@@ -91,6 +91,51 @@ class GameLauncher:
         """Start the launcher"""
         self.root.mainloop()
 
+class GameLauncherSY:
+    """Main application launcher with Scotland Yard only, fullscreen"""
+
+    def __init__(self):
+        self.root = tk.Tk()
+        self.root.title("Cops and Robbers - Game Launcher")
+        self.root.attributes('-fullscreen', True)
+        self.setup_ui()
+        self.launch_game()  # Automatically start the game
+
+    def setup_ui(self):
+        main_frame = ttk.Frame(self.root, padding="20")
+        main_frame.pack(fill=tk.BOTH, expand=True)
+
+        title_label = ttk.Label(main_frame, text="Scotland Yard Game", 
+                                font=("Arial", 20, "bold"))
+        title_label.pack(pady=(0, 20))
+
+        param_frame = ttk.LabelFrame(main_frame, text="Parameters", padding="10")
+        param_frame.pack(fill=tk.X, pady=(0, 10))
+
+        ttk.Label(param_frame, text="Number of Cops:").pack(anchor=tk.W)
+        self.cops_var = tk.StringVar(value="4")  # Default to 4 cops
+        ttk.Entry(param_frame, textvariable=self.cops_var, width=10).pack(anchor=tk.W)
+
+        ttk.Button(main_frame, text="Launch Game", command=self.launch_game).pack(pady=20)
+
+        ttk.Button(main_frame, text="Exit", command=self.root.destroy).pack(pady=10)
+
+    def launch_game(self):
+        try:
+            num_cops = int(self.cops_var.get())
+            game = create_scotlandYard_game(num_cops)
+            visualizer = GameVisualizer(game)
+            visualizer.run()
+        except ValueError as e:
+            messagebox.showerror("Error", f"Invalid input: {e}")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to launch game: {e}")
+
+    def run(self):
+        self.root.mainloop()
+
+
 if __name__ == "__main__":
-    launcher = GameLauncher()
+    # launcher = GameLauncher()
+    launcher = GameLauncherSY()
     launcher.run()

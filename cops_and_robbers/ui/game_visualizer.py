@@ -20,7 +20,7 @@ class GameVisualizer:
         self.solver = MinimaxSolver(game)
         self.root = tk.Tk()
         self.root.title("Cops and Robbers Game")
-        self.root.geometry("1200x800")
+        self.root.geometry(f"{self.root.winfo_screenwidth()}x{self.root.winfo_screenheight()}")
         
         # Game state
         self.selected_positions = []
@@ -400,7 +400,7 @@ class GameVisualizer:
         
         strategy_window = tk.Toplevel(self.root)
         strategy_window.title("Game Strategy")
-        strategy_window.geometry("600x400")
+        strategy_window.geometry(f"{self.root.winfo_screenwidth()}x{self.root.winfo_screenheight()}")
         
         text_widget = tk.Text(strategy_window, wrap=tk.WORD)
         scrollbar = ttk.Scrollbar(strategy_window, orient=tk.VERTICAL, command=text_widget.yview)
@@ -483,7 +483,7 @@ class GameVisualizer:
         """Show dialog to load saved games"""
         load_window = tk.Toplevel(self.root)
         load_window.title("Load Game")
-        load_window.geometry("600x400")
+        load_window.geometry(f"{self.root.winfo_screenwidth()}x{self.root.winfo_screenheight()}")
         
         # List of saved games
         games = self.loader.list_games()
@@ -535,7 +535,7 @@ class GameVisualizer:
         """Show game history and statistics"""
         history_window = tk.Toplevel(self.root)
         history_window.title("Game History & Statistics")
-        history_window.geometry("800x600")
+        history_window.geometry(f"{self.root.winfo_screenwidth()}x{self.root.winfo_screenheight()}")
         
         notebook = ttk.Notebook(history_window)
         notebook.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)

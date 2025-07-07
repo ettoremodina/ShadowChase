@@ -1,9 +1,19 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
 import networkx as nx
-from cops_and_robbers import GameVisualizer, Game, Player
+import sys
+import os
+import random
+
+# Add the project root to sys.path for imports
+current_dir = os.path.dirname(os.path.abspath(__file__))
+if current_dir not in sys.path:
+    sys.path.insert(0, current_dir)
+
+from cops_and_robbers.ui.game_visualizer import GameVisualizer
+from cops_and_robbers.core.game import Game, Player, ScotlandYardGame, TicketType, TransportType
 from cops_and_robbers.examples.example_games import *
-from cops_and_robbers.core.game import ScotlandYardGame, TicketType, TransportType
+from cops_and_robbers.solver.minimax_solver import MinimaxSolver
 
 def print_game_state(game):
     """Print current game state"""
@@ -40,8 +50,17 @@ def test_basic_game():
     print(f"Graph edges: {list(graph.edges())}")
     
     # Initialize game: 2 cops at positions 0,1 and robber at position 7
+    # Make sure positions don't conflict
     game = Game(graph, 2)
-    game.initialize_game([0, 1], 7)
+    cop_positions = [0, 1]
+    robber_position = 7
+    
+    # Ensure no position conflicts
+    if robber_position not in cop_positions:
+        game.initialize_game(cop_positions, robber_position)
+    else:
+        # Use different positions if there's a conflict
+        game.initialize_game([0, 2], 7)
     
     print_game_state(game)
     
@@ -152,66 +171,160 @@ def test_scotland_yard_game():
     
     mr_x_tickets = game.get_mr_x_tickets()
     print(f"Mr. X: {mr_x_tickets}")
-    
-    # Test Mr. X move
-    print("\n--- Mr. X Move ---")
-    current_pos = game.game_state.robber_position
-    neighbors = list(game.graph.neighbors(current_pos))
-    if neighbors:
-        target = neighbors[0]
-        edge_data = game.graph.get_edge_data(current_pos, target)
-        transport = TransportType(edge_data.get('edge_type', 1))
-        
-        print(f"Mr. X moves from {current_pos} to {target} via {transport.name}")
-        success = game.make_scotland_yard_move(Player.MR_X, target, transport)
-        print(f"Move success: {success}")
-        
-        # Check tickets after move
-        mr_x_tickets_after = game.get_mr_x_tickets()
-        print(f"Mr. X tickets after move: {mr_x_tickets_after}")
-    
-    # Test detective move
-    print("\n--- Detective Move ---")
-    detective_id = 0
-    current_pos = game.game_state.cop_positions[detective_id]
-    neighbors = list(game.graph.neighbors(current_pos))
-    valid_neighbors = [n for n in neighbors if n not in game.game_state.cop_positions]
-    
-    if valid_neighbors:
-        target = valid_neighbors[0]
-        edge_data = game.graph.get_edge_data(current_pos, target)
-        transport = TransportType(edge_data.get('edge_type', 1))
-        
-        print(f"Detective {detective_id+1} moves from {current_pos} to {target} via {transport.name}")
-        success = game.make_scotland_yard_move(Player.DETECTIVES, target, transport, detective_id)
-        print(f"Move success: {success}")
-        
-        # Check tickets after move
-        detective_tickets_after = game.get_detective_tickets(detective_id)
-        mr_x_tickets_after = game.get_mr_x_tickets()
-        print(f"Detective {detective_id+1} tickets after move: {detective_tickets_after}")
-        print(f"Mr. X tickets after detective move: {mr_x_tickets_after}")
 
-def test_simple_vs_full_scotland_yard():
-    """Compare simple and full Scotland Yard rules"""
-    print("\n\n=== COMPARING SIMPLE VS FULL RULES ===")
+def demo_path_game():
+    """Demonstrate game on path graph"""
+    print("Path Graph Game Demo")
+    game = create_path_graph_game(5, 1)
     
-    # Simple game
-    print("Simple Scotland Yard (visible robber, no tickets):")
-    simple_game = create_simple_scotland_yard_game(2, show_robber=True, use_tickets=False)
-    simple_game.initialize_game([1, 13], 100)
-    print(f"Robber position visible: {hasattr(simple_game, 'show_robber') and simple_game.show_robber}")
+    # Solve the game
+    solver = MinimaxSolver(game)
+    result = solver.solve([0], 4)
     
-    # Full game
-    print("\nFull Scotland Yard (hidden robber, tickets):")
-    full_game = create_scotlandYard_game(2)
-    full_game.initialize_scotland_yard_game([1, 13], 100)
-    print(f"Mr. X position hidden: {not full_game.game_state.mr_x_visible}")
-    print(f"Uses tickets: {isinstance(full_game, ScotlandYardGame)}")
+    print(f"Cops can win: {result.cops_can_win}")
+    if result.game_length:
+        print(f"Game length: {result.game_length}")
+    
+    # Visualize
+    visualizer = GameVisualizer(game)
+    visualizer.run()
+
+def demo_cycle_game():
+    """Demonstrate game on cycle graph"""
+    print("Cycle Graph Game Demo")
+    game = create_cycle_graph_game(6, 1)
+    
+    visualizer = GameVisualizer(game)
+    visualizer.run()
+
+def demo_grid_game():
+    """Demonstrate game on grid graph"""
+    print("Grid Graph Game Demo")
+    game = create_grid_graph_game(3, 3, 2)
+    
+    visualizer = GameVisualizer(game)
+    visualizer.run()
+
+def demo_scotland_yard_game():
+    """Demonstrate full Scotland Yard game"""
+    print("Scotland Yard Game Demo")
+    game = create_scotlandYard_game(3)
+    
+    # Initialize with random positions
+    nodes = list(game.graph.nodes())
+    detective_positions = random.sample(nodes, 3)
+    mr_x_position = random.choice([n for n in nodes if n not in detective_positions])
+    
+    game.initialize_scotland_yard_game(detective_positions, mr_x_position)
+    
+    print(f"Detectives at: {detective_positions}")
+    print(f"Mr. X at: {mr_x_position} (hidden)")
+    
+    # Show ticket counts
+    for i in range(3):
+        tickets = game.get_detective_tickets(i)
+        print(f"Detective {i+1}: {tickets}")
+    
+    mr_x_tickets = game.get_mr_x_tickets()
+    print(f"Mr. X: {mr_x_tickets}")
+
+def demo_simple_scotland_yard():
+    """Demonstrate simplified Scotland Yard game"""
+    print("Simple Scotland Yard Game Demo")
+    game = create_simple_scotland_yard_game(num_cops=2, show_robber=True, use_tickets=False)
+    
+    # Use basic initialization
+    game.initialize_game([1, 3], 100)
+    
+    visualizer = GameVisualizer(game)
+    visualizer.run()
+
+def demo_scotland_yard_visualizer():
+    """Demonstrate full Scotland Yard game with visualizer"""
+    print("Scotland Yard Game with Visualizer")
+    game = create_scotlandYard_game(3)
+    
+    visualizer = GameVisualizer(game)
+    visualizer.run()
+
+def demo_test_scotland_yard():
+    """Demonstrate test Scotland Yard game with small graph"""
+    print("Test Scotland Yard Game Demo (10 nodes)")
+    from cops_and_robbers.examples.example_games import create_test_scotland_yard_game
+    
+    game = create_test_scotland_yard_game(2)
+    
+    # Initialize with specific positions
+    detective_positions = [1, 3]
+    mr_x_position = 8
+    
+    game.initialize_scotland_yard_game(detective_positions, mr_x_position)
+    
+    print(f"Detectives at: {detective_positions}")
+    print(f"Mr. X at: {mr_x_position}")
+    
+    # Show ticket counts
+    for i in range(2):
+        tickets = game.get_detective_tickets(i)
+        print(f"Detective {i+1}: {tickets}")
+    
+    mr_x_tickets = game.get_mr_x_tickets()
+    print(f"Mr. X: {mr_x_tickets}")
+    
+    visualizer = GameVisualizer(game)
+    visualizer.run()
+
+def demo_simple_test_scotland_yard():
+    """Demonstrate simple test Scotland Yard game"""
+    print("Simple Test Scotland Yard Game Demo")
+    from cops_and_robbers.examples.example_games import create_simple_test_scotland_yard_game
+    
+    game = create_simple_test_scotland_yard_game(num_cops=2, show_robber=True, use_tickets=False)
+    
+    # Use basic initialization
+    game.initialize_game([1, 3], 8)
+    
+    visualizer = GameVisualizer(game)
+    visualizer.run()
 
 # Run tests
 if __name__ == "__main__":
-    test_basic_game()
-    test_game_until_end()
-    test_scotland_yard_game()
-    test_simple_vs_full_scotland_yard()
+    print("Choose a demo:")
+    print("1. Basic Game Test")
+    print("2. Complete Game Test") 
+    print("3. Scotland Yard Test")
+    print("4. Path Graph Demo")
+    print("5. Cycle Graph Demo")
+    print("6. Grid Graph Demo")
+    print("7. Simple Scotland Yard Demo")
+    print("8. Full Scotland Yard Demo")
+    print("9. Scotland Yard Visualizer")
+    print("10. Test Scotland Yard (10 nodes)")
+    print("11. Simple Test Scotland Yard (10 nodes)")
+    
+    choice = input("Enter choice (1-11): ")
+    
+    if choice == "1":
+        test_basic_game()
+    elif choice == "2":
+        test_game_until_end()
+    elif choice == "3":
+        test_scotland_yard_game()
+    elif choice == "4":
+        demo_path_game()
+    elif choice == "5":
+        demo_cycle_game()
+    elif choice == "6":
+        demo_grid_game()
+    elif choice == "7":
+        demo_simple_scotland_yard()
+    elif choice == "8":
+        demo_scotland_yard_game()
+    elif choice == "9":
+        demo_scotland_yard_visualizer()
+    elif choice == "10":
+        demo_test_scotland_yard()
+    elif choice == "11":
+        demo_simple_test_scotland_yard()
+    else:
+        print("Invalid choice")

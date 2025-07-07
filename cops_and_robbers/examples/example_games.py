@@ -2,9 +2,20 @@
 
 import networkx as nx
 import pandas as pd
-from ..core.game import Game, StandardMovement, DistanceKMovement, CaptureWinCondition, DistanceKWinCondition, ScotlandYardGame
-from ..solver.minimax_solver import MinimaxSolver
-from ..ui.game_visualizer import GameVisualizer
+import sys
+import os
+
+# Add the cops_and_robbers package directory to the path
+current_dir = os.path.dirname(os.path.abspath(__file__))
+package_dir = os.path.dirname(current_dir)  # This is the cops_and_robbers directory
+project_root = os.path.dirname(package_dir)  # This is the ScotlandYardRL directory
+
+# Add project root to sys.path so we can import cops_and_robbers package
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
+
+# Now import from the cops_and_robbers package
+from cops_and_robbers.core.game import Game, StandardMovement, DistanceKMovement, CaptureWinCondition, DistanceKWinCondition, ScotlandYardGame
 
 def create_path_graph_game(n: int, num_cops: int = 1) -> Game:
     """Create game on path graph"""
@@ -86,99 +97,47 @@ def create_simple_scotland_yard_game(num_cops: int = 3,
     else:
         # Use basic rules
         game = Game(graph, num_cops)
-        game.simplified_mode = True
-        game.show_robber = show_robber
         return game
 
-def demo_path_game():
-    """Demonstrate game on path graph"""
-    print("Path Graph Game Demo")
-    game = create_path_graph_game(5, 1)
-    
-    # Solve the game
-    solver = MinimaxSolver(game)
-    result = solver.solve([0], 4)
-    
-    print(f"Cops can win: {result.cops_can_win}")
-    if result.game_length:
-        print(f"Game length: {result.game_length}")
-    
-    # Visualize
-    visualizer = GameVisualizer(game)
-    visualizer.run()
+def create_test_scotland_yard_game(num_detectives: int = 2) -> ScotlandYardGame:
+    """Create game on small test Scotland Yard graph with full rules"""
+    def create_graph_from_csv(path):
+        df = pd.read_csv(path)
+        G = nx.Graph()
+        
+        for _, row in df.iterrows():
+            source = int(row['source'])
+            target = int(row['target'])
+            edge_type = int(row['edge_type'])
+            G.add_edge(source, target, edge_type=edge_type)
+        
+        return G
 
-def demo_cycle_game():
-    """Demonstrate game on cycle graph"""
-    print("Cycle Graph Game Demo")
-    game = create_cycle_graph_game(6, 1)
-    
-    visualizer = GameVisualizer(game)
-    visualizer.run()
+    graph = create_graph_from_csv("data/test_edgelist.csv") 
+    return ScotlandYardGame(graph, num_detectives)
 
-def demo_grid_game():
-    """Demonstrate game on grid graph"""
-    print("Grid Graph Game Demo")
-    game = create_grid_graph_game(3, 3, 2)
-    
-    visualizer = GameVisualizer(game)
-    visualizer.run()
+def create_simple_test_scotland_yard_game(num_cops: int = 2, 
+                                        show_robber: bool = True,
+                                        use_tickets: bool = False) -> Game:
+    """Create simplified test Scotland Yard game for learning"""
+    def create_graph_from_csv(path):
+        df = pd.read_csv(path)
+        G = nx.Graph()
+        
+        for _, row in df.iterrows():
+            source = int(row['source'])
+            target = int(row['target'])
+            edge_type = int(row['edge_type'])
+            G.add_edge(source, target, edge_type=edge_type)
+        
+        return G
 
-def demo_scotland_yard_game():
-    """Demonstrate full Scotland Yard game"""
-    print("Scotland Yard Game Demo")
-    game = create_scotlandYard_game(3)
+    graph = create_graph_from_csv("data/test_edgelist.csv")
     
-    # Initialize with random positions
-    import random
-    nodes = list(game.graph.nodes())
-    detective_positions = random.sample(nodes, 3)
-    mr_x_position = random.choice([n for n in nodes if n not in detective_positions])
-    
-    game.initialize_scotland_yard_game(detective_positions, mr_x_position)
-    
-    print(f"Detectives at: {detective_positions}")
-    print(f"Mr. X at: {mr_x_position} (hidden)")
-    
-    # Show ticket counts
-    for i in range(3):
-        tickets = game.get_detective_tickets(i)
-        print(f"Detective {i+1}: {tickets}")
-    
-    mr_x_tickets = game.get_mr_x_tickets()
-    print(f"Mr. X: {mr_x_tickets}")
-
-def demo_simple_scotland_yard():
-    """Demonstrate simplified Scotland Yard game"""
-    print("Simple Scotland Yard Game Demo")
-    game = create_simple_scotland_yard_game(num_cops=2, show_robber=True, use_tickets=False)
-    
-    # Use basic initialization
-    game.initialize_game([1, 3], 100)
-    
-    visualizer = GameVisualizer(game)
-    visualizer.run()
-
-if __name__ == "__main__":
-    # Run different demos
-    print("Choose a demo:")
-    print("1. Path Graph")
-    print("2. Cycle Graph") 
-    print("3. Grid Graph")
-    print("4. Simple Scotland Yard")
-    print("5. Full Scotland Yard")
-    
-    choice = input("Enter choice (1-5): ")
-    
-    if choice == "1":
-        demo_path_game()
-    elif choice == "2":
-        demo_cycle_game()
-    elif choice == "3":
-        demo_grid_game()
-    elif choice == "4":
-        demo_simple_scotland_yard()
-    elif choice == "5":
-        demo_scotland_yard_game()
+    if use_tickets:
+        # Use Scotland Yard rules
+        return ScotlandYardGame(graph, num_cops)
     else:
-        print("Invalid choice")
-
+        # Use basic rules
+        game = Game(graph, num_cops)
+        return game

@@ -347,21 +347,29 @@ if __name__ == "__main__":
     print("Scotland Yard Simulation Runner")
     print("1. Simple rules (visible robber, no tickets)")
     print("2. Full Scotland Yard rules")
+    print("3. Quick test (10 games)")
     
-    choice = input("Choose game type (1-2): ")
-    use_full_rules = choice == "2"
+    choice = input("Choose simulation type (1-3): ")
     
-    num_games = int(input("Number of games to simulate: "))
-    num_detectives = int(input("Number of detectives (2-5): "))
-    verbose = input("Verbose output for first few games? (y/n): ").lower() == 'y'
-    
-    simulator = GameSimulator(use_full_rules, num_detectives)
-    stats, results = simulator.run_simulation(num_games, verbose=verbose)
-    
-    print_simulation_results(stats, results)
-    
-    save_file = input("Save results to file? (filename or 'n'): ")
-    if save_file != 'n':
-        if not save_file.endswith('.json'):
-            save_file += '.json'
-        save_results(stats, results, save_file)
+    if choice == "3":
+        # Quick test mode
+        simulator = GameSimulator(use_full_rules=True, num_detectives=3)
+        stats, results = simulator.run_simulation(10, verbose=True)
+        print_simulation_results(stats, results)
+    else:
+        use_full_rules = choice == "2"
+        
+        num_games = int(input("Number of games to simulate: "))
+        num_detectives = int(input("Number of detectives (2-5): "))
+        verbose = input("Verbose output for first few games? (y/n): ").lower() == 'y'
+        
+        simulator = GameSimulator(use_full_rules, num_detectives)
+        stats, results = simulator.run_simulation(num_games, verbose=verbose)
+        
+        print_simulation_results(stats, results)
+        
+        save_file = input("Save results to file? (filename or 'n'): ")
+        if save_file != 'n':
+            if not save_file.endswith('.json'):
+                save_file += '.json'
+            save_results(stats, results, save_file)

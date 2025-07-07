@@ -92,11 +92,13 @@ def create_simple_scotland_yard_game(num_cops: int = 3,
     graph = create_graph_from_csv("data/edgelist.csv")
     
     if use_tickets:
-        # Use Scotland Yard rules
+        # Use Scotland Yard rules with tickets
         return ScotlandYardGame(graph, num_cops)
     else:
-        # Use basic rules
+        # Use basic rules without tickets
         game = Game(graph, num_cops)
+        # Add a flag to indicate this is a Scotland Yard map but with basic rules
+        game.is_scotland_yard_map = True
         return game
 
 def create_test_scotland_yard_game(num_detectives: int = 2) -> ScotlandYardGame:
@@ -135,9 +137,11 @@ def create_simple_test_scotland_yard_game(num_cops: int = 2,
     graph = create_graph_from_csv("data/test_edgelist.csv")
     
     if use_tickets:
-        # Use Scotland Yard rules
+        # Use Scotland Yard rules with tickets
         return ScotlandYardGame(graph, num_cops)
     else:
-        # Use basic rules
+        # Use basic rules without tickets
         game = Game(graph, num_cops)
+        # Add a flag to indicate this is a Scotland Yard map but with basic rules
+        game.is_scotland_yard_map = True
         return game

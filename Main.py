@@ -89,7 +89,8 @@ class GameLauncher:
             elif game_type == "simple_scotland_yard":
                 game = create_simple_scotland_yard_game(num_cops, show_robber=True, use_tickets=False)
             elif game_type == "test_scotland_yard":
-                game = create_test_scotland_yard_game(num_cops)
+                game = create_test_scotland_yard_game(2)
+                game.initialize_scotland_yard_game([1, 3], 8) 
             elif game_type == "simple_test_scotland_yard":
                 game = create_simple_test_scotland_yard_game(num_cops, show_robber=True, use_tickets=False)
             else:

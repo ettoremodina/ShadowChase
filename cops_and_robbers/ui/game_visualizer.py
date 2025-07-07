@@ -5,8 +5,8 @@ import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.figure import Figure
 import numpy as np
-from typing import Dict, List, Optional, Tuple
-from ..core.game import Game, Player, GameState
+from typing import Dict, List, Optional, Tuple, Set
+from ..core.game import Game, Player, GameState, ScotlandYardGame, TicketType, TransportType
 from ..solver.minimax_solver import MinimaxSolver
 from ..storage.game_loader import GameLoader
 
@@ -15,7 +15,6 @@ class GameVisualizer:
     
     def __init__(self, game: Game, loader: 'GameLoader' = None):
         self.loader = loader or GameLoader()
-
         self.game = game
         self.solver = MinimaxSolver(game)
         self.root = tk.Tk()
@@ -24,10 +23,10 @@ class GameVisualizer:
         
         # Transport type colors and styles
         self.transport_styles = {
-            1: {'color': 'yellow', 'width': 2, 'name': 'Taxi'},      # Taxi - yellow, thin
-            2: {'color': 'blue', 'width': 3, 'name': 'Bus'},        # Bus - blue, medium  
-            3: {'color': 'red', 'width': 4, 'name': 'Underground'}, # Underground - red, thick
-            4: {'color': 'green', 'width': 3, 'name': 'Ferry'}      # Ferry - green, medium
+            1: {'color': 'yellow', 'width': 2, 'name': 'Taxi'},
+            2: {'color': 'blue', 'width': 3, 'name': 'Bus'},
+            3: {'color': 'red', 'width': 4, 'name': 'Underground'},
+            4: {'color': 'green', 'width': 3, 'name': 'Ferry'}
         }
         
         # Game state
@@ -35,7 +34,12 @@ class GameVisualizer:
         self.setup_mode = True
         self.auto_play = False
         self.solver_result = None
-        self.loader = loader or GameLoader()
+        self.current_player_moves = {}  # Maps positions to available moves
+        self.highlighted_edges = []     # List of edges to highlight with transport types
+        self.active_player_positions = []  # Positions of players that need to move
+        self.current_cop_index = 0      # Which cop is currently being moved
+        self.cop_selections = []        # Track cop selections during turn
+        self.selected_nodes = []        # Nodes with visual selection feedback
         
         # UI components
         self.setup_ui()
@@ -56,7 +60,7 @@ class GameVisualizer:
         setup_section = ttk.LabelFrame(self.control_frame, text="Game Setup")
         setup_section.pack(fill=tk.X, pady=(0, 10))
         
-        ttk.Label(setup_section, text="Select cop positions, then robber position").pack(pady=5)
+        ttk.Label(setup_section, text="Select positions for setup").pack(pady=5)
         
         self.setup_button = ttk.Button(setup_section, text="Start Game", 
                                       command=self.start_game, state=tk.DISABLED)
@@ -78,19 +82,26 @@ class GameVisualizer:
                                      command=self.toggle_auto_play, state=tk.DISABLED)
         self.auto_button.pack(pady=5)
         
-        # Add tickets section for Scotland Yard
+        # Current turn section
+        self.turn_section = ttk.LabelFrame(self.control_frame, text="Current Turn")
+        self.turn_section.pack(fill=tk.X, pady=(0, 10))
+        
+        self.turn_text = tk.Text(self.turn_section, height=3, wrap=tk.WORD)
+        self.turn_text.pack(fill=tk.BOTH, expand=True)
+        
+        # Available moves section
+        self.moves_section = ttk.LabelFrame(self.control_frame, text="Available Moves")
+        self.moves_section.pack(fill=tk.X, pady=(0, 10))
+        
+        self.moves_text = tk.Text(self.moves_section, height=6, wrap=tk.WORD)
+        self.moves_text.pack(fill=tk.BOTH, expand=True)
+        
+        # Tickets section for Scotland Yard
         self.tickets_section = ttk.LabelFrame(self.control_frame, text="Tickets")
         self.tickets_section.pack(fill=tk.X, pady=(0, 10))
         
         self.tickets_text = tk.Text(self.tickets_section, height=6, wrap=tk.WORD)
         self.tickets_text.pack(fill=tk.BOTH, expand=True)
-        
-        # Move selection help
-        self.move_help_section = ttk.LabelFrame(self.control_frame, text="Move Instructions")
-        self.move_help_section.pack(fill=tk.X, pady=(0, 10))
-        
-        self.move_help_text = tk.Text(self.move_help_section, height=4, wrap=tk.WORD)
-        self.move_help_text.pack(fill=tk.BOTH, expand=True)
         
         # Solver section
         solver_section = ttk.LabelFrame(self.control_frame, text="Solver")
@@ -120,32 +131,193 @@ class GameVisualizer:
         
     def setup_graph_display(self):
         """Setup matplotlib graph display"""
-        self.fig = Figure(figsize=(8, 6), dpi=100)
+        self.fig = Figure(figsize=(10, 8), dpi=100)
         self.ax = self.fig.add_subplot(111)
         
         self.canvas = FigureCanvasTkAgg(self.fig, self.graph_frame)
         self.canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True)
         
-        # Mouse click handler
+        # Mouse click handler - simplified node detection
         self.canvas.mpl_connect('button_press_event', self.on_graph_click)
         
-        # Calculate graph layout
-        self.pos = nx.spring_layout(self.game.graph, seed=42)
+        # Calculate graph layout once
+        self.pos = nx.spring_layout(self.game.graph, seed=42, k=1, iterations=50)
         self.draw_graph()
         
+    def get_filtered_moves_for_player(self, player: Player, position: int = None, 
+                                    detective_id: int = None) -> Dict[int, List[TransportType]]:
+        """Get available moves with transport types, pre-filtered by tickets"""
+        moves_dict = {}
+        
+        if not self.game.game_state:
+            return moves_dict
+        
+        is_scotland_yard = isinstance(self.game, ScotlandYardGame)
+        
+        if not is_scotland_yard:
+            # Basic game - just return neighbors, excluding positions that will be occupied
+            if player == Player.COPS and position is not None:
+                for neighbor in self.game.graph.neighbors(position):
+                    # Exclude positions occupied by OTHER cops (not the current cop moving)
+                    # and already selected positions in this turn
+                    other_cop_positions = [pos for i, pos in enumerate(self.game.game_state.cop_positions) 
+                                         if i != detective_id]
+                    if (neighbor not in other_cop_positions and 
+                        neighbor not in self.cop_selections):
+                        moves_dict[neighbor] = [1]  # Generic transport
+            elif player == Player.ROBBER:
+                robber_pos = self.game.game_state.robber_position
+                for neighbor in self.game.graph.neighbors(robber_pos):
+                    # Exclude positions that will be occupied by cops after their moves
+                    final_cop_positions = self.cop_selections + [
+                        self.game.game_state.cop_positions[i] 
+                        for i in range(len(self.cop_selections), len(self.game.game_state.cop_positions))
+                    ]
+                    if neighbor not in final_cop_positions:
+                        moves_dict[neighbor] = [1]
+            return moves_dict
+        
+        # Scotland Yard game
+        if player == Player.COPS and detective_id is not None:
+            detective_pos = self.game.game_state.cop_positions[detective_id]
+            detective_tickets = self.game.get_detective_tickets(detective_id)
+            
+            for neighbor in self.game.graph.neighbors(detective_pos):
+                # Skip if occupied by another detective (excluding the current one moving)
+                other_detective_positions = [pos for i, pos in enumerate(self.game.game_state.cop_positions) 
+                                           if i != detective_id]
+                if (neighbor in other_detective_positions or 
+                    neighbor in self.cop_selections):
+                    continue
+                
+                # Skip if position is Mr. X's current position
+                if neighbor == self.game.game_state.robber_position:
+                    continue
+                
+                edge_data = self.game.graph.get_edge_data(detective_pos, neighbor)
+                transport_type = edge_data.get('edge_type', 1)
+                
+                # Check if detective has the required ticket
+                ticket_mapping = {1: TicketType.TAXI, 2: TicketType.BUS, 3: TicketType.UNDERGROUND}
+                required_ticket = ticket_mapping.get(transport_type, TicketType.TAXI)
+                
+                if detective_tickets.get(required_ticket, 0) > 0:
+                    moves_dict[neighbor] = [transport_type]
+        
+        elif player == Player.MR_X:
+            mr_x_pos = self.game.game_state.robber_position
+            mr_x_tickets = self.game.get_mr_x_tickets()
+            
+            for neighbor in self.game.graph.neighbors(mr_x_pos):
+                # Skip if position will be occupied by detectives after their moves
+                final_detective_positions = self.cop_selections + [
+                    self.game.game_state.cop_positions[i] 
+                    for i in range(len(self.cop_selections), len(self.game.game_state.cop_positions))
+                ]
+                if neighbor in final_detective_positions:
+                    continue
+                
+                edge_data = self.game.graph.get_edge_data(mr_x_pos, neighbor)
+                transport_type = edge_data.get('edge_type', 1)
+                
+                ticket_mapping = {1: TicketType.TAXI, 2: TicketType.BUS, 3: TicketType.UNDERGROUND}
+                required_ticket = ticket_mapping.get(transport_type, TicketType.TAXI)
+                
+                available_transports = []
+                
+                # Check if Mr. X has the specific ticket
+                if mr_x_tickets.get(required_ticket, 0) > 0:
+                    available_transports.append(transport_type)
+                
+                # Check if Mr. X can use black ticket
+                if mr_x_tickets.get(TicketType.BLACK, 0) > 0:
+                    available_transports.append(4)  # Black ticket
+                
+                if available_transports:
+                    moves_dict[neighbor] = available_transports
+        
+        return moves_dict
+    
+    def update_available_moves(self):
+        """Update available moves for current player"""
+        self.current_player_moves = {}
+        self.highlighted_edges = []
+        self.active_player_positions = []
+        
+        if not self.game.game_state or self.game.is_game_over():
+            return
+        
+        is_scotland_yard = isinstance(self.game, ScotlandYardGame)
+        
+        if self.game.game_state.turn == Player.COPS:
+            # Only highlight the current cop that needs to move
+            if self.current_cop_index < len(self.game.game_state.cop_positions):
+                cop_pos = self.game.game_state.cop_positions[self.current_cop_index]
+                self.active_player_positions = [cop_pos]
+                
+                if is_scotland_yard:
+                    moves = self.get_filtered_moves_for_player(Player.COPS, detective_id=self.current_cop_index)
+                else:
+                    moves = self.get_filtered_moves_for_player(Player.COPS, position=cop_pos)
+                
+                for move_pos, transports in moves.items():
+                    # Skip if position already selected by another cop
+                    if move_pos in self.cop_selections:
+                        continue
+                    
+                    # Store moves with transport types for highlighting
+                    for transport in transports:
+                        self.highlighted_edges.append((cop_pos, move_pos, transport))
+                    
+                    if cop_pos not in self.current_player_moves:
+                        self.current_player_moves[cop_pos] = {}
+                    self.current_player_moves[cop_pos][move_pos] = transports
+        
+        else:  # MR_X or ROBBER turn
+            if is_scotland_yard:
+                mr_x_pos = self.game.game_state.robber_position
+                self.active_player_positions.append(mr_x_pos)
+                moves = self.get_filtered_moves_for_player(Player.MR_X)
+            else:
+                robber_pos = self.game.game_state.robber_position
+                self.active_player_positions.append(robber_pos)
+                moves = self.get_filtered_moves_for_player(Player.ROBBER)
+            
+            current_pos = self.active_player_positions[0]
+            for move_pos, transports in moves.items():
+                for transport in transports:
+                    self.highlighted_edges.append((current_pos, move_pos, transport))
+                
+                if current_pos not in self.current_player_moves:
+                    self.current_player_moves[current_pos] = {}
+                self.current_player_moves[current_pos][move_pos] = transports
+    
     def draw_graph(self):
-        """Draw the game graph"""
+        """Draw the game graph with move highlighting"""
         self.ax.clear()
         
-        # Track which transport types are actually used
+        # Update available moves for highlighting
+        if not self.setup_mode:
+            self.update_available_moves()
+        
+        # Track which transport types are actually used for legend
         legend_handles = []
         
-        # Draw edges by transport type
+        # Collect highlighted edges by transport type
+        highlighted_by_transport = {}
+        for edge_info in self.highlighted_edges:
+            if len(edge_info) == 3:  # (from, to, transport)
+                from_pos, to_pos, transport = edge_info
+                if transport not in highlighted_by_transport:
+                    highlighted_by_transport[transport] = []
+                highlighted_by_transport[transport].append((from_pos, to_pos))
+        
+        # Draw all edges with reduced transparency for non-highlighted ones
         for transport_type, style in self.transport_styles.items():
-            # Get edges for this transport type
             edges_for_type = []
+            highlighted_edges_for_type = highlighted_by_transport.get(transport_type, [])
+            
             for u, v, data in self.game.graph.edges(data=True):
-                # Handle both 'edge_type' and 'transports' attributes
                 edge_transports = data.get('transports', [])
                 edge_type = data.get('edge_type', None)
                 
@@ -153,15 +325,29 @@ class GameVisualizer:
                     edges_for_type.append((u, v))
             
             if edges_for_type:
-                edge_collection = nx.draw_networkx_edges(
-                    self.game.graph, self.pos, 
-                    edgelist=edges_for_type,
-                    ax=self.ax,
-                    edge_color=style['color'],
-                    width=style['width'],
-                    alpha=0.7
-                )
-                # Create a custom legend entry
+                # Draw non-highlighted edges with low transparency
+                non_highlighted = [edge for edge in edges_for_type if edge not in highlighted_edges_for_type]
+                if non_highlighted:
+                    nx.draw_networkx_edges(
+                        self.game.graph, self.pos, 
+                        edgelist=non_highlighted,
+                        ax=self.ax,
+                        edge_color=style['color'],
+                        width=style['width'],
+                        alpha=0.15  # Very faded for non-available moves
+                    )
+                
+                # Draw highlighted edges with full color and increased thickness
+                if highlighted_edges_for_type:
+                    nx.draw_networkx_edges(
+                        self.game.graph, self.pos,
+                        edgelist=highlighted_edges_for_type,
+                        ax=self.ax,
+                        edge_color=style['color'],
+                        width=style['width'] + 2,  # Thicker for highlighted
+                        alpha=0.9  # Nearly full opacity
+                    )
+                
                 import matplotlib.lines as mlines
                 legend_handles.append(mlines.Line2D([], [], color=style['color'], 
                                                   linewidth=style['width'], 
@@ -178,19 +364,36 @@ class GameVisualizer:
                         node_colors.append('blue')  # Selected cop position
                     else:
                         node_colors.append('red')   # Selected robber position
-                    node_sizes.append(500)
+                    node_sizes.append(600)
                 else:
                     node_colors.append('lightgray')
                     node_sizes.append(300)
             else:
                 # Game mode
                 if self.game.game_state:
-                    if node in self.game.game_state.cop_positions:
+                    if node in self.active_player_positions:
+                        # Highlight active player(s)
+                        if node in self.game.game_state.cop_positions:
+                            node_colors.append('cyan')  # Active detective
+                        else:
+                            node_colors.append('orange')  # Active Mr. X/robber
+                        node_sizes.append(700)
+                    elif node in self.cop_selections:
+                        # Show already selected cop positions during turn
+                        node_colors.append('purple')  # Selected cop destination
+                        node_sizes.append(600)
+                    elif node in self.game.game_state.cop_positions:
                         node_colors.append('blue')
                         node_sizes.append(500)
                     elif node == self.game.game_state.robber_position:
-                        node_colors.append('red')
-                        node_sizes.append(500)
+                        # Show Mr. X only if visible
+                        is_scotland_yard = isinstance(self.game, ScotlandYardGame)
+                        if not is_scotland_yard or self.game.game_state.mr_x_visible:
+                            node_colors.append('red')
+                            node_sizes.append(500)
+                        else:
+                            node_colors.append('lightgray')
+                            node_sizes.append(300)
                     else:
                         node_colors.append('lightgray')
                         node_sizes.append(300)
@@ -202,8 +405,16 @@ class GameVisualizer:
         nx.draw_networkx_nodes(self.game.graph, self.pos, ax=self.ax,
                               node_color=node_colors, node_size=node_sizes)
         
+        # Draw black dotted rings around selected nodes
+        for node in self.selected_nodes:
+            if node in self.pos:
+                x, y = self.pos[node]
+                circle = plt.Circle((x, y), 0.08, fill=False, color='black', 
+                                  linewidth=2, linestyle='--', alpha=0.8)
+                self.ax.add_patch(circle)
+        
         # Draw labels
-        nx.draw_networkx_labels(self.game.graph, self.pos, ax=self.ax)
+        nx.draw_networkx_labels(self.game.graph, self.pos, ax=self.ax, font_size=8)
         
         self.ax.set_title("Cops and Robbers Game")
         
@@ -217,25 +428,28 @@ class GameVisualizer:
         self.update_info()
     
     def on_graph_click(self, event):
-        """Handle mouse clicks on graph"""
+        """Handle mouse clicks on graph - simplified node detection"""
         if event.inaxes != self.ax:
             return
         
-        # Find closest node
         click_pos = (event.xdata, event.ydata)
         if click_pos[0] is None or click_pos[1] is None:
             return
         
-        min_dist = float('inf')
+        # Find closest node by checking all nodes
         closest_node = None
+        min_dist = float('inf')
+        threshold = 0.15  # Adjust based on graph size
         
-        for node, pos in self.pos.items():
-            dist = np.sqrt((pos[0] - click_pos[0])**2 + (pos[1] - click_pos[1])**2)
-            if dist < min_dist:
-                min_dist = dist
-                closest_node = node
+        for node in self.game.graph.nodes():
+            if node in self.pos:
+                node_pos = self.pos[node]
+                dist = ((node_pos[0] - click_pos[0])**2 + (node_pos[1] - click_pos[1])**2)**0.5
+                if dist < min_dist and dist < threshold:
+                    min_dist = dist
+                    closest_node = node
         
-        if min_dist < 0.1:  # Threshold for node selection
+        if closest_node is not None:
             if self.setup_mode:
                 self.handle_setup_click(closest_node)
             else:
@@ -246,13 +460,11 @@ class GameVisualizer:
         if node in self.selected_positions:
             self.selected_positions.remove(node)
         else:
-            # Prevent selecting the same position for multiple entities
             if len(self.selected_positions) < self.game.num_cops + 1:
                 self.selected_positions.append(node)
         
         # Enable start button when we have enough positions
         if len(self.selected_positions) == self.game.num_cops + 1:
-            # Check for conflicts before enabling button
             cop_positions = self.selected_positions[:self.game.num_cops]
             robber_position = self.selected_positions[self.game.num_cops]
             
@@ -270,65 +482,98 @@ class GameVisualizer:
         if not self.game.game_state or self.game.is_game_over():
             return
         
-        # Check if this is a Scotland Yard game
-        is_scotland_yard = hasattr(self.game, 'is_scotland_yard') and self.game.is_scotland_yard
+        # Check if clicked node is a valid move
+        valid_move = False
+        source_pos = None
         
-        if self.game.game_state.turn == Player.COPS:
-            # Select positions for cops/detectives
-            if node in self.selected_positions:
-                self.selected_positions.remove(node)
-            else:
-                # For Scotland Yard, validate the move more thoroughly
-                if is_scotland_yard:
-                    try:
-                        # Check if this is a valid move for any detective
-                        valid_move = False
-                        available_detective = None
+        # Find which active player can move to this node
+        for active_pos in self.active_player_positions:
+            if active_pos in self.current_player_moves:
+                if node in self.current_player_moves[active_pos]:
+                    valid_move = True
+                    source_pos = active_pos
+                    break
+        
+        if not valid_move:
+            # Get more specific error message
+            is_scotland_yard = isinstance(self.game, ScotlandYardGame)
+            if is_scotland_yard and self.game.game_state.turn == Player.COPS:
+                cop_pos = self.game.game_state.cop_positions[self.current_cop_index]
+                if self.game.graph.has_edge(cop_pos, node):
+                    edge_data = self.game.graph.get_edge_data(cop_pos, node)
+                    transport_type = edge_data.get('edge_type', 1)
+                    transport_names = {1: 'Taxi', 2: 'Bus', 3: 'Underground'}
+                    transport_name = transport_names.get(transport_type, 'Unknown')
+                    
+                    detective_tickets = self.game.get_detective_tickets(self.current_cop_index)
+                    ticket_mapping = {1: TicketType.TAXI, 2: TicketType.BUS, 3: TicketType.UNDERGROUND}
+                    required_ticket = ticket_mapping.get(transport_type, TicketType.TAXI)
+                    
+                    if node in self.game.game_state.cop_positions:
+                        messagebox.showwarning("Invalid Move", 
+                                             f"Position {node} is occupied by another detective.")
+                    elif node == self.game.game_state.robber_position:
+                        messagebox.showwarning("Invalid Move", 
+                                             f"Position {node} is occupied by Mr. X.")
+                    elif detective_tickets.get(required_ticket, 0) <= 0:
+                        messagebox.showwarning("Invalid Move", 
+                                             f"Detective {self.current_cop_index + 1} has no {transport_name} tickets to move to position {node}.")
+                    else:
+                        messagebox.showwarning("Invalid Move", 
+                                             f"Position {node} is not a valid move for Detective {self.current_cop_index + 1}.")
+                else:
+                    messagebox.showwarning("Invalid Move", 
+                                         f"No direct connection from current position to {node}.")
+            elif is_scotland_yard and self.game.game_state.turn == Player.MR_X:
+                mr_x_pos = self.game.game_state.robber_position
+                if self.game.graph.has_edge(mr_x_pos, node):
+                    if node in self.game.game_state.cop_positions:
+                        messagebox.showwarning("Invalid Move", 
+                                             f"Position {node} is occupied by a detective.")
+                    else:
+                        edge_data = self.game.graph.get_edge_data(mr_x_pos, node)
+                        transport_type = edge_data.get('edge_type', 1)
+                        transport_names = {1: 'Taxi', 2: 'Bus', 3: 'Underground'}
+                        transport_name = transport_names.get(transport_type, 'Unknown')
                         
-                        for i, cop_pos in enumerate(self.game.game_state.cop_positions):
-                            if cop_pos not in self.selected_positions:  # Detective not already moved
-                                try:
-                                    valid_moves = self.game.get_valid_moves_with_tickets(Player.COPS, i)
-                                    if node in valid_moves:
-                                        valid_move = True
-                                        available_detective = i + 1
-                                        break
-                                except Exception:
-                                    continue
+                        mr_x_tickets = self.game.get_mr_x_tickets()
+                        ticket_mapping = {1: TicketType.TAXI, 2: TicketType.BUS, 3: TicketType.UNDERGROUND}
+                        required_ticket = ticket_mapping.get(transport_type, TicketType.TAXI)
                         
-                        if not valid_move:
+                        has_specific = mr_x_tickets.get(required_ticket, 0) > 0
+                        has_black = mr_x_tickets.get(TicketType.BLACK, 0) > 0
+                        
+                        if not (has_specific or has_black):
                             messagebox.showwarning("Invalid Move", 
-                                                 f"No detective can move to position {node}.\n"
-                                                 f"Check: tickets available, position not occupied, "
-                                                 f"detective not already moved this turn.")
-                            return
-                    except Exception as e:
-                        messagebox.showerror("Move Validation Error", 
-                                           f"Error checking move validity: {str(e)}")
-                        return
-                
-                self.selected_positions.append(node)
+                                                 f"Mr. X has no {transport_name} or Black tickets to move to position {node}.")
+                        else:
+                            messagebox.showwarning("Invalid Move", 
+                                                 f"Position {node} is not a valid move for Mr. X.")
+                else:
+                    messagebox.showwarning("Invalid Move", 
+                                         f"No direct connection from current position to {node}.")
+            else:
+                messagebox.showwarning("Invalid Move", 
+                                     f"Position {node} is not a valid move for the current player.")
+            return
+        
+        # Handle the move selection
+        if self.game.game_state.turn == Player.COPS:
+            # Add selection for current cop and move to next cop
+            self.cop_selections.append(node)
+            self.selected_nodes.append(node)  # Add visual feedback
+            self.current_cop_index += 1
             
-            if len(self.selected_positions) == self.game.num_cops:
+            # Check if all cops have been moved
+            if len(self.cop_selections) == self.game.num_cops:
+                self.selected_positions = self.cop_selections.copy()
                 self.move_button.config(state=tk.NORMAL)
             else:
                 self.move_button.config(state=tk.DISABLED)
         
-        else:  # Robber's/Mr. X's turn
-            if is_scotland_yard:
-                try:
-                    valid_moves = self.game.get_valid_moves_with_tickets(Player.MR_X)
-                    if node not in valid_moves:
-                        messagebox.showwarning("Invalid Move", 
-                                             f"Mr. X cannot move to position {node}.\n"
-                                             f"Check: tickets available, position not occupied by detective.")
-                        return
-                except Exception as e:
-                    messagebox.showerror("Move Validation Error", 
-                                       f"Error checking Mr. X move: {str(e)}")
-                    return
-            
+        else:  # MR_X or ROBBER turn
             self.selected_positions = [node]
+            self.selected_nodes = [node]  # Add visual feedback
             self.move_button.config(state=tk.NORMAL)
         
         self.draw_graph()
@@ -336,23 +581,26 @@ class GameVisualizer:
     def start_game(self):
         """Start the game with selected positions"""
         if len(self.selected_positions) != self.game.num_cops + 1:
-            messagebox.showerror("Error", f"Select {self.game.num_cops} cop positions and 1 robber position")
+            messagebox.showerror("Error", f"Select {self.game.num_cops} positions and 1 robber position")
             return
         
         cop_positions = self.selected_positions[:self.game.num_cops]
         robber_position = self.selected_positions[self.game.num_cops]
         
-        # Check for position conflicts
         if robber_position in cop_positions:
             messagebox.showerror("Error", "Robber and cops cannot start in the same position")
             return
         
-        # Reset any existing game state before initializing
+        # Reset game state
         self.game.game_state = None
         self.game.game_history = []
         
         try:
-            self.game.initialize_game(cop_positions, robber_position)
+            # Use appropriate initialization method
+            if isinstance(self.game, ScotlandYardGame):
+                self.game.initialize_scotland_yard_game(cop_positions, robber_position)
+            else:
+                self.game.initialize_game(cop_positions, robber_position)
         except ValueError as e:
             messagebox.showerror("Error", str(e))
             return
@@ -360,7 +608,7 @@ class GameVisualizer:
         self.setup_mode = False
         self.selected_positions = []
         
-        # Update UI - enable save button now that game is initialized
+        # Update UI
         self.setup_button.config(state=tk.DISABLED)
         self.move_button.config(state=tk.DISABLED)
         self.auto_button.config(state=tk.NORMAL)
@@ -375,6 +623,12 @@ class GameVisualizer:
         self.setup_mode = True
         self.auto_play = False
         self.solver_result = None
+        self.current_player_moves = {}
+        self.highlighted_edges = []
+        self.active_player_positions = []
+        self.current_cop_index = 0
+        self.cop_selections = []
+        self.selected_nodes = []
         
         self.setup_button.config(state=tk.DISABLED)
         self.move_button.config(state=tk.DISABLED)
@@ -388,7 +642,6 @@ class GameVisualizer:
         self.game.game_history = []
         self.draw_graph()
     
-   
     def make_manual_move(self):
         """Make a manual move with comprehensive error handling"""
         if not self.selected_positions:
@@ -396,6 +649,9 @@ class GameVisualizer:
             return
         
         try:
+            # Double-check move validity before making the move
+            is_scotland_yard = isinstance(self.game, ScotlandYardGame)
+            
             if self.game.game_state.turn == Player.COPS:
                 if len(self.selected_positions) != self.game.num_cops:
                     messagebox.showerror("Invalid Selection", 
@@ -403,28 +659,19 @@ class GameVisualizer:
                                        f"Currently selected: {len(self.selected_positions)}")
                     return
                 
-                # Validate move before attempting
-                is_scotland_yard = hasattr(self.game, 'is_scotland_yard') and self.game.is_scotland_yard
+                # Validate each cop move before attempting
                 if is_scotland_yard:
-                    # Check for duplicate positions
-                    if len(set(self.selected_positions)) != len(self.selected_positions):
-                        messagebox.showerror("Invalid Move", 
-                                           "Detectives cannot occupy the same position.")
-                        self.selected_positions = []
-                        self.move_button.config(state=tk.DISABLED)
-                        self.draw_graph()
-                        return
-                    
-                    # Check if Mr. X position would be occupied
-                    mr_x_pos = self.game.game_state.robber_position
-                    if mr_x_pos in self.selected_positions:
-                        messagebox.showerror("Invalid Move", 
-                                           f"Detective cannot move to position {mr_x_pos} "
-                                           f"(occupied by Mr. X).")
-                        self.selected_positions = []
-                        self.move_button.config(state=tk.DISABLED)
-                        self.draw_graph()
-                        return
+                    for i, new_pos in enumerate(self.selected_positions):
+                        old_pos = self.game.game_state.cop_positions[i]
+                        
+                        if old_pos != new_pos:  # Only check if actually moving
+                            # Check if valid moves includes this position
+                            valid_moves = self.game.get_valid_moves_with_tickets(Player.COPS, i)
+                            if new_pos not in valid_moves:
+                                messagebox.showerror("Invalid Move", 
+                                                   f"Detective {i+1} cannot move to position {new_pos}. "
+                                                   f"Check tickets and position availability.")
+                                return
                 
                 success = self.game.make_move(new_positions=self.selected_positions)
                 
@@ -434,33 +681,26 @@ class GameVisualizer:
                                        "Select 1 position for robber/Mr. X.")
                     return
                 
-                # Validate move before attempting
-                is_scotland_yard = hasattr(self.game, 'is_scotland_yard') and self.game.is_scotland_yard
+                # Validate Mr. X move before attempting
                 if is_scotland_yard:
-                    # Check if position is occupied by detective
-                    if self.selected_positions[0] in self.game.game_state.cop_positions:
+                    valid_moves = self.game.get_valid_moves_with_tickets(Player.MR_X)
+                    if self.selected_positions[0] not in valid_moves:
                         messagebox.showerror("Invalid Move", 
-                                           f"Mr. X cannot move to position {self.selected_positions[0]} "
-                                           f"(occupied by detective).")
-                        self.selected_positions = []
-                        self.move_button.config(state=tk.DISABLED)
-                        self.draw_graph()
+                                           f"Mr. X cannot move to position {self.selected_positions[0]}. "
+                                           f"Check tickets and position availability.")
                         return
                 
                 success = self.game.make_move(new_robber_pos=self.selected_positions[0])
             
             if not success:
-                # Generic move failure - could be due to game rules, connectivity, etc.
-                player_name = "detectives" if self.game.game_state.turn == Player.COPS else "Mr. X" if hasattr(self.game, 'is_scotland_yard') else "robber"
-                messagebox.showerror("Invalid Move", 
-                                   f"Move not allowed for {player_name}.\n"
-                                   f"Check: valid connections, sufficient tickets (if applicable), "
-                                   f"position availability.")
-                # Don't clear selections, let player try again
+                messagebox.showerror("Invalid Move", "Move not allowed by game rules.")
                 return
             
-            # Move successful - clear selections and update UI
+            # Move successful - clear selections and reset cop tracking
             self.selected_positions = []
+            self.cop_selections = []
+            self.current_cop_index = 0
+            self.selected_nodes = []  # Clear visual feedback
             self.move_button.config(state=tk.DISABLED)
             self.draw_graph()
             
@@ -472,24 +712,12 @@ class GameVisualizer:
                 self.auto_play = False
                 self.auto_button.config(text="Auto Play")
         
-        except ValueError as e:
-            # Specific game rule violations
-            messagebox.showerror("Move Error", f"Invalid move: {str(e)}")
-            # Don't clear selections, let player try again
-            
-        except AttributeError as e:
-            # Missing method or attribute errors
-            messagebox.showerror("Game Error", f"Game state error: {str(e)}")
-            self.selected_positions = []
-            self.move_button.config(state=tk.DISABLED)
-            self.draw_graph()
-            
         except Exception as e:
-            # Any other unexpected errors
-            messagebox.showerror("Unexpected Error", 
-                               f"An unexpected error occurred: {str(e)}\n"
-                               f"Please try a different move or restart the game.")
+            messagebox.showerror("Move Error", f"Error making move: {str(e)}")
             self.selected_positions = []
+            self.cop_selections = []
+            self.current_cop_index = 0
+            self.selected_nodes = []  # Clear visual feedback
             self.move_button.config(state=tk.DISABLED)
             self.draw_graph()
     
@@ -654,7 +882,7 @@ class GameVisualizer:
         
         if self.setup_mode:
             self.info_text.insert(tk.END, "Setup Mode\n")
-            self.info_text.insert(tk.END, f"Cops needed: {self.game.num_cops}\n")
+            self.info_text.insert(tk.END, f"Need: {self.game.num_cops} cops + 1 robber\n")
             self.info_text.insert(tk.END, f"Selected: {len(self.selected_positions)}\n")
         elif self.game.game_state:
             state_info = self.game.get_state_representation()
@@ -663,7 +891,7 @@ class GameVisualizer:
             self.info_text.insert(tk.END, f"Cop positions: {state_info['cop_positions']}\n")
             
             # Show robber position based on game type
-            is_scotland_yard = hasattr(self.game, 'is_scotland_yard') and self.game.is_scotland_yard
+            is_scotland_yard = isinstance(self.game, ScotlandYardGame)
             if is_scotland_yard:
                 if self.game.game_state.mr_x_visible:
                     self.info_text.insert(tk.END, f"Mr. X position: {state_info['robber_position']} (VISIBLE)\n")
@@ -672,7 +900,6 @@ class GameVisualizer:
             else:
                 self.info_text.insert(tk.END, f"Robber position: {state_info['robber_position']}\n")
             
-            # Only show game over info if game is actually over
             if self.game.is_game_over():
                 winner = self.game.get_winner()
                 if winner:
@@ -683,11 +910,95 @@ class GameVisualizer:
             if self.solver_result:
                 self.info_text.insert(tk.END, f"\nSolver: Cops can win = {self.solver_result.cops_can_win}\n")
         
-        # Update tickets display
+        # Update other displays
+        self.update_turn_display()
+        self.update_moves_display()
         self.update_tickets_display()
+    
+    def update_turn_display(self):
+        """Update current turn information"""
+        self.turn_text.delete(1.0, tk.END)
         
-        # Update move help
-        self.update_move_help()
+        if self.setup_mode:
+            self.turn_text.insert(tk.END, "Setup Phase - Click nodes to select positions")
+            return
+        
+        if not self.game.game_state:
+            return
+        
+        is_scotland_yard = isinstance(self.game, ScotlandYardGame)
+        current_player = self.game.game_state.turn
+        
+        if current_player == Player.COPS:
+            if is_scotland_yard:
+                if self.current_cop_index < self.game.num_cops:
+                    det_pos = self.game.game_state.cop_positions[self.current_cop_index]
+                    self.turn_text.insert(tk.END, f"DETECTIVE {self.current_cop_index + 1}'S TURN\n")
+                    self.turn_text.insert(tk.END, f"Moving from position {det_pos}\n")
+                    self.turn_text.insert(tk.END, f"Progress: {len(self.cop_selections)}/{self.game.num_cops}")
+                else:
+                    self.turn_text.insert(tk.END, "All detectives selected - make move")
+            else:
+                if self.current_cop_index < self.game.num_cops:
+                    cop_pos = self.game.game_state.cop_positions[self.current_cop_index]
+                    self.turn_text.insert(tk.END, f"COP {self.current_cop_index + 1}'S TURN\n")
+                    self.turn_text.insert(tk.END, f"Moving from position {cop_pos}\n")
+                    self.turn_text.insert(tk.END, f"Progress: {len(self.cop_selections)}/{self.game.num_cops}")
+                else:
+                    self.turn_text.insert(tk.END, "All cops selected - make move")
+        else:
+            if is_scotland_yard:
+                self.turn_text.insert(tk.END, "MR. X'S TURN\nSelect new position")
+            else:
+                self.turn_text.insert(tk.END, "ROBBER'S TURN\nSelect new position")
+    
+    def update_moves_display(self):
+        """Update available moves display"""
+        self.moves_text.delete(1.0, tk.END)
+        
+        if self.setup_mode or not self.game.game_state:
+            return
+        
+        is_scotland_yard = isinstance(self.game, ScotlandYardGame)
+        
+        if not self.current_player_moves:
+            self.moves_text.insert(tk.END, "No available moves")
+            return
+        
+        # Show current cop's moves or robber/Mr. X moves
+        if self.game.game_state.turn == Player.COPS and self.current_cop_index < self.game.num_cops:
+            cop_pos = self.game.game_state.cop_positions[self.current_cop_index]
+            if cop_pos in self.current_player_moves:
+                moves = self.current_player_moves[cop_pos]
+                player_name = f"Detective {self.current_cop_index + 1}" if is_scotland_yard else f"Cop {self.current_cop_index + 1}"
+                self.moves_text.insert(tk.END, f"{player_name} from {cop_pos}:\n")
+                for target_pos, transports in moves.items():
+                    if is_scotland_yard:
+                        transport_names = []
+                        for t in transports:
+                            if t == 1: transport_names.append("Taxi")
+                            elif t == 2: transport_names.append("Bus") 
+                            elif t == 3: transport_names.append("Underground")
+                            elif t == 4: transport_names.append("Black")
+                        self.moves_text.insert(tk.END, f"  → {target_pos} ({', '.join(transport_names)})\n")
+                    else:
+                        self.moves_text.insert(tk.END, f"  → {target_pos}\n")
+        else:
+            # Robber/Mr. X moves
+            for source_pos, moves in self.current_player_moves.items():
+                player_name = "Mr. X" if is_scotland_yard else "Robber"
+                self.moves_text.insert(tk.END, f"{player_name} from {source_pos}:\n")
+                for target_pos, transports in moves.items():
+                    if is_scotland_yard:
+                        transport_names = []
+                        for t in transports:
+                            if t == 1: transport_names.append("Taxi")
+                            elif t == 2: transport_names.append("Bus") 
+                            elif t == 3: transport_names.append("Underground")
+                            elif t == 4: transport_names.append("Black")
+                        self.moves_text.insert(tk.END, f"  → {target_pos} ({', '.join(transport_names)})\n")
+                    else:
+                        self.moves_text.insert(tk.END, f"  → {target_pos}\n")
     
     def update_tickets_display(self):
         """Update the tickets display for Scotland Yard games"""
@@ -696,7 +1007,7 @@ class GameVisualizer:
         if not self.game.game_state:
             return
         
-        is_scotland_yard = hasattr(self.game, 'is_scotland_yard') and self.game.is_scotland_yard
+        is_scotland_yard = isinstance(self.game, ScotlandYardGame)
         if not is_scotland_yard:
             self.tickets_text.insert(tk.END, "Not a Scotland Yard game")
             return
@@ -706,44 +1017,15 @@ class GameVisualizer:
         for i in range(self.game.num_cops):
             tickets = self.game.get_detective_tickets(i)
             pos = self.game.game_state.cop_positions[i]
-            self.tickets_text.insert(tk.END, f"Detective {i+1} (pos {pos}):\n")
+            self.tickets_text.insert(tk.END, f"Det. {i+1} (pos {pos}):\n")
             for ticket_type, count in tickets.items():
                 self.tickets_text.insert(tk.END, f"  {ticket_type.value}: {count}\n")
-            self.tickets_text.insert(tk.END, "\n")
         
         # Show Mr. X tickets
         mr_x_tickets = self.game.get_mr_x_tickets()
-        self.tickets_text.insert(tk.END, "MR. X TICKETS:\n")
+        self.tickets_text.insert(tk.END, "\nMR. X TICKETS:\n")
         for ticket_type, count in mr_x_tickets.items():
             self.tickets_text.insert(tk.END, f"  {ticket_type.value}: {count}\n")
-    
-    def update_move_help(self):
-        """Update move instruction text"""
-        self.move_help_text.delete(1.0, tk.END)
-        
-        if self.setup_mode:
-            self.move_help_text.insert(tk.END, "Click nodes to select starting positions")
-            return
-        
-        if not self.game.game_state or self.game.is_game_over():
-            return
-        
-        is_scotland_yard = hasattr(self.game, 'is_scotland_yard') and self.game.is_scotland_yard
-        
-        if self.game.game_state.turn == Player.COPS:
-            if is_scotland_yard:
-                self.move_help_text.insert(tk.END, f"Select {self.game.num_cops} new positions for detectives.\n")
-                self.move_help_text.insert(tk.END, "Check tickets before moving!\n")
-                self.move_help_text.insert(tk.END, f"Selected: {len(self.selected_positions)}/{self.game.num_cops}")
-            else:
-                self.move_help_text.insert(tk.END, f"Select {self.game.num_cops} new positions for cops.\n")
-                self.move_help_text.insert(tk.END, f"Selected: {len(self.selected_positions)}/{self.game.num_cops}")
-        else:
-            if is_scotland_yard:
-                self.move_help_text.insert(tk.END, "Select new position for Mr. X.\n")
-                self.move_help_text.insert(tk.END, "Check tickets before moving!")
-            else:
-                self.move_help_text.insert(tk.END, "Select new position for robber.")
     
     def add_save_load_ui(self):
         """Add save/load section to control panel"""
@@ -853,6 +1135,7 @@ class GameVisualizer:
             games_text.insert(tk.END, f"Date: {game['created_at']}\n")
             games_text.insert(tk.END, f"Type: {game['graph_type']}\n")
             games_text.insert(tk.END, f"Winner: {game.get('winner', 'Ongoing')}\n")
+            games_text.insert(tk.END, f"Turns: {game.get('total_turns', 0)}\n")
             games_text.insert(tk.END, "-" * 40 + "\n")
         
         games_text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)

@@ -225,7 +225,7 @@ class Game:
                         break
                 
                 if detective_id is not None:
-                    return self.get_valid_moves_with_tickets(Player.DETECTIVES, detective_id)
+                    return self.get_valid_moves_with_tickets(Player.COPS, detective_id)
             else:
                 return self.get_valid_moves_with_tickets(Player.MR_X)
         
@@ -251,13 +251,17 @@ class Game:
         
         valid_moves = set()
         
-        if player == Player.DETECTIVES and detective_id is not None:
+        if player == Player.COPS and detective_id is not None:
             current_pos = self.game_state.cop_positions[detective_id]
             detective_tickets = self.get_detective_tickets(detective_id)
             
             for neighbor in self.graph.neighbors(current_pos):
                 # Check if position is occupied by another detective
                 if neighbor in self.game_state.cop_positions:
+                    continue
+                
+                # Check if position is occupied by Mr. X (detectives can't move there)
+                if neighbor == self.game_state.robber_position:
                     continue
                 
                 edge_data = self.graph.get_edge_data(current_pos, neighbor)
@@ -279,6 +283,10 @@ class Game:
             mr_x_tickets = self.get_mr_x_tickets()
             
             for neighbor in self.graph.neighbors(current_pos):
+                # Check if position is occupied by a detective
+                if neighbor in self.game_state.cop_positions:
+                    continue
+                
                 edge_data = self.graph.get_edge_data(current_pos, neighbor)
                 transport_type = edge_data.get('edge_type', 1)
                 
@@ -309,22 +317,127 @@ class Game:
             if new_positions is None or len(new_positions) != self.num_cops:
                 return False
             
-            # Validate all cop moves
+            # Check for duplicate positions among cops
+            if len(set(new_positions)) != len(new_positions):
+                return False
+            
+            # Validate all cop moves and handle ticket consumption for Scotland Yard
             for i, new_pos in enumerate(new_positions):
-                valid_moves = self.get_valid_moves(Player.COPS, self.game_state.cop_positions[i])
-                if new_pos not in valid_moves:
+                old_pos = self.game_state.cop_positions[i]
+                
+                # Skip validation if not moving
+                if old_pos == new_pos:
+                    continue
+                
+                # Check basic connectivity
+                if not self.graph.has_edge(old_pos, new_pos):
                     return False
+                
+                # For Scotland Yard games, check tickets and consume them
+                if hasattr(self, 'is_scotland_yard') and self.is_scotland_yard:
+                    # Get edge data to determine transport type
+                    edge_data = self.graph.get_edge_data(old_pos, new_pos)
+                    transport_type = edge_data.get('edge_type', 1)
+                    
+                    # Map transport to ticket
+                    ticket_mapping = {1: TicketType.TAXI, 2: TicketType.BUS, 3: TicketType.UNDERGROUND}
+                    required_ticket = ticket_mapping.get(transport_type, TicketType.TAXI)
+                    
+                    # Check if detective has the ticket
+                    detective_tickets = self.game_state.detective_tickets.get(i, {})
+                    if detective_tickets.get(required_ticket, 0) <= 0:
+                        return False
+                    
+                    # Check if position conflicts with other new positions (already handled by duplicate check)
+                    # Check if moving to Mr. X's current position
+                    if new_pos == self.game_state.robber_position:
+                        return False
+                else:
+                    # Basic game validation
+                    valid_moves = self.get_valid_moves(Player.COPS, old_pos)
+                    if new_pos not in valid_moves:
+                        return False
+                    
+                    # Check if new position conflicts with robber
+                    if new_pos == self.game_state.robber_position:
+                        return False
+            
+            # If we get here, all moves are valid - now consume tickets for Scotland Yard
+            if hasattr(self, 'is_scotland_yard') and self.is_scotland_yard:
+                for i, new_pos in enumerate(new_positions):
+                    old_pos = self.game_state.cop_positions[i]
+                    
+                    if old_pos != new_pos:  # Only consume tickets if actually moving
+                        edge_data = self.graph.get_edge_data(old_pos, new_pos)
+                        transport_type = edge_data.get('edge_type', 1)
+                        ticket_mapping = {1: TicketType.TAXI, 2: TicketType.BUS, 3: TicketType.UNDERGROUND}
+                        required_ticket = ticket_mapping.get(transport_type, TicketType.TAXI)
+                        
+                        # Consume the ticket and give it to Mr. X
+                        self.game_state.detective_tickets[i][required_ticket] -= 1
+                        if required_ticket not in self.game_state.mr_x_tickets:
+                            self.game_state.mr_x_tickets[required_ticket] = 0
+                        self.game_state.mr_x_tickets[required_ticket] += 1
             
             self.game_state.cop_positions = new_positions
-            self.game_state.turn = Player.ROBBER
+            self.game_state.turn = Player.ROBBER if not hasattr(self, 'is_scotland_yard') else Player.MR_X
         
-        else:  # Robber's turn
+        else:  # Robber's/Mr. X's turn
             if new_robber_pos is None:
                 return False
             
-            valid_moves = self.get_valid_moves(Player.ROBBER)
-            if new_robber_pos not in valid_moves:
+            old_pos = self.game_state.robber_position
+            
+            # Skip validation if not moving
+            if old_pos == new_robber_pos:
+                self.game_state.turn = Player.COPS
+                self.game_state.turn_count += 1
+                self.game_history.append(self.game_state.copy())
+                return True
+            
+            # Check basic connectivity
+            if not self.graph.has_edge(old_pos, new_robber_pos):
                 return False
+            
+            # For Scotland Yard games, handle ticket consumption
+            if hasattr(self, 'is_scotland_yard') and self.is_scotland_yard:
+                edge_data = self.graph.get_edge_data(old_pos, new_robber_pos)
+                transport_type = edge_data.get('edge_type', 1)
+                
+                # Map transport to ticket
+                ticket_mapping = {1: TicketType.TAXI, 2: TicketType.BUS, 3: TicketType.UNDERGROUND}
+                required_ticket = ticket_mapping.get(transport_type, TicketType.TAXI)
+                
+                # Check if Mr. X has the specific ticket or black ticket
+                mr_x_tickets = self.game_state.mr_x_tickets
+                can_use_specific = mr_x_tickets.get(required_ticket, 0) > 0
+                can_use_black = mr_x_tickets.get(TicketType.BLACK, 0) > 0
+                
+                if not (can_use_specific or can_use_black):
+                    return False
+                
+                # Check if moving to a cop position
+                if new_robber_pos in self.game_state.cop_positions:
+                    return False
+                
+                # Consume appropriate ticket (prefer specific ticket over black)
+                if can_use_specific:
+                    self.game_state.mr_x_tickets[required_ticket] -= 1
+                else:
+                    self.game_state.mr_x_tickets[TicketType.BLACK] -= 1
+                
+                # Update visibility based on reveal turns
+                if hasattr(self, 'reveal_turns'):
+                    self.game_state.mr_x_visible = (self.game_state.turn_count + 1) in self.reveal_turns
+            else:
+                # Basic game validation
+                valid_moves = self.get_valid_moves(Player.ROBBER)
+                if new_robber_pos not in valid_moves:
+                    return False
+                
+                # Check if robber is moving to a cop position
+                if new_robber_pos in self.game_state.cop_positions:
+                    return False
             
             self.game_state.robber_position = new_robber_pos
             self.game_state.turn = Player.COPS
@@ -573,7 +686,6 @@ class ScotlandYardGame(Game):
         edge_data = self.graph.get_edge_data(current_pos, new_position)
         if TransportType(edge_data.get('edge_type', 1)) != transport_type:
             return False
-        
         # Check if position is occupied by another detective
         if new_position in self.game_state.cop_positions:
             return False

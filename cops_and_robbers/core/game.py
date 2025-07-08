@@ -152,347 +152,6 @@ class DistanceKWinCondition(WinCondition):
     def is_game_over(self, game_state: GameState) -> bool:
         return self.is_cops_win(game_state)
 
-class Obstacle(ABC):
-    """Abstract base class for obstacles"""
-    
-    @abstractmethod
-    def blocks_movement(self, from_pos: int, to_pos: int, 
-                       game_state: GameState, player: Player) -> bool:
-        """Check if obstacle blocks movement"""
-        pass
-
-class StaticObstacle(Obstacle):
-    """Static obstacles that block specific positions"""
-    
-    def __init__(self, blocked_positions: Set[int]):
-        self.blocked_positions = blocked_positions
-    
-    def blocks_movement(self, from_pos: int, to_pos: int, 
-                       game_state: GameState, player: Player) -> bool:
-        return to_pos in self.blocked_positions
-
-class Game:
-    """Main game class that orchestrates the game"""
-    
-    def __init__(self, graph: nx.Graph, num_cops: int, 
-                 cop_movement: MovementRule = None,
-                 robber_movement: MovementRule = None,
-                 win_condition: WinCondition = None,
-                 obstacles: List[Obstacle] = None):
-        self.graph = graph
-        self.num_cops = num_cops
-        self.cop_movement = cop_movement or StandardMovement()
-        self.robber_movement = robber_movement or StandardMovement()
-        self.win_condition = win_condition or CaptureWinCondition()
-        self.obstacles = obstacles or []
-        self.game_state = None
-        self.game_history = []
-    
-    def initialize_game(self, cop_positions: List[int], robber_position: int):
-        """Initialize game with starting positions"""
-        if len(cop_positions) != self.num_cops:
-            raise ValueError(f"Expected {self.num_cops} cops, got {len(cop_positions)}")
-        
-        # Check for position conflicts during setup
-        if robber_position in cop_positions:
-            raise ValueError("Robber and cop cannot start in the same position")
-        
-        self.game_state = GameState(cop_positions, robber_position, Player.COPS)
-        self.game_history = [self.game_state.copy()]
-    
-    def get_valid_moves(self, player: Player, position: int = None) -> Set[int]:
-        """Get valid moves for a player from a position"""
-        if self.game_state is None:
-            raise ValueError("Game not initialized")
-        
-        if player == Player.COPS:
-            movement_rule = self.cop_movement
-            if position is None:
-                raise ValueError("Must specify position for cops")
-        else:
-            movement_rule = self.robber_movement
-            if position is None:
-                position = self.game_state.robber_position
-        
-        # For Scotland Yard games, use the transport-aware method
-        if hasattr(self, 'is_scotland_yard') and self.is_scotland_yard:
-            if player == Player.COPS:
-                # Find which detective this is
-                detective_id = None
-                for i, cop_pos in enumerate(self.game_state.cop_positions):
-                    if cop_pos == position:
-                        detective_id = i
-                        break
-                
-                if detective_id is not None:
-                    return self.get_valid_moves_with_tickets(Player.COPS, detective_id)
-            else:
-                return self.get_valid_moves_with_tickets(Player.MR_X)
-        
-        valid_moves = movement_rule.get_valid_moves(self.graph, position, self.game_state)
-        
-        # Filter out moves blocked by obstacles
-        filtered_moves = set()
-        for move in valid_moves:
-            blocked = False
-            for obstacle in self.obstacles:
-                if obstacle.blocks_movement(position, move, self.game_state, player):
-                    blocked = True
-                    break
-            if not blocked:
-                filtered_moves.add(move)
-        
-        return filtered_moves
-    
-    def get_valid_moves_with_tickets(self, player: Player, detective_id: int = None) -> Set[int]:
-        """Get valid moves considering ticket availability (Scotland Yard specific)"""
-        if not hasattr(self, 'is_scotland_yard') or not self.is_scotland_yard:
-            return set()
-        
-        valid_moves = set()
-        
-        if player == Player.COPS and detective_id is not None:
-            current_pos = self.game_state.cop_positions[detective_id]
-            detective_tickets = self.get_detective_tickets(detective_id)
-            
-            for neighbor in self.graph.neighbors(current_pos):
-                # Check if position is occupied by another detective
-                if neighbor in self.game_state.cop_positions:
-                    continue
-                
-                # Check if position is occupied by Mr. X (detectives can't move there)
-                if neighbor == self.game_state.robber_position:
-                    continue
-                
-                edge_data = self.graph.get_edge_data(current_pos, neighbor)
-                transport_type = edge_data.get('edge_type', 1)
-                
-                # Check if detective has the required ticket
-                ticket_mapping = {
-                    1: TicketType.TAXI,
-                    2: TicketType.BUS,
-                    3: TicketType.UNDERGROUND
-                }
-                
-                required_ticket = ticket_mapping.get(transport_type, TicketType.TAXI)
-                if detective_tickets.get(required_ticket, 0) > 0:
-                    valid_moves.add(neighbor)
-        
-        elif player == Player.MR_X:
-            current_pos = self.game_state.robber_position
-            mr_x_tickets = self.get_mr_x_tickets()
-            
-            for neighbor in self.graph.neighbors(current_pos):
-                # Check if position is occupied by a detective
-                if neighbor in self.game_state.cop_positions:
-                    continue
-                
-                edge_data = self.graph.get_edge_data(current_pos, neighbor)
-                transport_type = edge_data.get('edge_type', 1)
-                
-                ticket_mapping = {
-                    1: TicketType.TAXI,
-                    2: TicketType.BUS,
-                    3: TicketType.UNDERGROUND
-                }
-                
-                required_ticket = ticket_mapping.get(transport_type, TicketType.TAXI)
-                
-                # Mr. X can use specific ticket or black ticket
-                if (mr_x_tickets.get(required_ticket, 0) > 0 or 
-                    mr_x_tickets.get(TicketType.BLACK, 0) > 0):
-                    valid_moves.add(neighbor)
-        
-        return valid_moves
-    
-    def make_move(self, new_positions: List[int] = None, new_robber_pos: int = None) -> bool:
-        """Make a move and return True if valid"""
-        if self.game_state is None:
-            raise ValueError("Game not initialized")
-        
-        if self.is_game_over():
-            return False
-        
-        if self.game_state.turn == Player.COPS:
-            if new_positions is None or len(new_positions) != self.num_cops:
-                return False
-            
-            # Check for duplicate positions among cops
-            if len(set(new_positions)) != len(new_positions):
-                return False
-            
-            # Validate all cop moves and handle ticket consumption for Scotland Yard
-            for i, new_pos in enumerate(new_positions):
-                old_pos = self.game_state.cop_positions[i]
-                
-                # Skip validation if not moving
-                if old_pos == new_pos:
-                    continue
-                
-                # Check basic connectivity
-                if not self.graph.has_edge(old_pos, new_pos):
-                    return False
-                
-                # For Scotland Yard games, check tickets and consume them
-                if hasattr(self, 'is_scotland_yard') and self.is_scotland_yard:
-                    # Get edge data to determine transport type
-                    edge_data = self.graph.get_edge_data(old_pos, new_pos)
-                    transport_type = edge_data.get('edge_type', 1)
-                    
-                    # Map transport to ticket
-                    ticket_mapping = {1: TicketType.TAXI, 2: TicketType.BUS, 3: TicketType.UNDERGROUND}
-                    required_ticket = ticket_mapping.get(transport_type, TicketType.TAXI)
-                    
-                    # Check if detective has the ticket
-                    detective_tickets = self.game_state.detective_tickets.get(i, {})
-                    if detective_tickets.get(required_ticket, 0) <= 0:
-                        return False
-                    
-                    # Check if position conflicts with other new positions (already handled by duplicate check)
-                    # Check if moving to Mr. X's current position
-                    if new_pos == self.game_state.robber_position:
-                        return False
-                else:
-                    # Basic game validation
-                    valid_moves = self.get_valid_moves(Player.COPS, old_pos)
-                    if new_pos not in valid_moves:
-                        return False
-                    
-                    # Check if new position conflicts with robber
-                    if new_pos == self.game_state.robber_position:
-                        return False
-            
-            # If we get here, all moves are valid - now consume tickets for Scotland Yard
-            if hasattr(self, 'is_scotland_yard') and self.is_scotland_yard:
-                for i, new_pos in enumerate(new_positions):
-                    old_pos = self.game_state.cop_positions[i]
-                    
-                    if old_pos != new_pos:  # Only consume tickets if actually moving
-                        edge_data = self.graph.get_edge_data(old_pos, new_pos)
-                        transport_type = edge_data.get('edge_type', 1)
-                        ticket_mapping = {1: TicketType.TAXI, 2: TicketType.BUS, 3: TicketType.UNDERGROUND}
-                        required_ticket = ticket_mapping.get(transport_type, TicketType.TAXI)
-                        
-                        # Consume the ticket and give it to Mr. X
-                        self.game_state.detective_tickets[i][required_ticket] -= 1
-                        if required_ticket not in self.game_state.mr_x_tickets:
-                            self.game_state.mr_x_tickets[required_ticket] = 0
-                        self.game_state.mr_x_tickets[required_ticket] += 1
-            
-            self.game_state.cop_positions = new_positions
-            self.game_state.turn = Player.ROBBER if not hasattr(self, 'is_scotland_yard') else Player.MR_X
-        
-        else:  # Robber's/Mr. X's turn
-            if new_robber_pos is None:
-                return False
-            
-            old_pos = self.game_state.robber_position
-            
-            # Skip validation if not moving
-            if old_pos == new_robber_pos:
-                self.game_state.turn = Player.COPS
-                self.game_state.turn_count += 1
-                self.game_history.append(self.game_state.copy())
-                return True
-            
-            # Check basic connectivity
-            if not self.graph.has_edge(old_pos, new_robber_pos):
-                return False
-            
-            # For Scotland Yard games, handle ticket consumption
-            if hasattr(self, 'is_scotland_yard') and self.is_scotland_yard:
-                edge_data = self.graph.get_edge_data(old_pos, new_robber_pos)
-                transport_type = edge_data.get('edge_type', 1)
-                
-                # Map transport to ticket
-                ticket_mapping = {1: TicketType.TAXI, 2: TicketType.BUS, 3: TicketType.UNDERGROUND}
-                required_ticket = ticket_mapping.get(transport_type, TicketType.TAXI)
-                
-                # Check if Mr. X has the specific ticket or black ticket
-                mr_x_tickets = self.game_state.mr_x_tickets
-                can_use_specific = mr_x_tickets.get(required_ticket, 0) > 0
-                can_use_black = mr_x_tickets.get(TicketType.BLACK, 0) > 0
-                
-                if not (can_use_specific or can_use_black):
-                    return False
-                
-                # Check if moving to a cop position
-                if new_robber_pos in self.game_state.cop_positions:
-                    return False
-                
-                # Consume appropriate ticket (prefer specific ticket over black)
-                if can_use_specific:
-                    self.game_state.mr_x_tickets[required_ticket] -= 1
-                else:
-                    self.game_state.mr_x_tickets[TicketType.BLACK] -= 1
-                
-                # Update visibility based on reveal turns
-                if hasattr(self, 'reveal_turns'):
-                    self.game_state.mr_x_visible = (self.game_state.turn_count + 1) in self.reveal_turns
-            else:
-                # Basic game validation
-                valid_moves = self.get_valid_moves(Player.ROBBER)
-                if new_robber_pos not in valid_moves:
-                    return False
-                
-                # Check if robber is moving to a cop position
-                if new_robber_pos in self.game_state.cop_positions:
-                    return False
-            
-            self.game_state.robber_position = new_robber_pos
-            self.game_state.turn = Player.COPS
-            self.game_state.turn_count += 1
-        
-        self.game_history.append(self.game_state.copy())
-        return True
-    
-    def is_game_over(self) -> bool:
-        """Check if game is over"""
-        if self.game_state is None:
-            return False
-        return self.win_condition.is_game_over(self.game_state)
-    
-    def get_winner(self) -> Optional[Player]:
-        """Get winner if game is over"""
-        if not self.is_game_over():
-            return None
-        
-        if self.win_condition.is_cops_win(self.game_state):
-            return Player.COPS
-        else:
-            return Player.ROBBER
-    
-    def reset(self):
-        """Reset game to initial state"""
-        if self.game_history:
-            self.game_state = self.game_history[0].copy()
-            self.game_history = [self.game_state.copy()]
-    
-    def get_state_representation(self) -> Dict:
-        """Get serializable representation of current state"""
-        if self.game_state is None:
-            return {}
-        
-        return {
-            'cop_positions': self.game_state.cop_positions,
-            'robber_position': self.game_state.robber_position,
-            'turn': self.game_state.turn.value,
-            'turn_count': self.game_state.turn_count,
-            'game_over': self.is_game_over(),
-            'winner': self.get_winner().value if self.get_winner() else None
-        }
-
-        
-    def save_game(self, loader, game_id: str = None, 
-                metadata: Dict = None) -> str:
-        """Save this game using the loader"""
-        return loader.save_game(self, game_id, metadata)
-    
-    def export_game(self, loader, game_id: str, 
-                format: str = 'json') -> Optional[str]:
-        """Export this game using the loader"""
-        return loader.export_game(game_id, format)
-
 class ScotlandYardMovement(MovementRule):
     """Movement rule for Scotland Yard game with transport types"""
     
@@ -543,6 +202,186 @@ class ScotlandYardWinCondition(WinCondition):
     
     def is_game_over(self, game_state: GameState) -> bool:
         return self.is_cops_win(game_state) or self.is_mr_x_win(game_state)
+    
+    
+class Game:
+    """Main game class that orchestrates the game"""
+    
+    def __init__(self, graph: nx.Graph, num_cops: int, 
+                 cop_movement: MovementRule = None,
+                 robber_movement: MovementRule = None,
+                 win_condition: WinCondition = None):
+        self.graph = graph
+        self.num_cops = num_cops
+        self.cop_movement = cop_movement or StandardMovement()
+        self.robber_movement = robber_movement or StandardMovement()
+        self.win_condition = win_condition or CaptureWinCondition()
+        self.game_state = None
+        self.game_history = []
+    
+    def initialize_game(self, cop_positions: List[int], robber_position: int):
+        """Initialize game with starting positions"""
+        if len(cop_positions) != self.num_cops:
+            raise ValueError(f"Expected {self.num_cops} cops, got {len(cop_positions)}")
+        
+        # Check for position conflicts during setup
+        if robber_position in cop_positions:
+            raise ValueError("Robber and cop cannot start in the same position")
+        
+        self.game_state = GameState(cop_positions, robber_position, Player.COPS)
+        self.game_history = [self.game_state.copy()]
+    
+    def get_valid_moves(self, player: Player, position: int = None) -> Set[int]:
+        """Get valid moves for a player from a position"""
+        if self.game_state is None:
+            raise ValueError("Game not initialized")
+        
+        if player == Player.COPS:
+            movement_rule = self.cop_movement
+            if position is None:
+                raise ValueError("Must specify position for cops")
+        else:
+            movement_rule = self.robber_movement
+            if position is None:
+                position = self.game_state.robber_position
+        
+        valid_moves = movement_rule.get_valid_moves(self.graph, position, self.game_state)
+        return valid_moves
+    
+    def make_move(self, new_positions: List[int] = None, new_robber_pos: int = None) -> bool:
+        """Make a move and return True if valid"""
+        if self.game_state is None:
+            raise ValueError("Game not initialized")
+        
+        if self.is_game_over():
+            return False
+        
+        if self.game_state.turn == Player.COPS:
+            if new_positions is None or len(new_positions) != self.num_cops:
+                return False
+            
+            # Check for duplicate positions among cops
+            if len(set(new_positions)) != len(new_positions):
+                return False
+            
+            # Validate all cop moves
+            for i, new_pos in enumerate(new_positions):
+                old_pos = self.game_state.cop_positions[i]
+                
+                # Skip validation if not moving
+                if old_pos == new_pos:
+                    continue
+                
+                # Check basic connectivity
+                if not self.graph.has_edge(old_pos, new_pos):
+                    return False
+            
+            self.game_state.cop_positions = new_positions
+            self.game_state.turn = Player.ROBBER
+        
+        else:  # Robber's turn
+            if new_robber_pos is None:
+                return False
+            
+            old_pos = self.game_state.robber_position
+            
+            # Skip validation if not moving
+            if old_pos == new_robber_pos:
+                self.game_state.turn = Player.COPS
+                self.game_state.turn_count += 1
+                self.game_history.append(self.game_state.copy())
+                return True
+            
+            # Check basic connectivity
+            if not self.graph.has_edge(old_pos, new_robber_pos):
+                return False
+            
+            self.game_state.robber_position = new_robber_pos
+            self.game_state.turn = Player.COPS
+            self.game_state.turn_count += 1
+        
+        self.game_history.append(self.game_state.copy())
+        return True
+    
+    def is_game_over(self) -> bool:
+        """Check if game is over"""
+        if self.game_state is None:
+            return False
+        return self.win_condition.is_game_over(self.game_state)
+    
+    def get_winner(self) -> Optional[Player]:
+        """Get winner if game is over"""
+        if not self.is_game_over():
+            return None
+        
+        if self.win_condition.is_cops_win(self.game_state):
+            return Player.COPS
+        else:
+            return Player.ROBBER
+    
+    def reset(self):
+        """Reset game to initial state"""
+        if self.game_history:
+            self.game_state = self.game_history[0].copy()
+            self.game_history = [self.game_state.copy()]
+    
+    def get_state_representation(self) -> Dict:
+        """Get serializable representation of current state"""
+        if self.game_state is None:
+            return {}
+        
+        return {
+            'cop_positions': self.game_state.cop_positions,
+            'robber_position': self.game_state.robber_position,
+            'turn': self.game_state.turn.value,
+            'turn_count': self.game_state.turn_count,
+            'game_over': self.is_game_over(),
+            'winner': self.get_winner().value if self.get_winner() else None
+        }
+    
+    def save_game(self, loader, game_id: str = None, 
+                metadata: Dict = None) -> str:
+        """Save this game using the loader"""
+        return loader.save_game(self, game_id, metadata)
+    
+    def export_game(self, loader, game_id: str, 
+                format: str = 'json') -> Optional[str]:
+        """Export this game using the loader"""
+        return loader.export_game(game_id, format)
+    
+    def get_valid_moves_for_player(self, player: Player, position: int = None) -> Set[int]:
+        """Get valid moves for a player, considering game rules"""
+        if self.game_state is None:
+            raise ValueError("Game not initialized")
+        
+        if player == Player.COPS:
+            if position is None:
+                raise ValueError("Must specify position for cops")
+            valid_moves = self.get_valid_moves(player, position)
+            # Filter out positions occupied by other cops
+            other_cop_positions = [pos for pos in self.game_state.cop_positions if pos != position]
+            return valid_moves - set(other_cop_positions)
+        else:
+            valid_moves = self.get_valid_moves(player)
+            # Filter out positions that will be occupied by cops
+            return valid_moves - set(self.game_state.cop_positions)
+    
+    def get_available_moves_with_info(self, player: Player, player_id: int = None) -> Dict[int, List[int]]:
+        """Get available moves with transport info for visualization"""
+        moves_dict = {}
+        
+        if player == Player.COPS and player_id is not None:
+            if player_id < len(self.game_state.cop_positions):
+                cop_pos = self.game_state.cop_positions[player_id]
+                valid_moves = self.get_valid_moves_for_player(Player.COPS, cop_pos)
+                moves_dict[cop_pos] = {pos: [1] for pos in valid_moves}  # Generic transport
+        
+        elif player == Player.ROBBER:
+            robber_pos = self.game_state.robber_position
+            valid_moves = self.get_valid_moves_for_player(Player.ROBBER)
+            moves_dict[robber_pos] = {pos: [1] for pos in valid_moves}
+        
+        return moves_dict
 
 class ScotlandYardGame(Game):
     """Scotland Yard variant of the game"""
@@ -551,7 +390,6 @@ class ScotlandYardGame(Game):
         super().__init__(graph, num_detectives, 
                         ScotlandYardMovement(), ScotlandYardMovement(),
                         ScotlandYardWinCondition())
-        self.is_scotland_yard = True
         self.reveal_turns = {3, 8, 13, 18, 24}
         
     def initialize_scotland_yard_game(self, detective_positions: List[int], 
@@ -581,10 +419,70 @@ class ScotlandYardGame(Game):
         )
         self.game_history = [self.game_state.copy()]
     
-    def make_scotland_yard_move(self, player: Player, new_position: int = None,
-                              transport_type: TransportType = None,
-                              detective_id: int = None,
-                              use_double_move: bool = False) -> bool:
+    def get_valid_moves(self, player: Player, position: int = None) -> Set[int]:
+        """Get valid moves for a player considering tickets"""
+        if self.game_state is None:
+            raise ValueError("Game not initialized")
+        
+        if player == Player.COPS:
+            if position is None:
+                raise ValueError("Must specify position for cops")
+            # Find which detective this is
+            detective_id = None
+            for i, cop_pos in enumerate(self.game_state.cop_positions):
+                if cop_pos == position:
+                    detective_id = i
+                    break
+            
+            if detective_id is not None:
+                return self.get_valid_moves_with_tickets(Player.COPS, detective_id)
+        else:
+            return self.get_valid_moves_with_tickets(Player.MR_X)
+        
+        return set()
+    
+    def get_valid_moves_with_tickets(self, player: Player, detective_id: int = None) -> Set[int]:
+        """Get valid moves considering ticket availability"""
+        valid_moves = set()
+        ticket_mapping = {
+            1: TicketType.TAXI,
+            2: TicketType.BUS,
+            3: TicketType.UNDERGROUND
+        }
+        
+        if player == Player.COPS and detective_id is not None:
+            current_pos = self.game_state.cop_positions[detective_id]
+            detective_tickets = self.get_detective_tickets(detective_id)
+            
+            for neighbor in self.graph.neighbors(current_pos):
+                # Check if position is occupied by another detective
+                if neighbor in self.game_state.cop_positions:
+                    continue
+                
+                edge_data = self.graph.get_edge_data(current_pos, neighbor)
+                transport_type = edge_data.get('edge_type', 1)
+                required_ticket = ticket_mapping.get(transport_type, TicketType.TAXI)
+                
+                if detective_tickets.get(required_ticket, 0) > 0:
+                    valid_moves.add(neighbor)
+        
+        elif player == Player.MR_X:
+            current_pos = self.game_state.robber_position
+            mr_x_tickets = self.get_mr_x_tickets()
+            
+            for neighbor in self.graph.neighbors(current_pos):                
+                edge_data = self.graph.get_edge_data(current_pos, neighbor)
+                transport_type = edge_data.get('edge_type', 1)
+                required_ticket = ticket_mapping.get(transport_type, TicketType.TAXI)
+                
+                # Mr. X can use specific ticket or black ticket
+                if (mr_x_tickets.get(required_ticket, 0) > 0 or 
+                    mr_x_tickets.get(TicketType.BLACK, 0) > 0):
+                    valid_moves.add(neighbor)
+        
+        return valid_moves
+    
+    def make_move(self, new_positions: List[int] = None, new_robber_pos: int = None) -> bool:
         """Make a move in Scotland Yard game"""
         if self.game_state is None:
             raise ValueError("Game not initialized")
@@ -592,122 +490,126 @@ class ScotlandYardGame(Game):
         if self.is_game_over():
             return False
         
-        if player == Player.MR_X:
-            return self._make_mr_x_move(new_position, transport_type, use_double_move)
-        elif player == Player.COPS:
-            return self._make_detective_move(detective_id, new_position, transport_type)
-        
-        return False
+        if self.game_state.turn == Player.COPS:
+            return self._make_detective_moves(new_positions)
+        else:  # Mr. X's turn
+            return self._make_mr_x_move(new_robber_pos)
     
-    def _make_mr_x_move(self, new_position: int, transport_type: TransportType,
-                       use_double_move: bool = False) -> bool:
-        """Handle Mr. X's move"""
-        if not self._validate_mr_x_move(new_position, transport_type):
+    def _make_detective_moves(self, new_positions: List[int]) -> bool:
+        """Handle detective moves"""
+        if new_positions is None or len(new_positions) != self.num_cops:
             return False
         
-        # Use ticket
-        ticket_type = self._transport_to_ticket(transport_type)
-        if use_double_move:
-            self.game_state.mr_x_tickets[TicketType.DOUBLE_MOVE] -= 1
-            self.game_state.double_move_active = True
+        # Check for duplicate positions among detectives
+        if len(set(new_positions)) != len(new_positions):
+            return False
         
-        self.game_state.mr_x_tickets[ticket_type] -= 1
+        # Validate all detective moves
+        for i, new_pos in enumerate(new_positions):
+            old_pos = self.game_state.cop_positions[i]
+            
+            # Skip validation if not moving
+            if old_pos == new_pos:
+                continue
+            
+            # Check basic connectivity
+            if not self.graph.has_edge(old_pos, new_pos):
+                return False
+            
+            # Get edge data to determine transport type
+            edge_data = self.graph.get_edge_data(old_pos, new_pos)
+            transport_type = edge_data.get('edge_type', 1)
+            
+            # Map transport to ticket
+            ticket_mapping = {1: TicketType.TAXI, 2: TicketType.BUS, 3: TicketType.UNDERGROUND}
+            required_ticket = ticket_mapping.get(transport_type, TicketType.TAXI)
+            
+            # Check if detective has the ticket
+            detective_tickets = self.game_state.detective_tickets.get(i, {})
+            if detective_tickets.get(required_ticket, 0) <= 0:
+                return False
         
-        # Record move
-        self.game_state.robber_position = new_position
-        self.game_state.mr_x_moves_log.append((new_position, transport_type))
         
-        # Check if position should be revealed
+        # If we get here, all moves are valid - now consume tickets
+        for i, new_pos in enumerate(new_positions):
+            old_pos = self.game_state.cop_positions[i]
+            
+            if old_pos != new_pos:  # Only consume tickets if actually moving
+                edge_data = self.graph.get_edge_data(old_pos, new_pos)
+                transport_type = edge_data.get('edge_type', 1)
+                ticket_mapping = {1: TicketType.TAXI, 2: TicketType.BUS, 3: TicketType.UNDERGROUND}
+                required_ticket = ticket_mapping.get(transport_type, TicketType.TAXI)
+                
+                # Consume the ticket and give it to Mr. X
+                self.game_state.detective_tickets[i][required_ticket] -= 1
+                if required_ticket not in self.game_state.mr_x_tickets:
+                    self.game_state.mr_x_tickets[required_ticket] = 0
+                self.game_state.mr_x_tickets[required_ticket] += 1
+        
+        self.game_state.cop_positions = new_positions
+        self.game_state.turn = Player.MR_X
+        self.game_history.append(self.game_state.copy())
+        return True
+    
+    def _make_mr_x_move(self, new_robber_pos: int) -> bool:
+        """Handle Mr. X's move"""
+        if new_robber_pos is None:
+            return False
+        
+        old_pos = self.game_state.robber_position
+        
+        # Skip validation if not moving
+        if old_pos == new_robber_pos:
+            self.game_state.turn = Player.COPS
+            self.game_state.turn_count += 1
+            self.game_history.append(self.game_state.copy())
+            return True
+        
+        # Check basic connectivity
+        if not self.graph.has_edge(old_pos, new_robber_pos):
+            return False
+        
+        # Get edge data to determine transport type
+        edge_data = self.graph.get_edge_data(old_pos, new_robber_pos)
+        transport_type = edge_data.get('edge_type', 1)
+        
+        # Map transport to ticket
+        ticket_mapping = {1: TicketType.TAXI, 2: TicketType.BUS, 3: TicketType.UNDERGROUND}
+        required_ticket = ticket_mapping.get(transport_type, TicketType.TAXI)
+        
+        # Check if Mr. X has the specific ticket or black ticket
+        mr_x_tickets = self.game_state.mr_x_tickets
+        can_use_specific = mr_x_tickets.get(required_ticket, 0) > 0
+        can_use_black = mr_x_tickets.get(TicketType.BLACK, 0) > 0
+        
+        # Mr. X must have at least one valid ticket to move
+        if not (can_use_specific or can_use_black):
+            return False
+        
+        # Consume appropriate ticket (prefer specific ticket over black)
+        if can_use_specific:
+            self.game_state.mr_x_tickets[required_ticket] -= 1
+        else:
+            self.game_state.mr_x_tickets[TicketType.BLACK] -= 1
+        
+        # Update position and visibility
+        self.game_state.robber_position = new_robber_pos
         self.game_state.mr_x_visible = (self.game_state.turn_count + 1) in self.reveal_turns
         
-        if not self.game_state.double_move_active:
-            self.game_state.turn = Player.COPS
+        self.game_state.turn = Player.COPS
+        self.game_state.turn_count += 1
+        self.game_history.append(self.game_state.copy())
+        return True
+    
+    def get_winner(self) -> Optional[Player]:
+        """Get winner if game is over"""
+        if not self.is_game_over():
+            return None
+        
+        if self.win_condition.is_cops_win(self.game_state):
+            return Player.COPS
         else:
-            self.game_state.double_move_active = False
-        
-        return True
-    
-    def _make_detective_move(self, detective_id: int, new_position: int,
-                           transport_type: TransportType) -> bool:
-        """Handle detective's move"""
-        if not self._validate_detective_move(detective_id, new_position, transport_type):
-            return False
-        
-        # Use ticket and give to Mr. X
-        ticket_type = self._transport_to_ticket(transport_type)
-        self.game_state.detective_tickets[detective_id][ticket_type] -= 1
-        self.game_state.mr_x_tickets[ticket_type] += 1
-        
-        # Move detective
-        self.game_state.cop_positions[detective_id] = new_position
-        
-        # Check if all detectives moved
-        if self._all_detectives_moved():
-            self.game_state.turn = Player.MR_X
-            self.game_state.turn_count += 1
-        
-        return True
-    
-    def _validate_mr_x_move(self, new_position: int, transport_type: TransportType) -> bool:
-        """Validate Mr. X's move"""
-        current_pos = self.game_state.robber_position
-        
-        # Check if move is valid on graph
-        if not self.graph.has_edge(current_pos, new_position):
-            return False
-        
-        edge_data = self.graph.get_edge_data(current_pos, new_position)
-        valid_transports = [TransportType(edge_data.get('edge_type', 1))]
-        
-        # Black tickets can use any transport
-        if transport_type == TransportType.BLACK:
-            valid_transports.extend([TransportType.TAXI, TransportType.BUS, TransportType.UNDERGROUND])
-        
-        if transport_type not in valid_transports:
-            return False
-        
-        # Check if Mr. X has the required ticket
-        ticket_type = self._transport_to_ticket(transport_type)
-        return self.game_state.mr_x_tickets.get(ticket_type, 0) > 0
-    
-    def _validate_detective_move(self, detective_id: int, new_position: int,
-                               transport_type: TransportType) -> bool:
-        """Validate detective's move"""
-        if detective_id >= len(self.game_state.cop_positions):
-            return False
-        
-        current_pos = self.game_state.cop_positions[detective_id]
-        
-        # Check graph connectivity
-        if not self.graph.has_edge(current_pos, new_position):
-            return False
-        
-        # Check transport type
-        edge_data = self.graph.get_edge_data(current_pos, new_position)
-        if TransportType(edge_data.get('edge_type', 1)) != transport_type:
-            return False
-        # Check if position is occupied by another detective
-        if new_position in self.game_state.cop_positions:
-            return False
-        
-        # Check if detective has the ticket
-        ticket_type = self._transport_to_ticket(transport_type)
-        return self.game_state.detective_tickets[detective_id].get(ticket_type, 0) > 0
-    
-    def _transport_to_ticket(self, transport_type: TransportType) -> TicketType:
-        """Convert transport type to ticket type"""
-        mapping = {
-            TransportType.TAXI: TicketType.TAXI,
-            TransportType.BUS: TicketType.BUS,
-            TransportType.UNDERGROUND: TicketType.UNDERGROUND,
-            TransportType.BLACK: TicketType.BLACK
-        }
-        return mapping.get(transport_type, TicketType.TAXI)
-    
-    def _all_detectives_moved(self) -> bool:
-        """Check if all detectives have moved this turn"""
-        # This is a simplified check - in full implementation you'd track who moved
-        return True
+            return Player.MR_X
     
     def get_mr_x_visible_position(self) -> Optional[int]:
         """Get Mr. X's position if visible"""
@@ -715,6 +617,11 @@ class ScotlandYardGame(Game):
             return self.game_state.robber_position
         return None
     
+    def _all_detectives_moved(self) -> bool:
+        """Check if all detectives have moved this turn"""
+        # This is a simplified check - in full implementation you'd track who moved
+        return True
+
     def get_detective_tickets(self, detective_id: int) -> Dict[TicketType, int]:
         """Get ticket counts for a detective"""
         return self.game_state.detective_tickets.get(detective_id, {})
@@ -722,3 +629,318 @@ class ScotlandYardGame(Game):
     def get_mr_x_tickets(self) -> Dict[TicketType, int]:
         """Get Mr. X's ticket counts"""
         return self.game_state.mr_x_tickets.copy()
+    
+    def get_valid_moves_for_player(self, player: Player, position: int = None) -> Set[int]:
+        """Get valid moves for a player, considering game rules"""
+        if self.game_state is None:
+            raise ValueError("Game not initialized")
+        
+        if player == Player.COPS:
+            if position is None:
+                raise ValueError("Must specify position for cops")
+            valid_moves = self.get_valid_moves(player, position)
+            # Filter out positions occupied by other cops
+            other_cop_positions = [pos for pos in self.game_state.cop_positions if pos != position]
+            return valid_moves - set(other_cop_positions)
+        else:
+            valid_moves = self.get_valid_moves(player)
+            # Filter out positions that will be occupied by cops
+            return valid_moves - set(self.game_state.cop_positions)
+    
+    def get_available_moves_with_info(self, player: Player, player_id: int = None) -> Dict[int, List[int]]:
+        """Get available moves with transport info for visualization"""
+        moves_dict = {}
+        
+        if player == Player.COPS and player_id is not None:
+            if player_id < len(self.game_state.cop_positions):
+                cop_pos = self.game_state.cop_positions[player_id]
+                valid_moves = self.get_valid_moves_for_player(Player.COPS, cop_pos)
+                moves_dict[cop_pos] = {pos: [1] for pos in valid_moves}  # Generic transport
+        
+        elif player == Player.ROBBER:
+            robber_pos = self.game_state.robber_position
+            valid_moves = self.get_valid_moves_for_player(Player.ROBBER)
+            moves_dict[robber_pos] = {pos: [1] for pos in valid_moves}
+        
+        return moves_dict
+
+class ScotlandYardGame(Game):
+    """Scotland Yard variant of the game"""
+    
+    def __init__(self, graph: nx.Graph, num_detectives: int = 3):
+        super().__init__(graph, num_detectives, 
+                        ScotlandYardMovement(), ScotlandYardMovement(),
+                        ScotlandYardWinCondition())
+        self.reveal_turns = {3, 8, 13, 18, 24}
+        
+    def initialize_scotland_yard_game(self, detective_positions: List[int], 
+                                    mr_x_position: int):
+        """Initialize Scotland Yard game with tickets"""
+        # Initialize detective tickets
+        detective_tickets = {}
+        for i in range(len(detective_positions)):
+            detective_tickets[i] = {
+                TicketType.TAXI: 10,
+                TicketType.BUS: 8, 
+                TicketType.UNDERGROUND: 4
+            }
+        
+        # Initialize Mr. X tickets
+        mr_x_tickets = {
+            TicketType.TAXI: 4,
+            TicketType.BUS: 3,
+            TicketType.UNDERGROUND: 3,
+            TicketType.BLACK: 5,
+            TicketType.DOUBLE_MOVE: 2
+        }
+        
+        self.game_state = GameState(
+            detective_positions, mr_x_position, Player.MR_X, 0,
+            detective_tickets, mr_x_tickets, False, []
+        )
+        self.game_history = [self.game_state.copy()]
+    
+    def get_valid_moves(self, player: Player, position: int = None) -> Set[int]:
+        """Get valid moves for a player considering tickets"""
+        if self.game_state is None:
+            raise ValueError("Game not initialized")
+        
+        if player == Player.COPS:
+            if position is None:
+                raise ValueError("Must specify position for cops")
+            # Find which detective this is
+            detective_id = None
+            for i, cop_pos in enumerate(self.game_state.cop_positions):
+                if cop_pos == position:
+                    detective_id = i
+                    break
+            
+            if detective_id is not None:
+                return self.get_valid_moves_with_tickets(Player.COPS, detective_id)
+        else:
+            return self.get_valid_moves_with_tickets(Player.MR_X)
+        
+        return set()
+    
+    def get_valid_moves_with_tickets(self, player: Player, detective_id: int = None) -> Set[int]:
+        """Get valid moves considering ticket availability"""
+        valid_moves = set()
+        ticket_mapping = {
+            1: TicketType.TAXI,
+            2: TicketType.BUS,
+            3: TicketType.UNDERGROUND
+        }
+        
+        if player == Player.COPS and detective_id is not None:
+            current_pos = self.game_state.cop_positions[detective_id]
+            detective_tickets = self.get_detective_tickets(detective_id)
+            
+            for neighbor in self.graph.neighbors(current_pos):
+                # Check if position is occupied by another detective
+                if neighbor in self.game_state.cop_positions:
+                    continue
+                
+                edge_data = self.graph.get_edge_data(current_pos, neighbor)
+                transport_type = edge_data.get('edge_type', 1)
+                required_ticket = ticket_mapping.get(transport_type, TicketType.TAXI)
+                
+                if detective_tickets.get(required_ticket, 0) > 0:
+                    valid_moves.add(neighbor)
+        
+        elif player == Player.MR_X:
+            current_pos = self.game_state.robber_position
+            mr_x_tickets = self.get_mr_x_tickets()
+            
+            for neighbor in self.graph.neighbors(current_pos):                
+                edge_data = self.graph.get_edge_data(current_pos, neighbor)
+                transport_type = edge_data.get('edge_type', 1)
+                required_ticket = ticket_mapping.get(transport_type, TicketType.TAXI)
+                
+                # Mr. X can use specific ticket or black ticket
+                if (mr_x_tickets.get(required_ticket, 0) > 0 or 
+                    mr_x_tickets.get(TicketType.BLACK, 0) > 0):
+                    valid_moves.add(neighbor)
+        
+        return valid_moves
+    
+    def make_move(self, new_positions: List[int] = None, new_robber_pos: int = None) -> bool:
+        """Make a move in Scotland Yard game"""
+        if self.game_state is None:
+            raise ValueError("Game not initialized")
+        
+        if self.is_game_over():
+            return False
+        
+        if self.game_state.turn == Player.COPS:
+            return self._make_detective_moves(new_positions)
+        else:  # Mr. X's turn
+            return self._make_mr_x_move(new_robber_pos)
+    
+    def _make_detective_moves(self, new_positions: List[int]) -> bool:
+        """Handle detective moves"""
+        if new_positions is None or len(new_positions) != self.num_cops:
+            return False
+        
+        # Check for duplicate positions among detectives
+        if len(set(new_positions)) != len(new_positions):
+            return False
+        
+        # Validate all detective moves
+        for i, new_pos in enumerate(new_positions):
+            old_pos = self.game_state.cop_positions[i]
+            
+            # Skip validation if not moving
+            if old_pos == new_pos:
+                continue
+            
+            # Check basic connectivity
+            if not self.graph.has_edge(old_pos, new_pos):
+                return False
+            
+            # Get edge data to determine transport type
+            edge_data = self.graph.get_edge_data(old_pos, new_pos)
+            transport_type = edge_data.get('edge_type', 1)
+            
+            # Map transport to ticket
+            ticket_mapping = {1: TicketType.TAXI, 2: TicketType.BUS, 3: TicketType.UNDERGROUND}
+            required_ticket = ticket_mapping.get(transport_type, TicketType.TAXI)
+            
+            # Check if detective has the ticket
+            detective_tickets = self.game_state.detective_tickets.get(i, {})
+            if detective_tickets.get(required_ticket, 0) <= 0:
+                return False
+        
+        
+        # If we get here, all moves are valid - now consume tickets
+        for i, new_pos in enumerate(new_positions):
+            old_pos = self.game_state.cop_positions[i]
+            
+            if old_pos != new_pos:  # Only consume tickets if actually moving
+                edge_data = self.graph.get_edge_data(old_pos, new_pos)
+                transport_type = edge_data.get('edge_type', 1)
+                ticket_mapping = {1: TicketType.TAXI, 2: TicketType.BUS, 3: TicketType.UNDERGROUND}
+                required_ticket = ticket_mapping.get(transport_type, TicketType.TAXI)
+                
+                # Consume the ticket and give it to Mr. X
+                self.game_state.detective_tickets[i][required_ticket] -= 1
+                if required_ticket not in self.game_state.mr_x_tickets:
+                    self.game_state.mr_x_tickets[required_ticket] = 0
+                self.game_state.mr_x_tickets[required_ticket] += 1
+        
+        self.game_state.cop_positions = new_positions
+        self.game_state.turn = Player.MR_X
+        self.game_history.append(self.game_state.copy())
+        return True
+    
+    def _make_mr_x_move(self, new_robber_pos: int) -> bool:
+        """Handle Mr. X's move"""
+        if new_robber_pos is None:
+            return False
+        
+        old_pos = self.game_state.robber_position
+        
+        # Skip validation if not moving
+        if old_pos == new_robber_pos:
+            self.game_state.turn = Player.COPS
+            self.game_state.turn_count += 1
+            self.game_history.append(self.game_state.copy())
+            return True
+        
+        # Check basic connectivity
+        if not self.graph.has_edge(old_pos, new_robber_pos):
+            return False
+        
+        # Get edge data to determine transport type
+        edge_data = self.graph.get_edge_data(old_pos, new_robber_pos)
+        transport_type = edge_data.get('edge_type', 1)
+        
+        # Map transport to ticket
+        ticket_mapping = {1: TicketType.TAXI, 2: TicketType.BUS, 3: TicketType.UNDERGROUND}
+        required_ticket = ticket_mapping.get(transport_type, TicketType.TAXI)
+        
+        # Check if Mr. X has the specific ticket or black ticket
+        mr_x_tickets = self.game_state.mr_x_tickets
+        can_use_specific = mr_x_tickets.get(required_ticket, 0) > 0
+        can_use_black = mr_x_tickets.get(TicketType.BLACK, 0) > 0
+        
+        # Mr. X must have at least one valid ticket to move
+        if not (can_use_specific or can_use_black):
+            return False
+        
+        # Consume appropriate ticket (prefer specific ticket over black)
+        if can_use_specific:
+            self.game_state.mr_x_tickets[required_ticket] -= 1
+        else:
+            self.game_state.mr_x_tickets[TicketType.BLACK] -= 1
+        
+        # Update position and visibility
+        self.game_state.robber_position = new_robber_pos
+        self.game_state.mr_x_visible = (self.game_state.turn_count + 1) in self.reveal_turns
+        
+        self.game_state.turn = Player.COPS
+        self.game_state.turn_count += 1
+        self.game_history.append(self.game_state.copy())
+        return True
+    
+    def get_winner(self) -> Optional[Player]:
+        """Get winner if game is over"""
+        if not self.is_game_over():
+            return None
+        
+        if self.win_condition.is_cops_win(self.game_state):
+            return Player.COPS
+        else:
+            return Player.MR_X
+    
+    def get_mr_x_visible_position(self) -> Optional[int]:
+        """Get Mr. X's position if visible"""
+        if self.game_state.mr_x_visible:
+            return self.game_state.robber_position
+        return None
+    
+    def _all_detectives_moved(self) -> bool:
+        """Check if all detectives have moved this turn"""
+        # This is a simplified check - in full implementation you'd track who moved
+        return True
+
+    def get_detective_tickets(self, detective_id: int) -> Dict[TicketType, int]:
+        """Get ticket counts for a detective"""
+        return self.game_state.detective_tickets.get(detective_id, {})
+    
+    def get_mr_x_tickets(self) -> Dict[TicketType, int]:
+        """Get Mr. X's ticket counts"""
+        return self.game_state.mr_x_tickets.copy()
+    
+    def get_valid_moves_for_player(self, player: Player, position: int = None) -> Set[int]:
+        """Get valid moves for a player, considering game rules"""
+        if self.game_state is None:
+            raise ValueError("Game not initialized")
+        
+        if player == Player.COPS:
+            if position is None:
+                raise ValueError("Must specify position for cops")
+            valid_moves = self.get_valid_moves(player, position)
+            # Filter out positions occupied by other cops
+            other_cop_positions = [pos for pos in self.game_state.cop_positions if pos != position]
+            return valid_moves - set(other_cop_positions)
+        else:
+            valid_moves = self.get_valid_moves(player)
+            # Filter out positions that will be occupied by cops
+            return valid_moves - set(self.game_state.cop_positions)
+    
+    def get_available_moves_with_info(self, player: Player, player_id: int = None) -> Dict[int, List[int]]:
+        """Get available moves with transport info for visualization"""
+        moves_dict = {}
+        
+        if player == Player.COPS and player_id is not None:
+            if player_id < len(self.game_state.cop_positions):
+                cop_pos = self.game_state.cop_positions[player_id]
+                valid_moves = self.get_valid_moves_for_player(Player.COPS, cop_pos)
+                moves_dict[cop_pos] = {pos: [1] for pos in valid_moves}  # Generic transport
+        
+        elif player == Player.ROBBER:
+            robber_pos = self.game_state.robber_position
+            valid_moves = self.get_valid_moves_for_player(Player.ROBBER)
+            moves_dict[robber_pos] = {pos: [1] for pos in valid_moves}
+        
+        return moves_dict

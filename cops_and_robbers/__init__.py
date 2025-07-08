@@ -8,8 +8,7 @@ with flexible rules, solvers, and interactive visualization.
 from .core.game import (
     Game, GameState, Player,
     MovementRule, StandardMovement, DistanceKMovement,
-    WinCondition, CaptureWinCondition, DistanceKWinCondition,
-    Obstacle, StaticObstacle
+    WinCondition, CaptureWinCondition, DistanceKWinCondition
 )
 
 from .solver.base_solver import BaseSolver, Strategy, SolverResult

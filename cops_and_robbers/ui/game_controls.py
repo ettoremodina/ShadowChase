@@ -31,10 +31,10 @@ class GameControls:
         button_frame = ttk.Frame(self.controls_section)
         button_frame.pack(fill=tk.X, padx=10, pady=8)
         
-        self.make_move_button = StyledButton(button_frame, "✅ Make Move", 
-                                           command=self.make_manual_move, 
-                                           style_type="primary", state=tk.DISABLED)
-        self.make_move_button.pack(fill=tk.X, pady=3)
+        self.move_button = StyledButton(button_frame, "✅ Make Move", 
+                                       command=self.make_manual_move, 
+                                       style_type="primary", state=tk.DISABLED)
+        self.move_button.pack(fill=tk.X, pady=3)
         
         self.skip_button = StyledButton(button_frame, "⏭️ Skip Turn (No Moves)",
                                       command=self.skip_turn, state=tk.DISABLED)
@@ -66,7 +66,8 @@ class GameControls:
         self.black_ticket_check = ttk.Checkbutton(controls_frame, text="🎫 Use Black Ticket",
                                                 variable=self.use_black_ticket, 
                                                 state=tk.DISABLED,
-                                                font=('Arial', 9))
+                                                # font=('Arial', 9)
+                                                )
         self.black_ticket_check.pack(anchor="w", pady=3)
         
         return self.mrx_section
@@ -307,7 +308,7 @@ class GameControls:
             self.mr_x_selections = []
             self.visualizer.current_cop_index = 0
             self.visualizer.selected_nodes = []
-            self.make_move_button.config(state=tk.DISABLED)
+            self.move_button.config(state=tk.DISABLED)
             self.double_move_active = False
             self.use_black_ticket.set(False)
             self.visualizer.update_ui_visibility()
@@ -328,12 +329,12 @@ class GameControls:
             self.mr_x_selections = []
             self.visualizer.current_cop_index = 0
             self.visualizer.selected_nodes = []
-            self.make_move_button.config(state=tk.DISABLED)
+            self.move_button.config(state=tk.DISABLED)
             self.double_move_active = False
             self.use_black_ticket.set(False)
             self.visualizer.update_ui_visibility()
             self.visualizer.draw_graph()
-    
+
     def skip_turn(self):
         """Handles a detective skipping their turn when they have no moves."""
         if (self.visualizer.game.game_state.turn == Player.COPS and 
@@ -347,7 +348,7 @@ class GameControls:
                 self.visualizer.current_cop_index += 1
                 
                 if len(self.visualizer.cop_selections) == self.visualizer.game.num_cops:
-                    self.make_move_button.config(state=tk.NORMAL)
+                    self.move_button.config(state=tk.NORMAL)
                 
                 self.visualizer.draw_graph()
             else:

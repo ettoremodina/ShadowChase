@@ -656,7 +656,7 @@ class ScotlandYardGame(Game):
                             use_black = True
 
                         move_transport = TicketType.BLACK if use_black else transport
-                        return self.make_move(mr_x_move=(new_pos, move_transport))
+                        return self.make_move(mr_x_moves=[(new_pos, transport)])
                 except Exception:
                     # If random move fails, just pass the turn
                     pass

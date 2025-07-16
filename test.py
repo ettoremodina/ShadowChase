@@ -287,44 +287,46 @@ def demo_simple_test_scotland_yard():
     visualizer = GameVisualizer(game)
     visualizer.run()
 
-# Run tests
 if __name__ == "__main__":
-    print("Choose a demo:")
-    print("1. Basic Game Test")
-    print("2. Complete Game Test") 
-    print("3. Scotland Yard Test")
-    print("4. Path Graph Demo")
-    print("5. Cycle Graph Demo")
-    print("6. Grid Graph Demo")
-    print("7. Simple Scotland Yard Demo")
-    print("8. Full Scotland Yard Demo")
-    print("9. Scotland Yard Visualizer")
-    print("10. Test Scotland Yard (10 nodes)")
-    print("11. Simple Test Scotland Yard (10 nodes)")
+    demo_test_scotland_yard()
+# Run tests
+# if __name__ == "__main__":
+#     print("Choose a demo:")
+#     print("1. Basic Game Test")
+#     print("2. Complete Game Test") 
+#     print("3. Scotland Yard Test")
+#     print("4. Path Graph Demo")
+#     print("5. Cycle Graph Demo")
+#     print("6. Grid Graph Demo")
+#     print("7. Simple Scotland Yard Demo")
+#     print("8. Full Scotland Yard Demo")
+#     print("9. Scotland Yard Visualizer")
+#     print("10. Test Scotland Yard (10 nodes)")
+#     print("11. Simple Test Scotland Yard (10 nodes)")
     
-    choice = input("Enter choice (1-11): ")
+#     choice = input("Enter choice (1-11): ")
     
-    if choice == "1":
-        test_basic_game()
-    elif choice == "2":
-        test_game_until_end()
-    elif choice == "3":
-        test_scotland_yard_game()
-    elif choice == "4":
-        demo_path_game()
-    elif choice == "5":
-        demo_cycle_game()
-    elif choice == "6":
-        demo_grid_game()
-    elif choice == "7":
-        demo_simple_scotland_yard()
-    elif choice == "8":
-        demo_scotland_yard_game()
-    elif choice == "9":
-        demo_scotland_yard_visualizer()
-    elif choice == "10":
-        demo_test_scotland_yard()
-    elif choice == "11":
-        demo_simple_test_scotland_yard()
-    else:
-        print("Invalid choice")
+#     if choice == "1":
+#         test_basic_game()
+#     elif choice == "2":
+#         test_game_until_end()
+#     elif choice == "3":
+#         test_scotland_yard_game()
+#     elif choice == "4":
+#         demo_path_game()
+#     elif choice == "5":
+#         demo_cycle_game()
+#     elif choice == "6":
+#         demo_grid_game()
+#     elif choice == "7":
+#         demo_simple_scotland_yard()
+#     elif choice == "8":
+#         demo_scotland_yard_game()
+#     elif choice == "9":
+#         demo_scotland_yard_visualizer()
+#     elif choice == "10":
+#         demo_test_scotland_yard()
+#     elif choice == "11":
+#         demo_simple_test_scotland_yard()
+#     else:
+#         print("Invalid choice")

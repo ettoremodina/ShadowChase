@@ -41,6 +41,11 @@ class GameVisualizer:
         self.cop_selections = []        # Track cop selections during turn
         self.selected_nodes = []        # Nodes with visual selection feedback
         
+        # Mr. X special moves state
+        self.use_black_ticket = tk.BooleanVar()
+        self.double_move_active = False
+        self.mr_x_selections = []
+        
         # UI components
         self.setup_ui()
         self.setup_graph_display()
@@ -78,9 +83,25 @@ class GameVisualizer:
                                      command=self.make_manual_move, state=tk.DISABLED)
         self.move_button.pack(pady=5)
         
+        self.skip_button = ttk.Button(controls_section, text="Skip Turn (No Moves)",
+                                     command=self.skip_turn, state=tk.DISABLED)
+        self.skip_button.pack(pady=5)
+        
         self.auto_button = ttk.Button(controls_section, text="Auto Play", 
                                      command=self.toggle_auto_play, state=tk.DISABLED)
         self.auto_button.pack(pady=5)
+        
+        # Mr. X Controls
+        self.mrx_controls_frame = ttk.LabelFrame(controls_section, text="Mr. X Moves")
+        self.mrx_controls_frame.pack(fill=tk.X, pady=(10, 0))
+        
+        self.double_move_button = ttk.Button(self.mrx_controls_frame, text="Use Double Move",
+                                            command=self.toggle_double_move, state=tk.DISABLED)
+        self.double_move_button.pack(pady=2)
+        
+        self.black_ticket_check = ttk.Checkbutton(self.mrx_controls_frame, text="Use Black Ticket",
+                                                 variable=self.use_black_ticket, state=tk.DISABLED)
+        self.black_ticket_check.pack(pady=2)
         
         # Current turn section
         self.turn_section = ttk.LabelFrame(self.control_frame, text="Current Turn")
@@ -186,7 +207,7 @@ class GameVisualizer:
                         ax=self.ax,
                         edge_color=style['color'],
                         width=style['width'],
-                        alpha=0.15  # Very faded for non-available moves
+                        alpha=0.3  # Very faded for non-available moves
                     )
                 
                 # Draw highlighted edges with full color and increased thickness
@@ -197,7 +218,7 @@ class GameVisualizer:
                         ax=self.ax,
                         edge_color=style['color'],
                         width=style['width'] + 2,  # Thicker for highlighted
-                        alpha=0.9  # Nearly full opacity
+                        alpha=1  # Nearly full opacity
                     )
                 
                 import matplotlib.lines as mlines
@@ -261,7 +282,7 @@ class GameVisualizer:
         for node in self.selected_nodes:
             if node in self.pos:
                 x, y = self.pos[node]
-                circle = plt.Circle((x, y), 0.08, fill=False, color='black', 
+                circle = plt.Circle((x, y), 0.04, fill=False, color='black', 
                                   linewidth=2, linestyle='--', alpha=0.8)
                 self.ax.add_patch(circle)
         
@@ -728,7 +749,11 @@ class GameVisualizer:
                     self.turn_text.insert(tk.END, "All cops selected - make move")
         else:
             if is_scotland_yard:
-                self.turn_text.insert(tk.END, "MR. X'S TURN\nSelect new position")
+                if self.double_move_active:
+                    self.turn_text.insert(tk.END, f"MR. X'S TURN (DOUBLE MOVE)\n")
+                    self.turn_text.insert(tk.END, f"Select move {len(self.mr_x_selections) + 1} of 2")
+                else:
+                    self.turn_text.insert(tk.END, "MR. X'S TURN\nSelect new position")
             else:
                 self.turn_text.insert(tk.END, "ROBBER'S TURN\nSelect new position")
     
@@ -750,6 +775,12 @@ class GameVisualizer:
             cop_pos = self.game.game_state.cop_positions[self.current_cop_index]
             if cop_pos in self.current_player_moves:
                 moves = self.current_player_moves[cop_pos]
+                if not moves:
+                    self.moves_text.insert(tk.END, "No available moves. Click 'Skip Turn'.")
+                    self.skip_button.config(state=tk.NORMAL)
+                else:
+                    self.skip_button.config(state=tk.DISABLED)
+
                 player_name = f"Detective {self.current_cop_index + 1}" if is_scotland_yard else f"Cop {self.current_cop_index + 1}"
                 self.moves_text.insert(tk.END, f"{player_name} from {cop_pos}:\n")
                 for target_pos, transports in moves.items():
@@ -764,6 +795,8 @@ class GameVisualizer:
                     else:
                         self.moves_text.insert(tk.END, f"  → {target_pos}\n")
         else:
+            self.skip_button.config(state=tk.DISABLED)
+            self.update_mrx_controls()
             # Robber/Mr. X moves
             for source_pos, moves in self.current_player_moves.items():
                 player_name = "Mr. X" if is_scotland_yard else "Robber"
@@ -799,12 +832,14 @@ class GameVisualizer:
         current_player = self.game.game_state.turn
     
         if current_player == Player.COPS:
+            self.double_move_active = False # Reset on cops' turn
+            self.mr_x_selections = []
             if self.current_cop_index < self.game.num_cops:
                 cop_pos = self.game.game_state.cop_positions[self.current_cop_index]
                 self.active_player_positions = [cop_pos]
                 
                 # The get_valid_moves method in ScotlandYardGame already filters by tickets and occupied positions.
-                valid_moves = self.game.get_valid_moves(Player.COPS, cop_pos)
+                valid_moves = self.game.get_valid_moves(Player.COPS, cop_pos, pending_moves=self.cop_selections)
                 
                 self.current_player_moves[cop_pos] = {}
                 for move in valid_moves:
@@ -820,7 +855,11 @@ class GameVisualizer:
                         self.highlighted_edges.append((cop_pos, dest, 1))
 
         else:  # Robber's turn
-            robber_pos = self.game.game_state.robber_position
+            if self.double_move_active and self.mr_x_selections:
+                # Second move of a double move starts from the first move's destination
+                robber_pos = self.mr_x_selections[0][0]
+            else:
+                robber_pos = self.game.game_state.robber_position
             self.active_player_positions = [robber_pos]
             
             valid_moves = self.game.get_valid_moves(Player.ROBBER, robber_pos)
@@ -880,25 +919,55 @@ class GameVisualizer:
                 self.move_button.config(state=tk.NORMAL)
         
         else:  # Robber's turn
-            self.selected_nodes = [node]
             if is_scotland_yard:
-                # For Mr. X, if multiple transport options exist, we must ask.
-                # For simplicity, we'll prefer the specific ticket over the black ticket.
-                available_transports = self.current_player_moves[source_pos][node]
-                transport_value = min(available_transports) # Prefer Taxi > Bus > Underground > Black
-                transport = TransportType(transport_value)
-                self.selected_positions = [(node, transport)]
-            else:
+                # Determine transport type for the move
+                if self.use_black_ticket.get():
+                    transport = TransportType.BLACK
+                else:
+                    # Prefer specific ticket over black if not explicitly chosen
+                    available_transports = self.current_player_moves[source_pos][node]
+                    transport_value = min(available_transports) # Prefers non-black
+                    transport = TransportType(transport_value)
+
+                if self.double_move_active:
+                    self.mr_x_selections.append((node, transport))
+                    self.selected_nodes.append(node)
+                    if len(self.mr_x_selections) == 2:
+                        self.move_button.config(state=tk.NORMAL)
+                else:
+                    self.mr_x_selections = [(node, transport)]
+                    self.selected_nodes = [node]
+                    self.move_button.config(state=tk.NORMAL)
+            else: # Standard game
                 self.selected_positions = [node]
-            
-            self.move_button.config(state=tk.NORMAL)
+                self.selected_nodes = [node]
+                self.move_button.config(state=tk.NORMAL)
     
         self.draw_graph()
+
+    def skip_turn(self):
+        """Handles a detective skipping their turn when they have no moves."""
+        if self.game.game_state.turn == Player.COPS and self.current_cop_index < self.game.num_cops:
+            cop_pos = self.game.game_state.cop_positions[self.current_cop_index]
+            
+            # Verify there are no moves
+            if cop_pos in self.current_player_moves and not self.current_player_moves[cop_pos]:
+                self.cop_selections.append((cop_pos, None)) # Append a "stay" move
+                self.current_cop_index += 1
+                
+                if len(self.cop_selections) == self.game.num_cops:
+                    self.move_button.config(state=tk.NORMAL)
+                
+                self.draw_graph()
+            else:
+                messagebox.showwarning("Invalid Action", "Skip turn is only for players with no available moves.")
+        
+        self.skip_button.config(state=tk.DISABLED)
 
     def make_manual_move(self):
         """Make a manual move by sending selected moves to the game object."""
         if (self.game.game_state.turn == Player.COPS and len(self.cop_selections) != self.game.num_cops) or \
-           (self.game.game_state.turn == Player.ROBBER and not self.selected_positions):
+           (self.game.game_state.turn == Player.ROBBER and not self.mr_x_selections and not self.selected_positions):
             messagebox.showwarning("Invalid Selection", "A move must be selected for all players.")
             return
     
@@ -913,7 +982,7 @@ class GameVisualizer:
                     success = self.game.make_move(new_positions=self.cop_selections)
             else:  # Robber's turn
                 if is_scotland_yard:
-                    success = self.game.make_move(mr_x_move=self.selected_positions[0])
+                    success = self.game.make_move(mr_x_moves=self.mr_x_selections)
                 else:
                     success = self.game.make_move(new_robber_pos=self.selected_positions[0])
     
@@ -923,9 +992,12 @@ class GameVisualizer:
             # Reset UI state after move attempt
             self.selected_positions = []
             self.cop_selections = []
+            self.mr_x_selections = []
             self.current_cop_index = 0
             self.selected_nodes = []
             self.move_button.config(state=tk.DISABLED)
+            self.double_move_active = False
+            self.use_black_ticket.set(False)
             self.draw_graph()
     
             # Check for game over
@@ -940,9 +1012,47 @@ class GameVisualizer:
             # Reset UI state on error
             self.selected_positions = []
             self.cop_selections = []
+            self.mr_x_selections = []
             self.current_cop_index = 0
             self.selected_nodes = []
             self.move_button.config(state=tk.DISABLED)
+            self.double_move_active = False
+            self.use_black_ticket.set(False)
             self.draw_graph()
-    
-    
+
+    def toggle_double_move(self):
+        """Toggles the double move state for Mr. X."""
+        self.double_move_active = not self.double_move_active
+        if self.double_move_active:
+            self.double_move_button.config(relief=tk.SUNKEN)
+        else:
+            self.double_move_button.config(relief=tk.RAISED)
+            # Reset selections if double move is cancelled
+            self.mr_x_selections = []
+            self.selected_nodes = []
+        self.draw_graph()
+
+    def update_mrx_controls(self):
+        """Updates the state of Mr. X's special move controls."""
+        if self.game.game_state and self.game.game_state.turn == Player.ROBBER:
+            mr_x_tickets = self.game.get_mr_x_tickets()
+            
+            if mr_x_tickets.get(TicketType.DOUBLE_MOVE, 0) > 0:
+                self.double_move_button.config(state=tk.NORMAL)
+            else:
+                self.double_move_button.config(state=tk.DISABLED)
+                self.double_move_active = False
+                self.double_move_button.config(relief=tk.RAISED)
+
+            if mr_x_tickets.get(TicketType.BLACK, 0) > 0:
+                self.black_ticket_check.config(state=tk.NORMAL)
+            else:
+                self.black_ticket_check.config(state=tk.DISABLED)
+                self.use_black_ticket.set(False)
+        else:
+            self.double_move_button.config(state=tk.DISABLED)
+            self.black_ticket_check.config(state=tk.DISABLED)
+            self.double_move_active = False
+            self.double_move_button.config(relief=tk.RAISED)
+            self.use_black_ticket.set(False)
+

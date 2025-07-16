@@ -39,10 +39,10 @@ class GameState:
         self.mr_x_tickets = mr_x_tickets or {}
         self.mr_x_visible = mr_x_visible
         self.mr_x_moves_log = mr_x_moves_log or []
-        self.double_move_active = False
+        self.double_move_in_progress = False
     
     def copy(self):
-        return GameState(
+        new_state = GameState(
             self.cop_positions, self.robber_position, 
             self.turn, self.turn_count,
             {k: v.copy() for k, v in self.detective_tickets.items()},
@@ -50,6 +50,8 @@ class GameState:
             self.mr_x_visible,
             self.mr_x_moves_log.copy()
         )
+        new_state.double_move_in_progress = self.double_move_in_progress
+        return new_state
     
     def __eq__(self, other):
         return (self.cop_positions == other.cop_positions and 
@@ -174,32 +176,51 @@ class ScotlandYardMovement(MovementRule):
 class ScotlandYardWinCondition(WinCondition):
     """Scotland Yard specific win conditions"""
     
-    def __init__(self, max_turns: int = 22):
+    def __init__(self, graph: nx.Graph, max_turns: int = 22):
+        self.graph = graph
         self.max_turns = max_turns
-        # self.reveal_turns = {3, 8, 13, 18, 24}
+        self.movement_rule = ScotlandYardMovement()
     
     def is_cops_win(self, game_state: GameState) -> bool:
         # Detectives win if any detective is on Mr. X's position
         return game_state.robber_position in game_state.cop_positions
     
     def is_mr_x_win(self, game_state: GameState) -> bool:
-        # Mr. X wins if max turns reached or detectives can't move
+        # Mr. X wins if max turns reached
         if game_state.turn_count >= self.max_turns:
             return True
         
-        # Check if all detectives are stuck
-        for i, detective_pos in enumerate(game_state.cop_positions):
-            if self._detective_can_move(game_state, i, detective_pos):
-                return False
-        return True
+        # Mr. X wins if all detectives are stuck
+        if game_state.turn == Player.COPS:
+            all_stuck = True
+            for i, pos in enumerate(game_state.cop_positions):
+                if self._detective_can_move(game_state, i, pos):
+                    all_stuck = False
+                    break
+            if all_stuck:
+                return True
+
+        return False
     
     def _detective_can_move(self, game_state: GameState, detective_id: int, position: int) -> bool:
-        # Check if detective has tickets and valid moves
-        if detective_id not in game_state.detective_tickets:
-            return False
+        """Check if a detective has any valid move."""
+        # This is a simplified check. For a full check, we'd need to consider
+        # pending moves of other detectives in the same turn.
+        # This check is sufficient for end-of-turn evaluation.
+        all_moves = self.movement_rule.get_valid_moves(self.graph, position, game_state)
+        detective_tickets = game_state.detective_tickets.get(detective_id, {})
         
-        tickets = game_state.detective_tickets[detective_id]
-        return any(count > 0 for count in tickets.values())
+        other_detective_positions = {pos for i, pos in enumerate(game_state.cop_positions) if i != detective_id}
+
+        for dest, transport in all_moves:
+            if dest in other_detective_positions:
+                continue
+            
+            required_ticket = TicketType[transport.name]
+            if detective_tickets.get(required_ticket, 0) > 0:
+                return True # Found at least one valid move
+        
+        return False
     
     def is_game_over(self, game_state: GameState) -> bool:
         return self.is_cops_win(game_state) or self.is_mr_x_win(game_state)
@@ -345,7 +366,7 @@ class ScotlandYardGame(Game):
     def __init__(self, graph: nx.Graph, num_detectives: int = 3):
         super().__init__(graph, num_detectives, 
                         ScotlandYardMovement(), ScotlandYardMovement(),
-                        ScotlandYardWinCondition())
+                        ScotlandYardWinCondition(graph))
         self.reveal_turns = {3, 8, 13, 18, 24}
         
     def initialize_scotland_yard_game(self, detective_positions: List[int], 
@@ -354,13 +375,25 @@ class ScotlandYardGame(Game):
         # Initialize detective tickets
         detective_tickets = {}
         for i in range(len(detective_positions)):
+            # detective_tickets[i] = {
+            #     TicketType.TAXI: 10,
+            #     TicketType.BUS: 8, 
+            #     TicketType.UNDERGROUND: 4
+            # }
             detective_tickets[i] = {
-                TicketType.TAXI: 10,
-                TicketType.BUS: 8, 
-                TicketType.UNDERGROUND: 4
+                TicketType.TAXI: 1,
+                TicketType.BUS: 1, 
+                TicketType.UNDERGROUND: 1
             }
         
         # Initialize Mr. X tickets
+        # mr_x_tickets = {
+        #     TicketType.TAXI: 4,
+        #     TicketType.BUS: 3,
+        #     TicketType.UNDERGROUND: 3,
+        #     TicketType.BLACK: 5,
+        #     TicketType.DOUBLE_MOVE: 2
+        # }
         mr_x_tickets = {
             TicketType.TAXI: 1,#4,
             TicketType.BUS: 3,
@@ -375,7 +408,7 @@ class ScotlandYardGame(Game):
         )
         self.game_history = [self.game_state.copy()]
     
-    def get_valid_moves(self, player: Player, position: int = None) -> Set[Tuple[int, TransportType]]:
+    def get_valid_moves(self, player: Player, position: int = None, pending_moves: List[Tuple[int, TransportType]] = None) -> Set[Tuple[int, TransportType]]:
         """Get valid moves for a player considering tickets.
         Returns a set of (destination, transport_type) tuples.
         """
@@ -391,21 +424,25 @@ class ScotlandYardGame(Game):
             except ValueError:
                 return set() # Position does not match any detective
             
-            return self._get_valid_detective_moves(detective_id, position)
+            return self._get_valid_detective_moves(detective_id, position, pending_moves)
         else: # MR_X
             position = self.game_state.robber_position
             return self._get_valid_mr_x_moves(position)
 
-    def _get_valid_detective_moves(self, detective_id: int, position: int) -> Set[Tuple[int, TransportType]]:
+    def _get_valid_detective_moves(self, detective_id: int, position: int, pending_moves: List[Tuple[int, TransportType]] = None) -> Set[Tuple[int, TransportType]]:
         """Get valid moves for a specific detective."""
         valid_moves = set()
         all_moves = self.cop_movement.get_valid_moves(self.graph, position, self.game_state)
         detective_tickets = self.get_detective_tickets(detective_id)
         
-        other_detective_positions = {pos for i, pos in enumerate(self.game_state.cop_positions) if i != detective_id}
+        pending_moves = pending_moves or []
+        occupied_positions = set(move[0] for move in pending_moves)
+        for i, pos in enumerate(self.game_state.cop_positions):
+            if i > detective_id:
+                occupied_positions.add(pos)
 
         for dest, transport in all_moves:
-            if dest in other_detective_positions:
+            if dest in occupied_positions:
                 continue
 
             required_ticket = TicketType[transport.name]
@@ -437,12 +474,12 @@ class ScotlandYardGame(Game):
         return valid_moves
 
     def make_move(self, detective_moves: List[Tuple[int, TransportType]] = None, 
-                  mr_x_move: Tuple[int, TransportType] = None) -> bool:
+                  mr_x_moves: List[Tuple[int, TransportType]] = None) -> bool:
         """
         Make a move in Scotland Yard. Assumes moves are pre-validated.
         - detective_moves: A list of (new_position, transport_type) for each detective.
-        - mr_x_move: A (new_position, transport_type) tuple for Mr. X.
-                     TransportType can be BLACK.
+        - mr_x_moves: A list of (new_position, transport_type) tuples for Mr. X.
+                      Can contain one or two moves.
         """
         if self.game_state is None:
             raise ValueError("Game not initialized")
@@ -451,14 +488,14 @@ class ScotlandYardGame(Game):
             return False
         
         if self.game_state.turn == Player.COPS:
-            #  XXX this is not correct, it's okay for a detective to be stuck 
             if detective_moves is None or len(detective_moves) != self.num_cops:
                 return False
 
             new_positions = []
-            for i, (new_pos, transport) in enumerate(detective_moves):
+            for i, move in enumerate(detective_moves):
+                new_pos, transport = move
                 new_positions.append(new_pos)
-                if new_pos != self.game_state.cop_positions[i]:
+                if new_pos != self.game_state.cop_positions[i] and transport is not None:
                     required_ticket = TicketType[transport.name]
                     self.game_state.detective_tickets[i][required_ticket] -= 1
                     self.game_state.mr_x_tickets[required_ticket] = self.game_state.mr_x_tickets.get(required_ticket, 0) + 1
@@ -467,29 +504,55 @@ class ScotlandYardGame(Game):
             self.game_state.turn = Player.ROBBER
         
         else:  # Mr. X's turn
-            if mr_x_move is None:
+            if not mr_x_moves:
                 return False
-            
-            new_pos, transport = mr_x_move
-            
-            # Determine which ticket to consume (prefer specific over black)
-            if transport != TicketType.BLACK:
-                required_ticket = TicketType[transport.name]
-                if self.game_state.mr_x_tickets.get(required_ticket, 0) > 0:
-                    self.game_state.mr_x_tickets[required_ticket] -= 1
-                else: # Must use black ticket
-                    self.game_state.mr_x_tickets[TicketType.BLACK] -= 1
-            else: # Black ticket was explicitly chosen
-                self.game_state.mr_x_tickets[TicketType.BLACK] -= 1
 
-            # Update log and visibility
-            self.game_state.mr_x_moves_log.append((new_pos, transport))
-            self.game_state.robber_position = new_pos
-            self.game_state.turn_count += 1
-            self.game_state.mr_x_visible = self.game_state.turn_count in self.reveal_turns
-            
-            self.game_state.turn = Player.COPS
-        
+            # Handle Double Move ticket consumption
+            if len(mr_x_moves) == 2:
+                if self.game_state.mr_x_tickets.get(TicketType.DOUBLE_MOVE, 0) <= 0:
+                    return False # No double move tickets
+                if not self.game_state.double_move_in_progress: # Consume only at the start
+                    self.game_state.mr_x_tickets[TicketType.DOUBLE_MOVE] -= 1
+
+            current_pos = self.game_state.robber_position
+            for i, (new_pos, transport_to_use) in enumerate(mr_x_moves):
+                # Determine which ticket to consume
+                edge_data = self.graph.get_edge_data(current_pos, new_pos)
+                if not edge_data: return False # Should not happen if move is valid
+                
+                actual_transport_val = edge_data.get('edge_type', 1) # Default to TAXI
+                actual_transport_type = TransportType(actual_transport_val)
+                required_ticket = TicketType[actual_transport_type.name]
+
+                if transport_to_use == TransportType.BLACK:
+                    ticket_to_consume = TicketType.BLACK
+                else:
+                    ticket_to_consume = required_ticket
+                
+                if self.game_state.mr_x_tickets.get(ticket_to_consume, 0) > 0:
+                    self.game_state.mr_x_tickets[ticket_to_consume] -= 1
+                elif self.game_state.mr_x_tickets.get(TicketType.BLACK, 0) > 0:
+                    # Fallback to black ticket if specific is not available
+                    self.game_state.mr_x_tickets[TicketType.BLACK] -= 1
+                else:
+                    return False # No tickets to make the move
+
+                # Update log and visibility
+                self.game_state.mr_x_moves_log.append((new_pos, transport_to_use))
+                self.game_state.robber_position = new_pos
+                current_pos = new_pos # Update current_pos for the next iteration (for double move)
+                
+                # Handle turn progression
+                if len(mr_x_moves) == 2 and i == 0:
+                    # First move of a double, stay on Mr. X's turn
+                    self.game_state.double_move_in_progress = True
+                else:
+                    # Single move or second move of a double
+                    self.game_state.double_move_in_progress = False
+                    self.game_state.turn_count += 1
+                    self.game_state.mr_x_visible = self.game_state.turn_count in self.reveal_turns
+                    self.game_state.turn = Player.COPS
+
         self.game_history.append(self.game_state.copy())
         return True
     
@@ -558,15 +621,20 @@ class ScotlandYardGame(Game):
             if self.game_state.turn == Player.COPS:
                 # Random cop moves
                 detective_moves = []
+                current_pending_moves = []
                 for i, cop_pos in enumerate(self.game_state.cop_positions):
                     try:
-                        valid_moves = list(self.get_valid_moves(Player.COPS, cop_pos))
+                        valid_moves = list(self.get_valid_moves(Player.COPS, cop_pos, pending_moves=current_pending_moves))
                         if valid_moves:
-                            detective_moves.append(random.choice(valid_moves))
+                            move = random.choice(valid_moves)
+                            detective_moves.append(move)
+                            current_pending_moves.append(move)
                         else:
                             detective_moves.append((cop_pos, None)) # Stay in place
+                            current_pending_moves.append((cop_pos, None))
                     except Exception:
                         detective_moves.append((cop_pos, None)) # Stay on error
+                        current_pending_moves.append((cop_pos, None))
                 
                 return self.make_move(detective_moves=detective_moves)
             else:

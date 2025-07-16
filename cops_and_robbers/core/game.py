@@ -39,7 +39,7 @@ class GameState:
         self.mr_x_tickets = mr_x_tickets or {}
         self.mr_x_visible = mr_x_visible
         self.mr_x_moves_log = mr_x_moves_log or []
-        self.double_move_in_progress = False
+        self.double_move_active = False
     
     def copy(self):
         new_state = GameState(
@@ -50,7 +50,7 @@ class GameState:
             self.mr_x_visible,
             self.mr_x_moves_log.copy()
         )
-        new_state.double_move_in_progress = self.double_move_in_progress
+        new_state.double_move_active = self.double_move_active
         return new_state
     
     def __eq__(self, other):
@@ -463,23 +463,19 @@ class ScotlandYardGame(Game):
             if (mr_x_tickets.get(required_ticket, 0) > 0 or 
                 mr_x_tickets.get(TicketType.BLACK, 0) > 0):
                 valid_moves.add((dest, transport))
-        
-        # Handle double move ticket
-        if mr_x_tickets.get(TicketType.DOUBLE_MOVE, 0) > 0:
-            # This is a simplified representation. A full implementation would need
-            # to return a different structure to represent double moves.
-            # For now, we just acknowledge the ticket exists.
-            pass
 
         return valid_moves
 
+    def can_use_double_move(self) -> bool:
+        """Check if Mr. X can use double move ticket"""
+        return (self.game_state.mr_x_tickets.get(TicketType.DOUBLE_MOVE, 0) > 0 and 
+                not self.game_state.double_move_active)
+
     def make_move(self, detective_moves: List[Tuple[int, TransportType]] = None, 
-                  mr_x_moves: List[Tuple[int, TransportType]] = None) -> bool:
+                  mr_x_moves: List[Tuple[int, TransportType]] = None, 
+                  use_double_move: bool = False) -> bool:
         """
-        Make a move in Scotland Yard. Assumes moves are pre-validated.
-        - detective_moves: A list of (new_position, transport_type) for each detective.
-        - mr_x_moves: A list of (new_position, transport_type) tuples for Mr. X.
-                      Can contain one or two moves.
+        Make a move in Scotland Yard. Simplified double move handling.
         """
         if self.game_state is None:
             raise ValueError("Game not initialized")
@@ -502,55 +498,67 @@ class ScotlandYardGame(Game):
             
             self.game_state.cop_positions = new_positions
             self.game_state.turn = Player.ROBBER
-        
+
         else:  # Mr. X's turn
-            if not mr_x_moves:
+            if not mr_x_moves or len(mr_x_moves) != 1:
                 return False
 
-            # Handle Double Move ticket consumption
-            if len(mr_x_moves) == 2:
-                if self.game_state.mr_x_tickets.get(TicketType.DOUBLE_MOVE, 0) <= 0:
-                    return False # No double move tickets
-                if not self.game_state.double_move_in_progress: # Consume only at the start
-                    self.game_state.mr_x_tickets[TicketType.DOUBLE_MOVE] -= 1
-
+            new_pos, transport_to_use = mr_x_moves[0]
+            
+            # Regular move
             current_pos = self.game_state.robber_position
-            for i, (new_pos, transport_to_use) in enumerate(mr_x_moves):
-                # Determine which ticket to consume
-                edge_data = self.graph.get_edge_data(current_pos, new_pos)
-                if not edge_data: return False # Should not happen if move is valid
-                
-                actual_transport_val = edge_data.get('edge_type', 1) # Default to TAXI
-                actual_transport_type = TransportType(actual_transport_val)
-                required_ticket = TicketType[actual_transport_type.name]
+            
+            # Validate the move
+            edge_data = self.graph.get_edge_data(current_pos, new_pos)
+            if not edge_data:
+                return False
+            
+            actual_transport_val = edge_data.get('edge_type', 1)
+            actual_transport_type = TransportType(actual_transport_val)
+            required_ticket = TicketType[actual_transport_type.name]
 
-                if transport_to_use == TransportType.BLACK:
-                    ticket_to_consume = TicketType.BLACK
-                else:
-                    ticket_to_consume = required_ticket
-                
-                if self.game_state.mr_x_tickets.get(ticket_to_consume, 0) > 0:
-                    self.game_state.mr_x_tickets[ticket_to_consume] -= 1
-                elif self.game_state.mr_x_tickets.get(TicketType.BLACK, 0) > 0:
-                    # Fallback to black ticket if specific is not available
-                    self.game_state.mr_x_tickets[TicketType.BLACK] -= 1
-                else:
-                    return False # No tickets to make the move
+            # Handle double move ticket consumption
+            if use_double_move:
+                if self.game_state.mr_x_tickets.get(TicketType.DOUBLE_MOVE, 0) <= 0:
+                    return False
+                self.game_state.mr_x_tickets[TicketType.DOUBLE_MOVE] -= 1
+                self.game_state.double_move_active = True
 
-                # Update log and visibility
-                self.game_state.mr_x_moves_log.append((new_pos, transport_to_use))
-                self.game_state.robber_position = new_pos
-                current_pos = new_pos # Update current_pos for the next iteration (for double move)
+            # Determine which ticket to consume for the move
+            if transport_to_use == TransportType.BLACK:
+                ticket_to_consume = TicketType.BLACK
+            else:
+                ticket_to_consume = required_ticket
+            
+            # Check and consume ticket
+            if self.game_state.mr_x_tickets.get(ticket_to_consume, 0) > 0:
+                self.game_state.mr_x_tickets[ticket_to_consume] -= 1
+            elif self.game_state.mr_x_tickets.get(TicketType.BLACK, 0) > 0:
+                self.game_state.mr_x_tickets[TicketType.BLACK] -= 1
+            else:
+                return False
+
+            # Execute the move
+            self.game_state.mr_x_moves_log.append((new_pos, transport_to_use))
+            self.game_state.robber_position = new_pos
+            
+            # Handle turn progression
+            if self.game_state.double_move_active:
+                # This is the second move of a double move - end double move
+                self.game_state.double_move_active = False
+                self.game_state.turn_count += 1
+                self.game_state.mr_x_visible = self.game_state.turn_count in self.reveal_turns
+                self.game_state.turn = Player.COPS
+            else:
+                # Regular single move or first move of double move
+                self.game_state.turn_count += 1
+                self.game_state.mr_x_visible = self.game_state.turn_count in self.reveal_turns
                 
-                # Handle turn progression
-                if len(mr_x_moves) == 2 and i == 0:
-                    # First move of a double, stay on Mr. X's turn
-                    self.game_state.double_move_in_progress = True
+                # If this was the start of a double move, stay on Mr. X turn
+                if use_double_move and not self.game_state.double_move_active:
+                    # This was just set to True above, so this is the first move
+                    self.game_state.turn = Player.ROBBER  # Skip cops' turn
                 else:
-                    # Single move or second move of a double
-                    self.game_state.double_move_in_progress = False
-                    self.game_state.turn_count += 1
-                    self.game_state.mr_x_visible = self.game_state.turn_count in self.reveal_turns
                     self.game_state.turn = Player.COPS
 
         self.game_history.append(self.game_state.copy())
@@ -643,9 +651,13 @@ class ScotlandYardGame(Game):
                     valid_moves = list(self.get_valid_moves(Player.ROBBER))
                     
                     if valid_moves:
-                        new_pos, transport = random.choice(valid_moves)
+                        move = random.choice(valid_moves)
+                        new_pos, transport = move
                         
-                        # Decide if to use black ticket
+                        # Randomly decide to use double move if available
+                        use_double = (self.can_use_double_move() and random.choice([True, False]))
+                        
+                        # Decide if to use black ticket for regular moves
                         use_black = False
                         required_ticket = TicketType[transport.name]
                         if (self.get_mr_x_tickets().get(TicketType.BLACK, 0) > 0 and
@@ -655,8 +667,8 @@ class ScotlandYardGame(Game):
                               random.choice([True, False])): # Randomly use black ticket if available
                             use_black = True
 
-                        move_transport = TicketType.BLACK if use_black else transport
-                        return self.make_move(mr_x_moves=[(new_pos, transport)])
+                        move_transport = TransportType.BLACK if use_black else transport
+                        return self.make_move(mr_x_moves=[(new_pos, move_transport)], use_double_move=use_double)
                 except Exception:
                     # If random move fails, just pass the turn
                     pass

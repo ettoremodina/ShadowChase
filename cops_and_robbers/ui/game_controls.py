@@ -297,8 +297,28 @@ class GameControls:
                     success = self.visualizer.game.make_move(new_positions=self.visualizer.cop_selections)
             else:  # Robber's turn
                 if is_scotland_yard:
-                    success = self.visualizer.game.make_move(mr_x_moves=self.mr_x_selections,
-                                                           use_double_move=self.double_move_requested)
+                    # For Scotland Yard, check if this is a double move scenario
+                    if self.double_move_requested and not self.visualizer.game.game_state.double_move_active:
+                        # Starting a double move - make first move
+                        success = self.visualizer.game.make_move(mr_x_moves=self.mr_x_selections,
+                                                               use_double_move=True)
+                        if success:
+                            # Reset selections for second move but keep double move button state
+                            self.mr_x_selections = []
+                            self.visualizer.selected_nodes = []
+                            self.move_button.config(state=tk.DISABLED)
+                            self.use_black_ticket.set(False)
+                            # Don't reset double_move_requested yet - we're still in double move
+                            self.visualizer.draw_graph()
+                            return
+                    else:
+                        # Regular move or second move of double move
+                        success = self.visualizer.game.make_move(mr_x_moves=self.mr_x_selections,
+                                                               use_double_move=False)
+                        if success and self.visualizer.game.game_state.double_move_active:
+                            # This was the second move of a double move, reset the flag
+                            self.double_move_requested = False
+                            self.double_move_button.configure(text="⚡ Use Double Move")
                 else:
                     success = self.visualizer.game.make_move(new_robber_pos=self.visualizer.selected_positions[0])
     
@@ -312,7 +332,12 @@ class GameControls:
             self.visualizer.current_cop_index = 0
             self.visualizer.selected_nodes = []
             self.move_button.config(state=tk.DISABLED)
-            self.double_move_requested = False
+            
+            # Only reset double move flag if not in the middle of a double move
+            if not self.visualizer.game.game_state.double_move_active:
+                self.double_move_requested = False
+                self.double_move_button.configure(text="⚡ Use Double Move")
+            
             self.use_black_ticket.set(False)
             self.visualizer.update_ui_visibility()
             self.visualizer.draw_graph()

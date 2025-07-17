@@ -518,7 +518,7 @@ class ScotlandYardGame(Game):
             required_ticket = TicketType[actual_transport_type.name]
 
             # Handle double move ticket consumption
-            if use_double_move:
+            if use_double_move and not self.game_state.double_move_active:
                 if self.game_state.mr_x_tickets.get(TicketType.DOUBLE_MOVE, 0) <= 0:
                     return False
                 self.game_state.mr_x_tickets[TicketType.DOUBLE_MOVE] -= 1
@@ -542,24 +542,23 @@ class ScotlandYardGame(Game):
             self.game_state.mr_x_moves_log.append((new_pos, transport_to_use))
             self.game_state.robber_position = new_pos
             
-            # Handle turn progression
+            # Handle turn progression for double moves
             if self.game_state.double_move_active:
-                # This is the second move of a double move - end double move
-                self.game_state.double_move_active = False
+                # We're in a double move - check if this completes it
+                if use_double_move:
+                    # This is the first move of a double move - stay on Mr. X's turn
+                    self.game_state.turn = Player.ROBBER
+                else:
+                    # This is the second move of a double move - end it
+                    self.game_state.double_move_active = False
+                    self.game_state.turn_count += 1
+                    self.game_state.mr_x_visible = self.game_state.turn_count in self.reveal_turns
+                    self.game_state.turn = Player.COPS
+            else:
+                # Regular single move
                 self.game_state.turn_count += 1
                 self.game_state.mr_x_visible = self.game_state.turn_count in self.reveal_turns
                 self.game_state.turn = Player.COPS
-            else:
-                # Regular single move or first move of double move
-                self.game_state.turn_count += 1
-                self.game_state.mr_x_visible = self.game_state.turn_count in self.reveal_turns
-                
-                # If this was the start of a double move, stay on Mr. X turn
-                if use_double_move and not self.game_state.double_move_active:
-                    # This was just set to True above, so this is the first move
-                    self.game_state.turn = Player.ROBBER  # Skip cops' turn
-                else:
-                    self.game_state.turn = Player.COPS
 
         self.game_history.append(self.game_state.copy())
         return True

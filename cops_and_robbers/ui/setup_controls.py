@@ -110,7 +110,7 @@ class SetupControls:
         self.visualizer.update_ui_visibility()
         self.visualizer.draw_graph()
         
-        messagebox.showinfo("🎉 Game Started", "Game has been initialized successfully!")
+        # messagebox.showinfo("🎉 Game Started", "Game has been initialized successfully!")
 
     def reset_setup(self):
         """Reset game setup"""

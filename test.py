@@ -13,7 +13,6 @@ if current_dir not in sys.path:
 from cops_and_robbers.ui.game_visualizer import GameVisualizer
 from cops_and_robbers.core.game import Game, Player, ScotlandYardGame, TicketType, TransportType
 from cops_and_robbers.examples.example_games import *
-from cops_and_robbers.solver.minimax_solver import MinimaxSolver
 
 def print_game_state(game):
     """Print current game state"""
@@ -29,10 +28,16 @@ def show_valid_moves(game, player, position=None):
     """Show valid moves for a player"""
     if player == Player.COPS and position is not None:
         moves = game.get_valid_moves(Player.COPS, position)
-        print(f"Cop at {position} can move to: {sorted(moves)}")
+        if isinstance(game, ScotlandYardGame):
+            print(f"Cop at {position} can move to: {[(dest, transport.name) for dest, transport in moves]}")
+        else:
+            print(f"Cop at {position} can move to: {sorted(moves)}")
     elif player == Player.ROBBER:
         moves = game.get_valid_moves(Player.ROBBER)
-        print(f"Robber can move to: {sorted(moves)}")
+        if isinstance(game, ScotlandYardGame):
+            print(f"Robber can move to: {[(dest, transport.name) for dest, transport in moves]}")
+        else:
+            print(f"Robber can move to: {sorted(moves)}")
     return moves
 
 def test_basic_game():
@@ -178,7 +183,7 @@ def demo_path_game():
     game = create_path_graph_game(5, 1)
     
     # Solve the game
-    solver = MinimaxSolver(game)
+    solver = None
     result = solver.solve([0], 4)
     
     print(f"Cops can win: {result.cops_can_win}")

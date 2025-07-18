@@ -11,8 +11,8 @@ from .core.game import (
     WinCondition, CaptureWinCondition, DistanceKWinCondition
 )
 
-from .solver.base_solver import BaseSolver, Strategy, SolverResult
-from .solver.minimax_solver import MinimaxSolver
+# from .solver.base_solver import BaseSolver, Strategy, SolverResult
+# from .solver.minimax_solver import MinimaxSolver
 
 from .ui.game_visualizer import GameVisualizer
 

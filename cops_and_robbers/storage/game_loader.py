@@ -7,13 +7,12 @@ from tkinter import ttk
 from typing import Dict, List, Optional, Tuple
 import networkx as nx
 from ..core.game import Game, GameState, Player
-from ..solver.base_solver import SolverResult
 
 class GameRecord:
     """Represents a saved game record"""
     
     def __init__(self, game_id: str, metadata: Dict, game_config: Dict, 
-                 game_history: List[GameState], solver_result: Optional[SolverResult] = None):
+                 game_history: List[GameState], solver_result: None):
         self.game_id = game_id
         self.metadata = metadata
         self.game_config = game_config

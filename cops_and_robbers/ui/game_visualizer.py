@@ -5,13 +5,12 @@ import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.figure import Figure
 import numpy as np
-from typing import Dict, List, Optional, Tuple, Set
 from ..core.game import Game, Player, GameState, ScotlandYardGame, TicketType, TransportType
-from ..solver.minimax_solver import MinimaxSolver
 from ..storage.game_loader import GameLoader
 from .ui_components import ScrollableFrame, StyledButton, InfoDisplay
 from .setup_controls import SetupControls
 from .game_controls import GameControls
+from .transport_selection import select_transport
 
 class GameVisualizer:
     """Interactive GUI for Cops and Robbers game"""
@@ -19,7 +18,7 @@ class GameVisualizer:
     def __init__(self, game: Game, loader: 'GameLoader' = None):
         self.loader = loader or GameLoader()
         self.game = game
-        self.solver = MinimaxSolver(game)
+        self.solver = None
         self.root = tk.Tk()
         self.root.title("🎯 Cops and Robbers Game")
         self.root.geometry(f"{self.root.winfo_screenwidth()}x{self.root.winfo_screenheight()}")
@@ -242,8 +241,47 @@ class GameVisualizer:
         self.pos = nx.spring_layout(self.game.graph, seed=42, k=1, iterations=50)
         self.draw_graph()
     
+    def calculate_parallel_edge_positions(self, u, v, transport_types, offset_distance=0.02):
+        """Calculate parallel positions for multiple edges between two nodes"""
+        if u not in self.pos or v not in self.pos:
+            return []
+        
+        pos_u = np.array(self.pos[u])
+        pos_v = np.array(self.pos[v])
+        
+        # Calculate the vector from u to v
+        edge_vector = pos_v - pos_u
+        edge_length = np.linalg.norm(edge_vector)
+        
+        if edge_length == 0:
+            return [(pos_u, pos_v) for _ in transport_types]
+        
+        # Calculate perpendicular vector for offsetting
+        perp_vector = np.array([-edge_vector[1], edge_vector[0]])
+        perp_vector = perp_vector / np.linalg.norm(perp_vector)
+        
+        # Calculate offsets for each transport type
+        num_transports = len(transport_types)
+        positions = []
+        
+        if num_transports == 1:
+            # Single edge - no offset needed
+            positions.append((pos_u, pos_v))
+        else:
+            # Multiple edges - distribute them symmetrically
+            for i, transport in enumerate(transport_types):
+                # Calculate offset from center
+                offset_multiplier = (i - (num_transports - 1) / 2) * offset_distance
+                offset = perp_vector * offset_multiplier
+                
+                pos_u_offset = pos_u + offset
+                pos_v_offset = pos_v + offset
+                positions.append((pos_u_offset, pos_v_offset))
+        
+        return positions
+
     def draw_graph(self):
-        """Draw the game graph with move highlighting"""
+        """Draw the game graph with parallel edges for multiple transport types"""
         self.ax.clear()
         
         # Update available moves for highlighting
@@ -262,46 +300,73 @@ class GameVisualizer:
                     highlighted_by_transport[transport] = []
                 highlighted_by_transport[transport].append((from_pos, to_pos))
         
-        # Draw all edges with reduced transparency for non-highlighted ones
-        for transport_type, style in self.transport_styles.items():
-            edges_for_type = []
-            highlighted_edges_for_type = highlighted_by_transport.get(transport_type, [])
+        # Build edge data structure for parallel drawing
+        edge_data = {}  # (u, v) -> [transport_types]
+        
+        for u, v, data in self.game.graph.edges(data=True):
+            edge_transports = data.get('transports', [])
+            edge_type = data.get('edge_type', None)
             
-            for u, v, data in self.game.graph.edges(data=True):
-                edge_transports = data.get('transports', [])
-                edge_type = data.get('edge_type', None)
-                
-                if transport_type in edge_transports or edge_type == transport_type:
-                    edges_for_type.append((u, v))
+            # Determine which transport types are available for this edge
+            available_transports = []
+            if edge_transports:
+                available_transports = edge_transports
+            elif edge_type:
+                available_transports = [edge_type]
             
-            if edges_for_type:
-                # Draw non-highlighted edges with low transparency
-                non_highlighted = [edge for edge in edges_for_type if edge not in highlighted_edges_for_type]
-                if non_highlighted:
-                    nx.draw_networkx_edges(
-                        self.game.graph, self.pos, 
-                        edgelist=non_highlighted,
-                        ax=self.ax,
-                        edge_color=style['color'],
-                        width=style['width'],
-                        alpha=0.3
-                    )
+            # Ensure consistent edge direction for parallel calculation
+            edge_key = (min(u, v), max(u, v))
+            if edge_key not in edge_data:
+                edge_data[edge_key] = []
+            edge_data[edge_key].extend(available_transports)
+        
+        # Remove duplicates from transport types
+        for edge_key in edge_data:
+            edge_data[edge_key] = list(set(edge_data[edge_key]))
+        
+        # Draw edges with parallel positioning
+        for (u, v), transport_types in edge_data.items():
+            # Calculate parallel positions for this edge
+            parallel_positions = self.calculate_parallel_edge_positions(u, v, transport_types)
+            
+            for i, transport_type in enumerate(transport_types):
+                if transport_type not in self.transport_styles:
+                    continue
                 
-                # Draw highlighted edges with full color and increased thickness
-                if highlighted_edges_for_type:
-                    nx.draw_networkx_edges(
-                        self.game.graph, self.pos,
-                        edgelist=highlighted_edges_for_type,
-                        ax=self.ax,
-                        edge_color=style['color'],
-                        width=style['width'] + 2,
-                        alpha=1
-                    )
+                style = self.transport_styles[transport_type]
                 
-                import matplotlib.lines as mlines
-                legend_handles.append(mlines.Line2D([], [], color=style['color'], 
-                                                  linewidth=style['width'], 
-                                                  label=style['name']))
+                # Check if this specific edge and transport type should be highlighted
+                is_highlighted = ((u, v) in highlighted_by_transport.get(transport_type, []) or 
+                                (v, u) in highlighted_by_transport.get(transport_type, []))
+                
+                # Get the parallel position for this transport type
+                if i < len(parallel_positions):
+                    pos_u_offset, pos_v_offset = parallel_positions[i]
+                    
+                    # Draw the edge
+                    if is_highlighted:
+                        # Highlighted edge - full color and increased thickness
+                        self.ax.plot([pos_u_offset[0], pos_v_offset[0]], 
+                                   [pos_u_offset[1], pos_v_offset[1]],
+                                   color=style['color'], 
+                                   linewidth=style['width'] + 2, 
+                                   alpha=1.0, 
+                                   solid_capstyle='round')
+                    else:
+                        # Non-highlighted edge - reduced transparency
+                        self.ax.plot([pos_u_offset[0], pos_v_offset[0]], 
+                                   [pos_u_offset[1], pos_v_offset[1]],
+                                   color=style['color'], 
+                                   linewidth=style['width'], 
+                                   alpha=0.3, 
+                                   solid_capstyle='round')
+                
+                # Add to legend (avoid duplicates)
+                if not any(handle.get_label() == style['name'] for handle in legend_handles):
+                    import matplotlib.lines as mlines
+                    legend_handles.append(mlines.Line2D([], [], color=style['color'], 
+                                                      linewidth=style['width'], 
+                                                      label=style['name']))
         
         # Color nodes based on game state
         node_colors = []
@@ -649,7 +714,10 @@ class GameVisualizer:
                 self.active_player_positions = [cop_pos]
                 
                 # The get_valid_moves method in ScotlandYardGame already filters by tickets and occupied positions.
-                valid_moves = self.game.get_valid_moves(Player.COPS, cop_pos, pending_moves=self.cop_selections)
+                if is_scotland_yard:
+                    valid_moves = self.game.get_valid_moves(Player.COPS, cop_pos, pending_moves=self.cop_selections)
+                else:
+                    valid_moves = self.game.get_valid_moves(Player.COPS, cop_pos)
                 
                 self.current_player_moves[cop_pos] = {}
                 for move in valid_moves:
@@ -675,21 +743,23 @@ class GameVisualizer:
             for move in valid_moves:
                 if is_scotland_yard:
                     dest, transport = move
-                    # Mr. X can use a specific ticket or a black ticket.
-                    # The UI needs to know which options are available for a given route.
                     mr_x_tickets = self.game.get_mr_x_tickets()
-                    transports_for_move = []
                     
+                    # Initialize destination if not exists
+                    if dest not in self.current_player_moves[robber_pos]:
+                        self.current_player_moves[robber_pos][dest] = []
+                    
+                    # Check if Mr. X can use the specific transport type
                     required_ticket = TicketType[transport.name]
                     if mr_x_tickets.get(required_ticket, 0) > 0:
-                        transports_for_move.append(transport.value)
-                    if mr_x_tickets.get(TicketType.BLACK, 0) > 0:
-                        transports_for_move.append(TransportType.BLACK.value)
+                        self.current_player_moves[robber_pos][dest].append(transport.value)
+                        self.highlighted_edges.append((robber_pos, dest, transport.value))
                     
-                    if transports_for_move:
-                        self.current_player_moves[robber_pos][dest] = transports_for_move
-                        for t_val in transports_for_move:
-                            self.highlighted_edges.append((robber_pos, dest, t_val))
+                    # Check if Mr. X can use black ticket for this destination
+                    if mr_x_tickets.get(TicketType.BLACK, 0) > 0:
+                        if TransportType.BLACK.value not in self.current_player_moves[robber_pos][dest]:
+                            self.current_player_moves[robber_pos][dest].append(TransportType.BLACK.value)
+                            self.highlighted_edges.append((robber_pos, dest, TransportType.BLACK.value))
                 else: # Standard Game
                     dest = move
                     self.current_player_moves[robber_pos][dest] = [1]
@@ -712,9 +782,33 @@ class GameVisualizer:
     
         if current_player == Player.COPS:
             if is_scotland_yard:
-                # For detectives, there's only one transport type per edge.
-                transport_value = self.current_player_moves[source_pos][node][0]
-                transport = TransportType(transport_value)
+                # Get available moves for this detective (already filtered by tickets)
+                cop_pos = self.game.game_state.cop_positions[self.current_cop_index]
+                valid_moves = self.game.get_valid_moves(Player.COPS, cop_pos, pending_moves=self.cop_selections)
+                
+                # Filter for only the clicked destination - these are already ticket-filtered
+                available_transports = []
+                for move in valid_moves:
+                    if move[0] == node:
+                        available_transports.append(move[1])
+                
+                if not available_transports:
+                    messagebox.showerror("Error", "No valid transport found for this destination")
+                    return
+                
+                # Show transport selection dialog if multiple options exist
+                if len(available_transports) > 1:
+                    selected_transport = select_transport(
+                        self.root, source_pos, node, available_transports, 
+                        f"Detective {self.current_cop_index + 1}"
+                    )
+                    if selected_transport is None:
+                        return  # User cancelled
+                    transport = selected_transport
+                else:
+                    # Only one transport option
+                    transport = available_transports[0]
+                
                 self.cop_selections.append((node, transport))
             else:
                 self.cop_selections.append(node)
@@ -727,25 +821,44 @@ class GameVisualizer:
         
         else:  # Robber's turn
             if is_scotland_yard:
-                # Determine transport type for the move
-                if self.game_controls.use_black_ticket.get():
-                    transport = TransportType.BLACK
-                else:
-                    # Prefer specific ticket over black if not explicitly chosen
-                    available_transports = self.current_player_moves[source_pos][node]
-                    transport_value = min(available_transports) # Prefers non-black
-                    transport = TransportType(transport_value)
-
+                # Get available moves for Mr. X (already filtered by tickets)
+                valid_moves = self.game.get_valid_moves(Player.ROBBER, source_pos)
+                
+                # Filter for only the clicked destination - these are already ticket-filtered
+                available_transports = []
+                for move in valid_moves:
+                    if move[0] == node:
+                        available_transports.append(move[1])
+                
+                if not available_transports:
+                    messagebox.showerror("Error", "No valid transport found for this destination")
+                    return
+                
+                # Check if Mr. X can use black ticket for this destination
+                mr_x_tickets = self.game.get_mr_x_tickets()
+                can_use_black = (mr_x_tickets.get(TicketType.BLACK, 0) > 0 and 
+                               any(move[0] == node for move in valid_moves))
+                
+                # Show transport selection dialog
+                selected_transport = select_transport(
+                    self.root, source_pos, node, available_transports, 
+                    "Mr. X", can_use_black
+                )
+                
+                if selected_transport is None:
+                    return  # User cancelled
+                
                 # Always treat as a single move - the double move logic is handled in make_move
-                self.game_controls.mr_x_selections = [(node, transport)]
+                self.game_controls.mr_x_selections = [(node, selected_transport)]
                 self.selected_nodes = [node]
                 self.game_controls.move_button.config(state=tk.NORMAL)
+                
+                # Clear the black ticket checkbox since we're using the dialog now
+                self.game_controls.use_black_ticket.set(False)
+                
             else: # Standard game
                 self.selected_positions = [node]
                 self.selected_nodes = [node]
                 self.game_controls.move_button.config(state=tk.NORMAL)
     
-                self.draw_graph()
-    
         self.draw_graph()
-

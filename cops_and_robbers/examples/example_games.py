@@ -60,7 +60,7 @@ def create_scotlandYard_game(num_detectives: int = 3) -> ScotlandYardGame:
     """Create game on Scotland Yard graph with full rules"""
     def create_graph_from_csv(path):
         df = pd.read_csv(path)
-        G = nx.Graph()
+        G = nx.MultiGraph()  # Use MultiGraph to support multiple edges
         
         for _, row in df.iterrows():
             source = int(row['source'])
@@ -79,7 +79,7 @@ def create_simple_scotland_yard_game(num_cops: int = 3,
     """Create simplified Scotland Yard game for learning"""
     def create_graph_from_csv(path):
         df = pd.read_csv(path)
-        G = nx.Graph()
+        G = nx.MultiGraph()  # Use MultiGraph to support multiple edges
         
         for _, row in df.iterrows():
             source = int(row['source'])
@@ -105,7 +105,7 @@ def create_test_scotland_yard_game(num_detectives: int = 2) -> ScotlandYardGame:
     """Create game on small test Scotland Yard graph with full rules"""
     def create_graph_from_csv(path):
         df = pd.read_csv(path)
-        G = nx.Graph()
+        G = nx.MultiGraph()  # Use MultiGraph to support multiple edges
         
         for _, row in df.iterrows():
             source = int(row['source'])
@@ -124,7 +124,7 @@ def create_simple_test_scotland_yard_game(num_cops: int = 2,
     """Create simplified test Scotland Yard game for learning"""
     def create_graph_from_csv(path):
         df = pd.read_csv(path)
-        G = nx.Graph()
+        G = nx.MultiGraph()  # Use MultiGraph to support multiple edges
         
         for _, row in df.iterrows():
             source = int(row['source'])

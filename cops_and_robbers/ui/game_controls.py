@@ -63,12 +63,11 @@ class GameControls:
                                              state=tk.DISABLED)
         self.double_move_button.pack(fill=tk.X, pady=3)
         
-        self.black_ticket_check = ttk.Checkbutton(controls_frame, text="🎫 Use Black Ticket",
-                                                variable=self.use_black_ticket, 
-                                                state=tk.DISABLED,
-                                                # font=('Arial', 9)
-                                                )
-        self.black_ticket_check.pack(anchor="w", pady=3)
+        # # Add note about transport selection
+        # info_label = ttk.Label(controls_frame, 
+        #                      text="💡 Transport type is selected when clicking destination",
+        #                      font=('Arial', 8, 'italic'))
+        # info_label.pack(pady=5)
         
         return self.mrx_section
     
@@ -264,18 +263,10 @@ class GameControls:
                 self.double_move_button.config(state=tk.DISABLED)
                 self.double_move_requested = False
                 self.double_move_button.configure(text="⚡ Use Double Move")
-
-            if mr_x_tickets.get(TicketType.BLACK, 0) > 0:
-                self.black_ticket_check.config(state=tk.NORMAL)
-            else:
-                self.black_ticket_check.config(state=tk.DISABLED)
-                self.use_black_ticket.set(False)
         else:
             self.double_move_button.config(state=tk.DISABLED)
-            self.black_ticket_check.config(state=tk.DISABLED)
             self.double_move_requested = False
             self.double_move_button.configure(text="⚡ Use Double Move")
-            self.use_black_ticket.set(False)
     
     def make_manual_move(self):
         """Make a manual move by sending selected moves to the game object."""

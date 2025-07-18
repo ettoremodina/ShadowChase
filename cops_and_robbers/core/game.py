@@ -160,13 +160,30 @@ class ScotlandYardMovement(MovementRule):
                        game_state: GameState) -> Set[Tuple[int, TransportType]]:
         moves = set()
         
+        # Handle multiple edges between same nodes
         for neighbor in graph.neighbors(position):
-            edge_data = graph.get_edge_data(position, neighbor)
-            # In Scotland Yard, every edge should have a type.
-            # Defaulting to TAXI for robustness, but graph should be well-formed.
-            transport_type_val = edge_data.get('edge_type', 1) 
-            transport_type = TransportType(transport_type_val)
-            moves.add((neighbor, transport_type))
+            # Get all edges between position and neighbor
+            if graph.is_multigraph():
+                # For multigraphs, get all edges
+                edge_data_dict = graph.get_edge_data(position, neighbor)
+                for edge_key, edge_data in edge_data_dict.items():
+                    transport_type_val = edge_data.get('edge_type', 1)
+                    transport_type = TransportType(transport_type_val)
+                    moves.add((neighbor, transport_type))
+            else:
+                # For simple graphs, check if there are multiple transport types stored
+                edge_data = graph.get_edge_data(position, neighbor)
+                # Check if edge_data contains multiple transport types
+                if 'transports' in edge_data:
+                    # Multiple transport types stored as a list
+                    for transport_val in edge_data['transports']:
+                        transport_type = TransportType(transport_val)
+                        moves.add((neighbor, transport_type))
+                else:
+                    # Single transport type
+                    transport_type_val = edge_data.get('edge_type', 1)
+                    transport_type = TransportType(transport_type_val)
+                    moves.add((neighbor, transport_type))
         
         return moves
     
@@ -460,8 +477,7 @@ class ScotlandYardGame(Game):
             required_ticket = TicketType[transport.name]
             
             # Mr. X can use specific ticket or black ticket
-            if (mr_x_tickets.get(required_ticket, 0) > 0 or 
-                mr_x_tickets.get(TicketType.BLACK, 0) > 0):
+            if mr_x_tickets.get(required_ticket, 0) > 0:
                 valid_moves.add((dest, transport))
 
         return valid_moves
@@ -505,17 +521,11 @@ class ScotlandYardGame(Game):
 
             new_pos, transport_to_use = mr_x_moves[0]
             
-            # Regular move
-            current_pos = self.game_state.robber_position
-            
-            # Validate the move
-            edge_data = self.graph.get_edge_data(current_pos, new_pos)
-            if not edge_data:
-                return False
-            
-            actual_transport_val = edge_data.get('edge_type', 1)
-            actual_transport_type = TransportType(actual_transport_val)
-            required_ticket = TicketType[actual_transport_type.name]
+            # Determine ticket to consume
+            if transport_to_use == TransportType.BLACK:
+                ticket_to_consume = TicketType.BLACK
+            else:
+                ticket_to_consume = TicketType[transport_to_use.name]
 
             # Handle double move ticket consumption
             if use_double_move and not self.game_state.double_move_active:
@@ -524,12 +534,6 @@ class ScotlandYardGame(Game):
                 self.game_state.mr_x_tickets[TicketType.DOUBLE_MOVE] -= 1
                 self.game_state.double_move_active = True
 
-            # Determine which ticket to consume for the move
-            if transport_to_use == TransportType.BLACK:
-                ticket_to_consume = TicketType.BLACK
-            else:
-                ticket_to_consume = required_ticket
-            
             # Check and consume ticket
             if self.game_state.mr_x_tickets.get(ticket_to_consume, 0) > 0:
                 self.game_state.mr_x_tickets[ticket_to_consume] -= 1
@@ -548,6 +552,8 @@ class ScotlandYardGame(Game):
                 if use_double_move:
                     # This is the first move of a double move - stay on Mr. X's turn
                     self.game_state.turn = Player.ROBBER
+                    self.game_state.turn_count += 1
+                    self.game_state.mr_x_visible = self.game_state.turn_count in self.reveal_turns
                 else:
                     # This is the second move of a double move - end it
                     self.game_state.double_move_active = False

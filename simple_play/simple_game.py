@@ -27,10 +27,10 @@ def main():
     print("=" * 60)
     
     # Get game configuration
-    map_size, play_mode, num_detectives = "test", "human_det_vs_ai_mrx", 2
-    verbosity = 4
-    # map_size, play_mode, num_detectives = get_game_mode()
-    # verbosity = get_verbosity_level()
+    # map_size, play_mode, num_detectives = "test", "human_det_vs_ai_mrx", 2
+    # verbosity = 4
+    map_size, play_mode, num_detectives = get_game_mode()
+    verbosity = get_verbosity_level()
     
     # Create display
     display = GameDisplay(verbosity)

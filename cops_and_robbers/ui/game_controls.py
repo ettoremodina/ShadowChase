@@ -337,6 +337,10 @@ class GameControls:
             if self.visualizer.game.is_game_over():
                 winner = self.visualizer.game.get_winner()
                 winner_name = winner.value.title() if winner else "No one"
+                
+                # Auto-save the completed game
+                self.visualizer.auto_save_completed_game()
+                
                 messagebox.showinfo("🎉 Game Over", f"{winner_name} wins!")
                 self.auto_button.config(state=tk.DISABLED)
     

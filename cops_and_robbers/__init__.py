@@ -35,7 +35,7 @@ __all__ = [
     "Game", "GameState", "Player",
     "MovementRule", "StandardMovement", "DistanceKMovement", 
     "WinCondition", "CaptureWinCondition", "DistanceKWinCondition",
-    "Obstacle", "StaticObstacle",
+    # "Obstacle", "StaticObstacle",
     
     # Solver classes
     "BaseSolver", "Strategy", "SolverResult", "MinimaxSolver",

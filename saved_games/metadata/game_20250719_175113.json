@@ -1,0 +1,12 @@
+{
+  "game_id": "game_20250719_175113",
+  "created_at": "2025-07-19T17:51:13.427362",
+  "graph_type": "custom",
+  "num_nodes": 10,
+  "num_edges": 37,
+  "num_cops": 2,
+  "total_turns": 2,
+  "winner": "cops",
+  "game_completed": true,
+  "has_ticket_system": true
+}

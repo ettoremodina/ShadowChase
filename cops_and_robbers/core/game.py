@@ -40,6 +40,7 @@ class GameState:
         self.mr_x_visible = mr_x_visible
         self.mr_x_moves_log = mr_x_moves_log or []
         self.double_move_active = False
+
     
     def copy(self):
         new_state = GameState(
@@ -48,7 +49,7 @@ class GameState:
             {k: v.copy() for k, v in self.detective_tickets.items()},
             self.mr_x_tickets.copy(),
             self.mr_x_visible,
-            self.mr_x_moves_log.copy()
+            self.mr_x_moves_log.copy(),
         )
         new_state.double_move_active = self.double_move_active
         return new_state
@@ -424,7 +425,8 @@ class ScotlandYardGame(Game):
             detective_tickets, mr_x_tickets, False, []
         )
         self.game_history = [self.game_state.copy()]
-    
+        self.ticket_history = []
+
     def get_valid_moves(self, player: Player, position: int = None, pending_moves: List[Tuple[int, TransportType]] = None) -> Set[Tuple[int, TransportType]]:
         """Get valid moves for a player considering tickets.
         Returns a set of (destination, transport_type) tuples.
@@ -499,6 +501,15 @@ class ScotlandYardGame(Game):
         if self.is_game_over():
             return False
         
+        # Prepare turn data for ticket history
+        turn_data = {
+            'turn_number': self.game_state.turn_count,
+            'player': self.game_state.turn.value,
+            'detective_moves': [],
+            'mr_x_moves': [],
+            'double_move_used': False
+        }
+        
         if self.game_state.turn == Player.COPS:
             if detective_moves is None or len(detective_moves) != self.num_cops:
                 return False
@@ -506,11 +517,24 @@ class ScotlandYardGame(Game):
             new_positions = []
             for i, move in enumerate(detective_moves):
                 new_pos, transport = move
+                old_pos = self.game_state.cop_positions[i]
                 new_positions.append(new_pos)
-                if new_pos != self.game_state.cop_positions[i] and transport is not None:
+                
+                # Record detective move in ticket history
+                detective_move_data = {
+                    'detective_id': i,
+                    'edge': (old_pos, new_pos),
+                    'ticket_used': None,
+                    'stayed': new_pos == old_pos
+                }
+                
+                if new_pos != old_pos and transport is not None:
                     required_ticket = TicketType[transport.name]
                     self.game_state.detective_tickets[i][required_ticket] -= 1
                     self.game_state.mr_x_tickets[required_ticket] = self.game_state.mr_x_tickets.get(required_ticket, 0) + 1
+                    detective_move_data['ticket_used'] = required_ticket.value
+                
+                turn_data['detective_moves'].append(detective_move_data)
             
             self.game_state.cop_positions = new_positions
             self.game_state.turn = Player.ROBBER
@@ -519,6 +543,7 @@ class ScotlandYardGame(Game):
             if not mr_x_moves or len(mr_x_moves) != 1:
                 return False
 
+            old_pos = self.game_state.robber_position
             new_pos, transport_to_use = mr_x_moves[0]
             
             # Determine ticket to consume
@@ -533,12 +558,16 @@ class ScotlandYardGame(Game):
                     return False
                 self.game_state.mr_x_tickets[TicketType.DOUBLE_MOVE] -= 1
                 self.game_state.double_move_active = True
+                turn_data['double_move_used'] = True
 
             # Check and consume ticket
+            actual_ticket_used = None
             if self.game_state.mr_x_tickets.get(ticket_to_consume, 0) > 0:
                 self.game_state.mr_x_tickets[ticket_to_consume] -= 1
+                actual_ticket_used = ticket_to_consume
             elif self.game_state.mr_x_tickets.get(TicketType.BLACK, 0) > 0:
                 self.game_state.mr_x_tickets[TicketType.BLACK] -= 1
+                actual_ticket_used = TicketType.BLACK
             else:
                 return False
 
@@ -546,16 +575,27 @@ class ScotlandYardGame(Game):
             self.game_state.mr_x_moves_log.append((new_pos, transport_to_use))
             self.game_state.robber_position = new_pos
             
+            # Record Mr. X move in ticket history
+            mr_x_move_data = {
+                'edge': (old_pos, new_pos),
+                'transport_used': transport_to_use.value,
+                'ticket_used': actual_ticket_used.value,
+                'double_move_part': 1 if self.game_state.double_move_active else 0
+            }
+            turn_data['mr_x_moves'].append(mr_x_move_data)
+            
             # Handle turn progression for double moves
             if self.game_state.double_move_active:
                 # We're in a double move - check if this completes it
                 if use_double_move:
                     # This is the first move of a double move - stay on Mr. X's turn
+                    mr_x_move_data['double_move_part'] = 1
                     self.game_state.turn = Player.ROBBER
                     self.game_state.turn_count += 1
                     self.game_state.mr_x_visible = self.game_state.turn_count in self.reveal_turns
                 else:
                     # This is the second move of a double move - end it
+                    mr_x_move_data['double_move_part'] = 2
                     self.game_state.double_move_active = False
                     self.game_state.turn_count += 1
                     self.game_state.mr_x_visible = self.game_state.turn_count in self.reveal_turns
@@ -566,6 +606,8 @@ class ScotlandYardGame(Game):
                 self.game_state.mr_x_visible = self.game_state.turn_count in self.reveal_turns
                 self.game_state.turn = Player.COPS
 
+        # Add turn data to ticket history
+        self.ticket_history.append(turn_data)
         self.game_history.append(self.game_state.copy())
         return True
     

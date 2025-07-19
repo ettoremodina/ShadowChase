@@ -6,18 +6,19 @@ from datetime import datetime
 from tkinter import ttk
 from typing import Dict, List, Optional, Tuple
 import networkx as nx
-from ..core.game import Game, GameState, Player
+from ..core.game import Game, GameState, Player, ScotlandYardGame
 
 class GameRecord:
     """Represents a saved game record"""
     
     def __init__(self, game_id: str, metadata: Dict, game_config: Dict, 
-                 game_history: List[GameState], solver_result: None):
+                 game_history: List[GameState], ticket_history: List[Dict], solver_result: None):
         self.game_id = game_id
         self.metadata = metadata
         self.game_config = game_config
         self.game_history = game_history
-        self.solver_result = solver_result
+        # self.solver_result = solver_result
+        self.ticket_history = ticket_history
         self.created_at = metadata.get('created_at', datetime.now().isoformat())
         self.updated_at = datetime.now().isoformat()
 
@@ -44,14 +45,13 @@ class GameLoader:
         for directory in directories:
             os.makedirs(directory, exist_ok=True)
     
-    def save_game(self, game: Game, game_id: str = None, 
+    def save_game(self, game: ScotlandYardGame, game_id: str = None, 
                   additional_metadata: Dict = None) -> str:
         """Save a complete game with organized file structure"""
         
         if game_id is None:
             game_id = self._generate_game_id()
         
-        # Prepare metadata
         metadata = {
             'game_id': game_id,
             'created_at': datetime.now().isoformat(),
@@ -61,11 +61,9 @@ class GameLoader:
             'num_cops': game.num_cops,
             'total_turns': game.game_state.turn_count if game.game_state else 0,
             'winner': game.get_winner().value if game.get_winner() else None,
-            'game_completed': game.is_game_over()
+            'game_completed': game.is_game_over(),
+            'has_ticket_system': isinstance(game, ScotlandYardGame)
         }
-        
-        if additional_metadata:
-            metadata.update(additional_metadata)
         
         # Prepare game configuration
         game_config = {
@@ -76,18 +74,18 @@ class GameLoader:
                 'robber_movement': self._serialize_movement_rule(game.robber_movement)
             },
             'win_condition': self._serialize_win_condition(game.win_condition),
-            'obstacles': [self._serialize_obstacle(obs) for obs in game.obstacles]
         }
         
-        # Create game record
-        record = GameRecord(game_id, metadata, game_config, game.game_history)
+        # Create game record - ticket history is already in game_state
+        solver_result = getattr(game, 'solver_result', None)
+        record = GameRecord(game_id, metadata, game_config, game.game_history, game.ticket_history, solver_result)
         
         # Save to multiple organized locations
         self._save_to_organized_structure(record)
         
         return game_id
     
-    def load_game(self, game_id: str) -> Optional[Game]:
+    def load_game(self, game_id: str) -> Optional[ScotlandYardGame]:
         """Load a game by ID"""
         record = self.load_game_record(game_id)
         if not record:
@@ -140,7 +138,7 @@ class GameLoader:
             return False
     
     def export_game(self, game_id: str, format: str = 'json') -> Optional[str]:
-        """Export game to various formats"""
+        """Export game to various formats with ticket information"""
         record = self.load_game_record(game_id)
         if not record:
             return None
@@ -148,7 +146,8 @@ class GameLoader:
         export_data = {
             'metadata': record.metadata,
             'game_config': record.game_config,
-            'game_history': [self._serialize_game_state(state) for state in record.game_history]
+            'game_history': [self._serialize_game_state(state) for state in record.game_history],
+            'ticket_history': getattr(record, 'ticket_history', [])
         }
         
         if format == 'json':
@@ -157,7 +156,7 @@ class GameLoader:
                 json.dump(export_data, f, indent=2)
         elif format == 'csv':
             export_file = f"{self.base_dir}/exports/{game_id}.csv"
-            self._export_to_csv(record, export_file)
+            self._export_to_csv_with_tickets(record, export_file)
         else:
             return None
         
@@ -317,38 +316,122 @@ class GameLoader:
             'parameters': getattr(condition, '__dict__', {})
         }
     
-    def _serialize_obstacle(self, obstacle) -> Dict:
-        """Serialize obstacle for storage"""
-        return {
-            'type': obstacle.__class__.__name__,
-            'parameters': getattr(obstacle, '__dict__', {})
-        }
-    
     def _serialize_game_state(self, state: GameState) -> Dict:
         """Serialize game state for export"""
-        return {
+        serialized = {
             'cop_positions': state.cop_positions,
             'robber_position': state.robber_position,
             'turn': state.turn.value,
-            'turn_count': state.turn_count
+            'turn_count': state.turn_count,
+            'mr_x_visible': getattr(state, 'mr_x_visible', True),
+            'double_move_active': getattr(state, 'double_move_active', False)
         }
+        
+        # Add ticket information if available
+        if hasattr(state, 'detective_tickets'):
+            serialized['detective_tickets'] = {
+                i: {k.value if hasattr(k, 'value') else str(k): v for k, v in tickets.items()}
+                for i, tickets in state.detective_tickets.items()
+            }
+        
+        if hasattr(state, 'mr_x_tickets'):
+            serialized['mr_x_tickets'] = {
+                k.value if hasattr(k, 'value') else str(k): v 
+                for k, v in state.mr_x_tickets.items()
+            }
+        
+        if hasattr(state, 'ticket_history'):
+            serialized['ticket_history'] = state.ticket_history
+            
+        return serialized
     
-    def _reconstruct_game_from_record(self, record: GameRecord) -> Game:
-        """Reconstruct Game object from saved record"""
-        # Reconstruct graph
-        graph = nx.node_link_graph(record.game_config['graph_data'])
+    def _export_to_csv_with_tickets(self, record: GameRecord, filename: str):
+        """Export game history to CSV format using stored ticket_history"""
+        import csv
         
-        # Create game with basic configuration
-        game = Game(graph, record.game_config['num_cops'])
+        with open(filename, 'w', newline='') as csvfile:
+            writer = csv.writer(csvfile)
+            writer.writerow(['Turn', 'Player', 'Cop_Positions', 'Robber_Position', 
+                           'Tickets_Used', 'Double_Move_Used', 'Detective_Tickets', 'MrX_Tickets'])
+            
+            for i, state in enumerate(record.game_history):
+                # Get ticket info from stored history
+                tickets_used = []
+                double_move_used = False
+                
+                if hasattr(state, 'ticket_history') and i < len(state.ticket_history):
+                    turn_data = state.ticket_history[i]
+                    
+                    # Collect all tickets used this turn
+                    for move_data in turn_data.get('detective_moves', []):
+                        if move_data.get('ticket_used'):
+                            tickets_used.append(f"Det{move_data.get('detective_id', 0)}:{move_data['ticket_used']}")
+                    
+                    for move_data in turn_data.get('mr_x_moves', []):
+                        if move_data.get('ticket_used'):
+                            tickets_used.append(f"MrX:{move_data['ticket_used']}")
+                    
+                    double_move_used = turn_data.get('double_move_used', False)
+                
+                writer.writerow([
+                    i,
+                    state.turn.value,
+                    ','.join(map(str, state.cop_positions)),
+                    state.robber_position,
+                    ';'.join(tickets_used),
+                    double_move_used,
+                    str(getattr(state, 'detective_tickets', {})),
+                    str(getattr(state, 'mr_x_tickets', {}))
+                ])
+    
+    def generate_detailed_statistics(self) -> Dict:
+        """Generate detailed statistics including ticket usage patterns"""
+        games = self.list_games()
         
-        # Restore game history
-        if record.game_history:
-            initial_state = record.game_history[0]
-            game.initialize_game(initial_state.cop_positions, initial_state.robber_position)
-            game.game_history = record.game_history.copy()
-            game.game_state = record.game_history[-1].copy()
+        if not games:
+            return {}
         
-        return game
+        basic_stats = self.generate_statistics()
+        
+        # Add ticket-specific statistics
+        ticket_stats = {
+            'games_with_tickets': sum(1 for g in games if g.get('has_ticket_system', False)),
+            'average_tickets_per_game': {},
+            'most_used_ticket_type': {},
+            'ticket_efficiency': {}
+        }
+        
+        # Analyze ticket usage patterns
+        total_ticket_usage = {'taxi': 0, 'bus': 0, 'underground': 0, 'black': 0}
+        games_with_tickets = 0
+        
+        for game_meta in games:
+            if game_meta.get('has_ticket_system', False):
+                games_with_tickets += 1
+                ticket_summary = game_meta.get('ticket_summary', {})
+                total_used = ticket_summary.get('total_tickets_used', {})
+                
+                for ticket_type, count in total_used.items():
+                    if ticket_type in total_ticket_usage:
+                        total_ticket_usage[ticket_type] += count
+        
+        if games_with_tickets > 0:
+            ticket_stats['average_tickets_per_game'] = {
+                ticket: count / games_with_tickets 
+                for ticket, count in total_ticket_usage.items()
+            }
+            
+            ticket_stats['most_used_ticket_type'] = max(total_ticket_usage.items(), key=lambda x: x[1])[0]
+        
+        # Combine statistics
+        detailed_stats = {**basic_stats, 'ticket_statistics': ticket_stats}
+        
+        # Save detailed statistics
+        stats_file = f"{self.base_dir}/statistics/detailed_stats_{datetime.now().strftime('%Y%m%d')}.json"
+        with open(stats_file, 'w') as f:
+            json.dump(detailed_stats, f, indent=2)
+        
+        return detailed_stats
     
     def _matches_filter(self, metadata: Dict, filter_by: Dict) -> bool:
         """Check if metadata matches filter criteria"""
@@ -376,5 +459,23 @@ class GameLoader:
                     ','.join(map(str, state.cop_positions)),
                     state.robber_position
                 ])
+    
+    def _reconstruct_game_from_record(self, record: GameRecord) -> Game:
+        """Reconstruct Game object from saved record"""
+        # Reconstruct graph with explicit edges parameter to avoid warning
+        graph = nx.node_link_graph(record.game_config['graph_data'], edges='links')
+        
+        # Create game with basic configuration
+        game = ScotlandYardGame(graph, record.game_config['num_cops'])
+        
+        # Restore game history
+        if record.game_history:
+            initial_state = record.game_history[0]
+            game.initialize_game(initial_state.cop_positions, initial_state.robber_position)
+            game.game_history = record.game_history.copy()
+            game.game_state = record.game_history[-1].copy()
+            game.ticket_history = record.ticket_history.copy()
+        
+        return game
 
 

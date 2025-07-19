@@ -39,11 +39,7 @@ class GameControls:
         self.skip_button = StyledButton(button_frame, "⏭️ Skip Turn (No Moves)",
                                       command=self.skip_turn, state=tk.DISABLED)
         self.skip_button.pack(fill=tk.X, pady=3)
-        
-        self.auto_button = StyledButton(button_frame, "🤖 Auto Play", 
-                                      command=self.toggle_auto_play, state=tk.DISABLED)
-        self.auto_button.pack(fill=tk.X, pady=3)
-        
+
         return self.controls_section
     
     def create_mrx_controls_section(self, parent):
@@ -229,16 +225,6 @@ class GameControls:
         
         self.tickets_display.set_text(tickets_text)
     
-    def toggle_auto_play(self):
-        """Toggle automatic play mode"""
-        self.visualizer.auto_play = not self.visualizer.auto_play
-        
-        if self.visualizer.auto_play:
-            self.auto_button.configure(text="⏹️ Stop Auto")
-            self.visualizer.root.after(1000, self.visualizer.auto_play_step)
-        else:
-            self.auto_button.configure(text="🤖 Auto Play")
-    
     def toggle_double_move(self):
         """Request double move for the next Mr. X turn."""
         self.double_move_requested = not self.double_move_requested
@@ -342,7 +328,6 @@ class GameControls:
                 self.visualizer.auto_save_completed_game()
                 
                 messagebox.showinfo("🎉 Game Over", f"{winner_name} wins!")
-                self.auto_button.config(state=tk.DISABLED)
     
         except Exception as e:
             messagebox.showerror("Move Error", f"An error occurred while making the move: {str(e)}")

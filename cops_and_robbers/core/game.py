@@ -361,23 +361,6 @@ class Game:
         return loader.export_game(game_id, format)
 
     
-    def get_available_moves_with_info(self, player: Player, player_id: int = None) -> Dict[int, List[int]]:
-        """Get available moves with transport info for visualization"""
-        moves_dict = {}
-        
-        if player == Player.COPS and player_id is not None:
-            if player_id < len(self.game_state.cop_positions):
-                cop_pos = self.game_state.cop_positions[player_id]
-                valid_moves = self.get_valid_moves(Player.COPS, cop_pos)
-                moves_dict[cop_pos] = {pos: [1] for pos in valid_moves}  # Generic transport
-        
-        elif player == Player.ROBBER:
-            robber_pos = self.game_state.robber_position
-            valid_moves = self.get_valid_moves(Player.ROBBER)
-            moves_dict[robber_pos] = {pos: [1] for pos in valid_moves}
-        
-        return moves_dict
-
 class ScotlandYardGame(Game):
     """Scotland Yard variant of the game"""
     
@@ -639,90 +622,4 @@ class ScotlandYardGame(Game):
     def get_mr_x_tickets(self) -> Dict[TicketType, int]:
         """Get Mr. X's ticket counts"""
         return self.game_state.mr_x_tickets.copy()
-
-
-    # XXX Doubbi da qua in poi
-    def get_available_moves_with_info(self, player: Player, player_id: int = None) -> Dict[int, List[int]]:
-        """Get available moves with transport info for visualization"""
-        moves_dict = {}
-        
-        if player == Player.COPS and player_id is not None:
-            if player_id < len(self.game_state.cop_positions):
-                cop_pos = self.game_state.cop_positions[player_id]
-                valid_moves = self.get_valid_moves(Player.COPS, cop_pos)
-                for dest, transport in valid_moves:
-                    if dest not in moves_dict:
-                        moves_dict[dest] = []
-                    moves_dict[dest].append(transport.value)
-        
-        elif player == Player.ROBBER:
-            robber_pos = self.game_state.robber_position
-            valid_moves = self.get_valid_moves(Player.ROBBER, robber_pos)
-            for dest, transport in valid_moves:
-                if dest not in moves_dict:
-                    moves_dict[dest] = []
-                moves_dict[dest].append(transport.value)
-
-        return moves_dict
     
-    def make_random_move(self):
-        """Make a random valid move with error handling"""
-        import random
-        
-        if not self.game_state or self.is_game_over():
-            return False
-        
-        try:
-            if self.game_state.turn == Player.COPS:
-                # Random cop moves
-                detective_moves = []
-                current_pending_moves = []
-                for i, cop_pos in enumerate(self.game_state.cop_positions):
-                    try:
-                        valid_moves = list(self.get_valid_moves(Player.COPS, cop_pos, pending_moves=current_pending_moves))
-                        if valid_moves:
-                            move = random.choice(valid_moves)
-                            detective_moves.append(move)
-                            current_pending_moves.append(move)
-                        else:
-                            detective_moves.append((cop_pos, None)) # Stay in place
-                            current_pending_moves.append((cop_pos, None))
-                    except Exception:
-                        detective_moves.append((cop_pos, None)) # Stay on error
-                        current_pending_moves.append((cop_pos, None))
-                
-                return self.make_move(detective_moves=detective_moves)
-            else:
-                # Random robber move
-                try:
-                    valid_moves = list(self.get_valid_moves(Player.ROBBER))
-                    
-                    if valid_moves:
-                        move = random.choice(valid_moves)
-                        new_pos, transport = move
-                        
-                        # Randomly decide to use double move if available
-                        use_double = (self.can_use_double_move() and random.choice([True, False]))
-                        
-                        # Decide if to use black ticket for regular moves
-                        use_black = False
-                        required_ticket = TicketType[transport.name]
-                        if (self.get_mr_x_tickets().get(TicketType.BLACK, 0) > 0 and
-                            self.get_mr_x_tickets().get(required_ticket, 0) == 0):
-                             use_black = True
-                        elif (self.get_mr_x_tickets().get(TicketType.BLACK, 0) > 0 and
-                              random.choice([True, False])): # Randomly use black ticket if available
-                            use_black = True
-
-                        move_transport = TransportType.BLACK if use_black else transport
-                        return self.make_move(mr_x_moves=[(new_pos, move_transport)], use_double_move=use_double)
-                except Exception:
-                    # If random move fails, just pass the turn
-                    pass
-                    
-        except Exception as e:
-            # If random move completely fails, log but don't crash
-            print(f"Random move failed: {e}")
-            return False
-        
-        return False

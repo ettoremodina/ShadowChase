@@ -13,6 +13,7 @@ from .setup_controls import SetupControls
 from .game_controls import GameControls
 from .transport_selection import select_transport
 from .game_replay import GameReplayWindow
+from agents import Agent
 
 class GameVisualizer:
     """Interactive GUI for Cops and Robbers game"""
@@ -37,8 +38,6 @@ class GameVisualizer:
         # Game state
         self.selected_positions = []
         self.setup_mode = True
-        self.auto_play = False
-        self.solver_result = None
         self.current_player_moves = {}
         self.highlighted_edges = []
         self.active_player_positions = []
@@ -113,9 +112,6 @@ class GameVisualizer:
         self.tickets_table_display = InfoDisplay(self.scrollable_controls.scrollable_frame,
                                                 "🎫 Ticket Table", height=8)
         # Don't pack it here - let update_ui_visibility() control when it appears
-
-        # Solver section
-        self.create_solver_section()
         
         # Save/Load section
         self.create_save_load_section()
@@ -130,33 +126,10 @@ class GameVisualizer:
         # Initial UI state
         self.update_ui_visibility()
     
-    def create_solver_section(self):
-        """Create the solver controls section"""
-        self.solver_section = ttk.LabelFrame(self.scrollable_controls.scrollable_frame, 
-                                           text="🧠 AI Solver")
-        
-        style = ttk.Style()
-        style.configure("Solver.TLabelframe.Label", anchor="w", font=('Arial', 11, 'bold'))
-        self.solver_section.configure(style="Solver.TLabelframe")
-        
-        button_frame = ttk.Frame(self.solver_section)
-        button_frame.pack(fill=tk.X, padx=10, pady=8)
-        
-        self.solve_button = StyledButton(button_frame, "🧠 Solve Game", 
-                                       command=self.solve_game, style_type="primary",
-                                       state=tk.DISABLED)
-        self.solve_button.pack(fill=tk.X, pady=3)
-        
-        self.strategy_button = StyledButton(button_frame, "📊 Show Strategy", 
-                                          command=self.show_strategy, state=tk.DISABLED)
-        self.strategy_button.pack(fill=tk.X, pady=3)
-        
-        self.solver_section.pack(fill=tk.X, pady=(0, 10))
-    
     def create_save_load_section(self):
         """Create the save/load controls section"""
         self.save_load_section = ttk.LabelFrame(self.scrollable_controls.scrollable_frame, 
-                                              text="💾 Save & Load")
+                                              text="💾 Load Game")
         
         style = ttk.Style()
         style.configure("SaveLoad.TLabelframe.Label", anchor="w", font=('Arial', 11, 'bold'))
@@ -164,10 +137,6 @@ class GameVisualizer:
         
         button_frame = ttk.Frame(self.save_load_section)
         button_frame.pack(fill=tk.X, padx=10, pady=8)
-        
-        # self.save_button = StyledButton(button_frame, "💾 Save Game", 
-        #                               command=self.save_current_game, state=tk.DISABLED)
-        # self.save_button.pack(fill=tk.X, pady=3)
         
         self.load_button = StyledButton(button_frame, "📂 Load Game", 
                                       command=self.show_load_dialog)
@@ -217,9 +186,6 @@ class GameVisualizer:
                     info_text += f"🏆 Game Over - Winner: {winner.value.title()}\n"
             else:
                 info_text += "⏳ Game in progress\n"
-            
-            if self.solver_result:
-                info_text += f"\n🧠 Solver: Cops can win = {self.solver_result.cops_can_win}\n"
         else:
             info_text = "ℹ️ No game initialized"
         
@@ -282,103 +248,8 @@ class GameVisualizer:
             self.setup_controls.start_button.config(state=tk.DISABLED)
         
         self.draw_graph()
+    
 
-    
-    def auto_play_step(self):
-        """Execute one step of automatic play"""
-        if not self.auto_play or self.game.is_game_over():
-            self.auto_play = False
-            self.game_controls.auto_button.configure(text="🤖 Auto Play")
-            return
-        
-        if self.solver_result and self.solver_result.cops_can_win:
-            # Use solver strategy
-            if self.game.game_state.turn == Player.COPS and self.solver_result.cop_strategy:
-                move = self.solver_result.cop_strategy.get_move(self.game.game_state)
-                if move:
-                    self.game.make_move(new_positions=move)
-            elif self.game.game_state.turn == Player.ROBBER and self.solver_result.robber_strategy:
-                move = self.solver_result.robber_strategy.get_move(self.game.game_state)
-                if move:
-                    self.game.make_move(new_robber_pos=move[0])
-        else:
-            # Make random valid move
-            self.game.make_random_move()
-        
-        self.draw_graph()
-        
-        if self.game.is_game_over():
-            winner = self.game.get_winner()
-            self.auto_play = False
-            self.game_controls.auto_button.configure(text="🤖 Auto Play")
-            
-            # Auto-save the completed game
-            self.auto_save_completed_game()
-            
-            messagebox.showinfo("🏆 Game Over", f"{winner.value.title()} wins!")
-        else:
-            self.root.after(1000, self.auto_play_step)
-    
-    def solve_game(self):
-        """Solve the current game"""
-        if not self.game.game_state:
-            messagebox.showerror("Error", "No game initialized")
-            return
-        
-        try:
-            self.info_display.insert("🧠 Solving game...\n")
-            self.root.update()
-            
-            self.solver_result = self.solver.solve(
-                self.game.game_history[0].cop_positions,
-                self.game.game_history[0].robber_position
-            )
-            
-            result_text = f"🧠 Solver Result:\n"
-            result_text += f"✅ Cops can win: {self.solver_result.cops_can_win}\n"
-            if self.solver_result.game_length:
-                result_text += f"⏱️ Game length: {self.solver_result.game_length}\n"
-            result_text += "\n"
-            
-            self.info_display.insert(result_text)
-            self.strategy_button.config(state=tk.NORMAL)
-            
-        except Exception as e:
-            messagebox.showerror("Error", f"Solver failed: {str(e)}")
-    
-    def show_strategy(self):
-        """Show optimal strategy"""
-        if not self.solver_result:
-            messagebox.showerror("Error", "No solver result available")
-            return
-        
-        strategy_window = tk.Toplevel(self.root)
-        strategy_window.title("🧠 Game Strategy")
-        strategy_window.geometry("900x700")
-        
-        text_widget = tk.Text(strategy_window, wrap=tk.WORD, font=('Consolas', 9))
-        scrollbar = ttk.Scrollbar(strategy_window, orient="vertical", command=text_widget.yview)
-        text_widget.configure(yscrollcommand=scrollbar.set)
-        
-        text_widget.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-        
-        strategy_text = f"🧠 Optimal Strategy:\n\n"
-        strategy_text += f"✅ Cops can win: {self.solver_result.cops_can_win}\n\n"
-        
-        if self.solver_result.cops_can_win and self.solver_result.cop_strategy:
-            strategy_text += "👮 Cop Strategy:\n"
-            for state_key, move in self.solver_result.cop_strategy.moves.items():
-                strategy_text += f"State {state_key}: Move to {move}\n"
-        
-        if not self.solver_result.cops_can_win and self.solver_result.robber_strategy:
-            strategy_text += "🏃 Robber Strategy:\n"
-            for state_key, move in self.solver_result.robber_strategy.moves.items():
-                strategy_text += f"State {state_key}: Move to {move}\n"
-        
-        text_widget.insert(tk.END, strategy_text)
-        text_widget.config(state=tk.DISABLED)
-    
     def save_current_game(self):
         """Save the current game state"""
         if not self.game.game_state:
@@ -706,7 +577,6 @@ class GameVisualizer:
             self.mrx_section.pack_forget()
             self.turn_display.pack_forget()
             self.moves_display.pack_forget()
-            self.solver_section.pack_forget()
             self.tickets_table_display.pack_forget()
             
         else:
@@ -735,8 +605,6 @@ class GameVisualizer:
                 if hasattr(self, 'tickets_table_display'):
                     self.tickets_table_display.pack_forget()
             
-            # Show solver section
-            self.solver_section.pack(fill=tk.X, pady=(0, 10))
 
     def setup_graph_display(self):
         """Setup matplotlib graph display"""

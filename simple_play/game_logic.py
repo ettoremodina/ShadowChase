@@ -340,8 +340,10 @@ class GameController:
                 continue
     
     def make_ai_move(self, player: Player) -> bool:
-        """Make a random AI move"""
-        success = self.game.make_random_move()
+        """Make an AI move using the agent system"""
+        from .agent import make_random_move
+        
+        success = make_random_move(self.game)
         
         if success:
             if player == Player.COPS:

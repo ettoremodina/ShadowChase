@@ -116,7 +116,6 @@ class SetupControls:
         """Reset game setup"""
         self.visualizer.selected_positions = []
         self.visualizer.setup_mode = True
-        self.visualizer.auto_play = False
         self.visualizer.solver_result = None
         self.visualizer.current_player_moves = {}
         self.visualizer.highlighted_edges = []

@@ -14,16 +14,16 @@ from .setup_controls import SetupControls
 from .game_controls import GameControls
 from .transport_selection import select_transport
 from .game_replay import GameReplayWindow
-from agents import Agent
+from .base_visualizer import BaseVisualizer
 from agents.random_agent import RandomMrXAgent, RandomMultiDetectiveAgent
 
-class GameVisualizer:
+class GameVisualizer(BaseVisualizer):
     """Interactive GUI for Cops and Robbers game"""
     
     def __init__(self, game: Game, loader: 'GameLoader' = None):
+        super().__init__(game)
         self.loader = loader or GameLoader()
         self.game_service = GameService(self.loader)
-        self.game = game
         self.solver = None
         self.root = tk.Tk()
         self.root.title("🎯 Cops and Robbers Game")
@@ -34,14 +34,6 @@ class GameVisualizer:
         self.game_mode = "human_vs_human"
         self.detective_agent = None
         self.mr_x_agent = None
-        
-        # Transport type colors and styles
-        self.transport_styles = {
-            1: {'color': 'yellow', 'width': 2, 'name': 'Taxi'},
-            2: {'color': 'blue', 'width': 3, 'name': 'Bus'},
-            3: {'color': 'red', 'width': 4, 'name': 'Underground'},
-            4: {'color': 'green', 'width': 3, 'name': 'Ferry'}
-        }
         
         # Game state
         self.selected_positions = []
@@ -162,7 +154,6 @@ class GameVisualizer:
                                       "ℹ️ Game Information", height=8)
         self.info_display.pack(fill=tk.X, pady=(0, 10))
         
-        # Remove duplicate tickets_table_display creation since it's already created in setup_ui()
 
     def update_info(self):
         """Update game information display"""
@@ -201,7 +192,7 @@ class GameVisualizer:
         
         # Update ticket table for Scotland Yard games
         if isinstance(self.game, ScotlandYardGame) and self.game.game_state:
-            self.update_tickets_table()
+            self.update_tickets_display_table(self.tickets_table_display)
         
         # Update other displays
         self.game_controls.update_turn_display()
@@ -529,62 +520,6 @@ class GameVisualizer:
                 self.game_controls.move_button.config(state=tk.NORMAL)
     
         self.draw_graph()
-
-    def update_tickets_table(self):
-        """Update tickets display as a table format with improved spacing"""
-        if not hasattr(self, 'tickets_table_display') or not self.tickets_table_display:
-            return
-        
-        # Create table format for tickets with better spacing
-        tickets_text = "🎫 TICKET TABLE:\n\n"
-        
-        # Header row with proper spacing
-        tickets_text += "Player│🚕│🚌│🚇│⚫│⚡\n"
-        tickets_text += "──────┼──┼──┼──┼──┼──\n"
-        
-        # Detective rows
-        for i in range(self.game.num_cops):
-            pos = self.game.game_state.cop_positions[i] if i < len(self.game.game_state.cop_positions) else "N/A"
-            player_name = f"Det {i+1}"
-            
-            # Get tickets for this detective
-            detective_tickets = self.game.get_detective_tickets(i)
-            
-            # Display ticket counts in table format with proper alignment
-            taxi_count = self._get_ticket_count(detective_tickets, 'taxi')
-            bus_count = self._get_ticket_count(detective_tickets, 'bus')
-            underground_count = self._get_ticket_count(detective_tickets, 'underground')
-            
-            tickets_text += f"{player_name:<6}│{taxi_count:>2}│{bus_count:>2}│{underground_count:>2}│ -│ -\n"
-        
-        # Mr. X row
-        mr_x_tickets = self.game.get_mr_x_tickets()
-        
-        taxi_count = self._get_ticket_count(mr_x_tickets, 'taxi')
-        bus_count = self._get_ticket_count(mr_x_tickets, 'bus')
-        underground_count = self._get_ticket_count(mr_x_tickets, 'underground')
-        black_count = self._get_ticket_count(mr_x_tickets, 'black')
-        double_count = self._get_ticket_count(mr_x_tickets, 'double_move')
-        
-        tickets_text += f"{'Mr. X':<6}│{taxi_count:>2}│{bus_count:>2}│{underground_count:>2}│{black_count:>2}│{double_count:>2}\n"
-        
-        self.tickets_table_display.set_text(tickets_text)
-
-    def _get_ticket_count(self, tickets, ticket_name):
-        """Helper to get ticket count handling different formats"""
-        if not tickets:
-            return 0
-        
-        # Try different possible key formats
-        for key, value in tickets.items():
-            if hasattr(key, 'value') and key.value.lower() == ticket_name.lower():
-                return value
-            elif hasattr(key, 'name') and key.name.lower() == ticket_name.lower():
-                return value
-            elif str(key).lower() == ticket_name.lower():
-                return value
-        
-        return 0
     
     def update_ui_visibility(self):
         """Update UI section visibility based on game state"""
@@ -633,57 +568,12 @@ class GameVisualizer:
 
     def setup_graph_display(self):
         """Setup matplotlib graph display"""
-        self.fig = Figure(figsize=(10, 8), dpi=100, facecolor='#f8f9fa')
-        self.ax = self.fig.add_subplot(111)
-        
-        self.canvas = FigureCanvasTkAgg(self.fig, self.graph_frame)
-        self.canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True)
+        super().setup_graph_display(self.graph_frame)
         
         # Mouse click handler
         self.canvas.mpl_connect('button_press_event', self.on_graph_click)
         
-        # Calculate graph layout once
-        self.pos = nx.spring_layout(self.game.graph, seed=42, k=1, iterations=50)
         self.draw_graph()
-
-    def calculate_parallel_edge_positions(self, u, v, transport_types, offset_distance=0.02):
-        """Calculate parallel positions for multiple edges between two nodes"""
-        if u not in self.pos or v not in self.pos:
-            return []
-        
-        pos_u = np.array(self.pos[u])
-        pos_v = np.array(self.pos[v])
-        
-        # Calculate the vector from u to v
-        edge_vector = pos_v - pos_u
-        edge_length = np.linalg.norm(edge_vector)
-        
-        if edge_length == 0:
-            return [(pos_u, pos_v) for _ in transport_types]
-        
-        # Calculate perpendicular vector for offsetting
-        perp_vector = np.array([-edge_vector[1], edge_vector[0]])
-        perp_vector = perp_vector / np.linalg.norm(perp_vector)
-        
-        # Calculate offsets for each transport type
-        num_transports = len(transport_types)
-        positions = []
-        
-        if num_transports == 1:
-            # Single edge - no offset needed
-            positions.append((pos_u, pos_v))
-        else:
-            # Multiple edges - distribute them symmetrically
-            for i, transport in enumerate(transport_types):
-                # Calculate offset from center
-                offset_multiplier = (i - (num_transports - 1) / 2) * offset_distance
-                offset = perp_vector * offset_multiplier
-                
-                pos_u_offset = pos_u + offset
-                pos_v_offset = pos_v + offset
-                positions.append((pos_u_offset, pos_v_offset))
-        
-        return positions
 
     def draw_graph(self):
         """Draw the game graph with parallel edges for multiple transport types"""
@@ -692,9 +582,6 @@ class GameVisualizer:
         # Update available moves for highlighting
         if not self.setup_mode:
             self.update_available_moves()
-        
-        # Track which transport types are actually used for legend
-        legend_handles = []
         
         # Collect highlighted edges by transport type
         highlighted_by_transport = {}
@@ -705,75 +592,37 @@ class GameVisualizer:
                     highlighted_by_transport[transport] = []
                 highlighted_by_transport[transport].append((from_pos, to_pos))
         
-        # Build edge data structure for parallel drawing
-        edge_data = {}  # (u, v) -> [transport_types]
+        # Use base class method for drawing edges with highlighting
+        self.draw_edges_with_parallel_positioning(alpha=0.3, highlighted_edges=highlighted_by_transport)
         
-        for u, v, data in self.game.graph.edges(data=True):
-            edge_transports = data.get('transports', [])
-            edge_type = data.get('edge_type', None)
-            
-            # Determine which transport types are available for this edge
-            available_transports = []
-            if edge_transports:
-                available_transports = edge_transports
-            elif edge_type:
-                available_transports = [edge_type]
-            
-            # Ensure consistent edge direction for parallel calculation
-            edge_key = (min(u, v), max(u, v))
-            if edge_key not in edge_data:
-                edge_data[edge_key] = []
-            edge_data[edge_key].extend(available_transports)
+        # Draw nodes based on game state
+        node_colors, node_sizes = self._get_game_node_colors_and_sizes()
+        nx.draw_networkx_nodes(self.game.graph, self.pos, ax=self.ax,
+                              node_color=node_colors, node_size=node_sizes)
         
-        # Remove duplicates from transport types
-        for edge_key in edge_data:
-            edge_data[edge_key] = list(set(edge_data[edge_key]))
+        # Draw black dotted rings around selected nodes
+        for node in self.selected_nodes:
+            if node in self.pos:
+                x, y = self.pos[node]
+                circle = plt.Circle((x, y), 0.04, fill=False, color='black', 
+                                  linewidth=2, linestyle='--', alpha=0.8)
+                self.ax.add_patch(circle)
         
-        # Draw edges with parallel positioning
-        for (u, v), transport_types in edge_data.items():
-            # Calculate parallel positions for this edge
-            parallel_positions = self.calculate_parallel_edge_positions(u, v, transport_types)
-            
-            for i, transport_type in enumerate(transport_types):
-                if transport_type not in self.transport_styles:
-                    continue
-                
-                style = self.transport_styles[transport_type]
-                
-                # Check if this specific edge and transport type should be highlighted
-                is_highlighted = ((u, v) in highlighted_by_transport.get(transport_type, []) or 
-                                (v, u) in highlighted_by_transport.get(transport_type, []))
-                
-                # Get the parallel position for this transport type
-                if i < len(parallel_positions):
-                    pos_u_offset, pos_v_offset = parallel_positions[i]
-                    
-                    # Draw the edge
-                    if is_highlighted:
-                        # Highlighted edge - full color and increased thickness
-                        self.ax.plot([pos_u_offset[0], pos_v_offset[0]], 
-                                   [pos_u_offset[1], pos_v_offset[1]],
-                                   color=style['color'], 
-                                   linewidth=style['width'] + 2, 
-                                   alpha=1.0, 
-                                   solid_capstyle='round')
-                    else:
-                        # Non-highlighted edge - reduced transparency
-                        self.ax.plot([pos_u_offset[0], pos_v_offset[0]], 
-                                   [pos_u_offset[1], pos_v_offset[1]],
-                                   color=style['color'], 
-                                   linewidth=style['width'], 
-                                   alpha=0.3, 
-                                   solid_capstyle='round')
-                
-                # Add to legend (avoid duplicates)
-                if not any(handle.get_label() == style['name'] for handle in legend_handles):
-                    import matplotlib.lines as mlines
-                    legend_handles.append(mlines.Line2D([], [], color=style['color'], 
-                                                      linewidth=style['width'], 
-                                                      label=style['name']))
+        # Draw labels
+        nx.draw_networkx_labels(self.game.graph, self.pos, ax=self.ax, font_size=8)
         
-        # Color nodes based on game state
+        self.ax.set_title("🎯 Cops and Robbers Game", fontsize=14, fontweight='bold')
+        
+        # Use base class method for legend
+        self.draw_transport_legend()
+        
+        self.ax.axis('off')
+        self.canvas.draw()
+        
+        self.update_info()
+    
+    def _get_game_node_colors_and_sizes(self):
+        """Get node colors and sizes based on game state"""
         node_colors = []
         node_sizes = []
         
@@ -817,38 +666,7 @@ class GameVisualizer:
                     node_colors.append('lightgray')
                     node_sizes.append(300)
         
-        # Draw nodes
-        nx.draw_networkx_nodes(self.game.graph, self.pos, ax=self.ax,
-                              node_color=node_colors, node_size=node_sizes)
-        
-        # Draw black dotted rings around selected nodes
-        for node in self.selected_nodes:
-            if node in self.pos:
-                x, y = self.pos[node]
-                circle = plt.Circle((x, y), 0.04, fill=False, color='black', 
-                                  linewidth=2, linestyle='--', alpha=0.8)
-                self.ax.add_patch(circle)
-        
-        # Draw labels
-        nx.draw_networkx_labels(self.game.graph, self.pos, ax=self.ax, font_size=8)
-        
-        self.ax.set_title("🎯 Cops and Robbers Game", fontsize=14, fontweight='bold')
-        
-        if legend_handles:
-            self.ax.legend(handles=legend_handles, loc='upper right')
-        
-        self.ax.axis('off')
-        self.canvas.draw()
-        
-        self.update_info()
-        
-        # self.ax.axis('off')
-        # self.canvas.draw()
-        
-        # self.update_info()
-        # self.canvas.draw()
-        
-        # self.update_info()
+        return node_colors, node_sizes
 
     def setup_ai_agents(self):
         """Initialize AI agents based on game mode"""

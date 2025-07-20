@@ -296,38 +296,7 @@ class GameControls:
                         moves_text += f"  ➡️ {target_pos}\n"
         
         self.moves_display.set_text(moves_text)
-    
-    def update_tickets_display(self):
-        """Update the tickets display for Scotland Yard games"""
-        if not self.tickets_display:
-            return
-            
-        if not self.visualizer.game.game_state:
-            return
-        
-        is_scotland_yard = isinstance(self.visualizer.game, ScotlandYardGame)
-        if not is_scotland_yard:
-            self.tickets_display.set_text("ℹ️ Not a Scotland Yard game")
-            return
-        
-        tickets_text = "🕵️ DETECTIVE TICKETS:\n"
-        for i in range(self.visualizer.game.num_cops):
-            tickets = self.visualizer.game.get_detective_tickets(i)
-            pos = self.visualizer.game.game_state.cop_positions[i]
-            tickets_text += f"Det. {i+1} (pos {pos}):\n"
-            for ticket_type, count in tickets.items():
-                icon = {"taxi": "🚕", "bus": "🚌", "underground": "🚇"}.get(ticket_type.value, "🎫")
-                tickets_text += f"  {icon} {ticket_type.value}: {count}\n"
-        
-        # Show Mr. X tickets
-        mr_x_tickets = self.visualizer.game.get_mr_x_tickets()
-        tickets_text += "\n🕵️‍♂️ MR. X TICKETS:\n"
-        for ticket_type, count in mr_x_tickets.items():
-            icon = {"taxi": "🚕", "bus": "🚌", "underground": "🚇", 
-                   "black": "⚫", "double_move": "⚡"}.get(ticket_type.value, "🎫")
-            tickets_text += f"  {icon} {ticket_type.value}: {count}\n"
-        
-        self.tickets_display.set_text(tickets_text)
+   
     
     def toggle_double_move(self):
         """Request double move for the next Mr. X turn."""
@@ -492,37 +461,6 @@ class GameControls:
         
         self.moves_display.set_text(moves_text)
     
-    def update_tickets_display(self):
-        """Update the tickets display for Scotland Yard games"""
-        if not self.tickets_display:
-            return
-            
-        if not self.visualizer.game.game_state:
-            return
-        
-        is_scotland_yard = isinstance(self.visualizer.game, ScotlandYardGame)
-        if not is_scotland_yard:
-            self.tickets_display.set_text("ℹ️ Not a Scotland Yard game")
-            return
-        
-        tickets_text = "🕵️ DETECTIVE TICKETS:\n"
-        for i in range(self.visualizer.game.num_cops):
-            tickets = self.visualizer.game.get_detective_tickets(i)
-            pos = self.visualizer.game.game_state.cop_positions[i]
-            tickets_text += f"Det. {i+1} (pos {pos}):\n"
-            for ticket_type, count in tickets.items():
-                icon = {"taxi": "🚕", "bus": "🚌", "underground": "🚇"}.get(ticket_type.value, "🎫")
-                tickets_text += f"  {icon} {ticket_type.value}: {count}\n"
-        
-        # Show Mr. X tickets
-        mr_x_tickets = self.visualizer.game.get_mr_x_tickets()
-        tickets_text += "\n🕵️‍♂️ MR. X TICKETS:\n"
-        for ticket_type, count in mr_x_tickets.items():
-            icon = {"taxi": "🚕", "bus": "🚌", "underground": "🚇", 
-                   "black": "⚫", "double_move": "⚡"}.get(ticket_type.value, "🎫")
-            tickets_text += f"  {icon} {ticket_type.value}: {count}\n"
-        
-        self.tickets_display.set_text(tickets_text)
     
     def toggle_double_move(self):
         """Request double move for the next Mr. X turn."""

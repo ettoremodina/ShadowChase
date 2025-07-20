@@ -6,6 +6,7 @@ import random
 from typing import List, Tuple, Optional
 from cops_and_robbers.core.game import ScotlandYardGame, Player, TicketType, TransportType
 from .display_utils import GameDisplay, format_transport_input
+from agents.random_agent import RandomMrXAgent, RandomMultiDetectiveAgent
 
 
 class GameController:
@@ -16,13 +17,11 @@ class GameController:
         self.display = display
         self.current_detective = 0
         self.double_move_first = False
-    
-    def make_human_move(self, player: Player, position: Optional[int] = None) -> bool:
-        """Handle human player move input"""
-        if player == Player.COPS:
-            return self._make_detective_move(position)
-        else:
-            return self._make_mr_x_move()
+        
+        # Initialize agents
+        num_detectives = len(game.game_state.cop_positions)
+        self.agent_mrx = RandomMrXAgent()
+        self.agent_detectives = RandomMultiDetectiveAgent(num_detectives)
     
     def make_all_detective_moves(self) -> bool:
         """Handle all detective moves simultaneously"""
@@ -147,91 +146,7 @@ class GameController:
             
             return (dest, transport)
     
-    def _make_detective_move(self, position: int) -> bool:
-        """Handle detective move"""
-        # Find detective ID
-        try:
-            detective_id = self.game.game_state.cop_positions.index(position)
-        except ValueError:
-            self.display.print_error(f"No detective at position {position}")
-            return False
-        
-        # Show available moves
-        available_moves = self.display.print_available_moves(self.game, Player.COPS, position)
-        if not available_moves:
-            return False
-        
-        while True:
-            move_input = input(f"\n🎮 Detective {detective_id + 1} move: ").strip()
-            
-            if move_input.lower() in ['help', 'h']:
-                self.display.print_input_help()
-                continue
-            
-            if move_input.lower() in ['quit', 'exit', 'q']:
-                return False
-            
-            # Parse input
-            dest, transport, use_black, is_double = format_transport_input(move_input)
-            
-            if dest is None:
-                self.display.print_error("Invalid input format")
-                continue
-            
-            # Find valid transport for this destination
-            valid_transports = []
-            for move_dest, move_transport in available_moves:
-                if move_dest == dest:
-                    valid_transports.append(move_transport)
-            
-            if not valid_transports:
-                self.display.print_error(f"Cannot move to position {dest}")
-                continue
-            
-            # Choose transport
-            if transport is None and len(valid_transports) == 1:
-                transport = valid_transports[0]
-            elif transport is None and len(valid_transports) > 1:
-                print(f"Multiple transport options for position {dest}:")
-                for i, t in enumerate(valid_transports):
-                    icon = self.display.symbols.get(t.name.lower(), '🎫')
-                    print(f"  {i+1}. {icon} {t.name.capitalize()}")
-                
-                while True:
-                    try:
-                        choice = int(input("Choose transport (number): ")) - 1
-                        if 0 <= choice < len(valid_transports):
-                            transport = valid_transports[choice]
-                            break
-                        else:
-                            print("Invalid choice")
-                    except ValueError:
-                        print("Please enter a number")
-            elif transport not in valid_transports:
-                available_names = [t.name.capitalize() for t in valid_transports]
-                self.display.print_error(f"Cannot use {transport.name} transport. Available: {', '.join(available_names)}")
-                continue
-            
-            # Create move list for all detectives (others stay in place)
-            detective_moves = []
-            for i in range(self.game.num_cops):
-                if i == detective_id:
-                    detective_moves.append((dest, transport))
-                else:
-                    current_pos = self.game.game_state.cop_positions[i]
-                    detective_moves.append((current_pos, None))  # Stay in place
-            
-            # Make move
-            success = self.game.make_move(detective_moves=detective_moves)
-            
-            if success:
-                self.display.print_move_result(True, f"Detective {detective_id + 1} moved to position {dest}")
-                return True
-            else:
-                self.display.print_error("Move failed")
-                continue
-    
-    def _make_mr_x_move(self) -> bool:
+    def make_mr_x_move(self, player: Player = Player.ROBBER) -> bool:
         """Handle Mr. X move"""
         available_moves = self.display.print_available_moves(self.game, Player.ROBBER)
         if not available_moves:
@@ -341,19 +256,37 @@ class GameController:
     
     def make_ai_move(self, player: Player) -> bool:
         """Make an AI move using the agent system"""
-        from .agent import make_random_move
-        
-        success = make_random_move(self.game)
-        
-        if success:
-            if player == Player.COPS:
-                self.display.print_move_result(True, "AI Detectives moved")
+        if player == Player.COPS:
+            detective_moves = self.agent_detectives.make_move(self.game)
+            if detective_moves:
+                success = self.game.make_move(detective_moves=detective_moves)
+                if success:
+                    self.display.print_move_result(True, "AI Detectives moved")
+                    return True
+                else:
+                    self.display.print_error("AI Detective moves failed")
+                    return False
             else:
-                self.display.print_move_result(True, "AI Mr. X moved")
-        else:
-            self.display.print_error("AI move failed")
-        
-        return success
+                self.display.print_error("AI Detectives could not find valid moves")
+                return False
+        else:  # Player.ROBBER
+            dest, transport, use_double  = self.agent_mrx.make_move(self.game)
+            if dest is not None and transport is not None:
+                # Handle potential double move and black ticket usage
+                if use_double:
+                    success = self.game.make_move(mr_x_moves=[(dest, transport)], use_double_move=use_double)
+                else:
+                    success = self.game.make_move(mr_x_moves=[(dest, transport)])
+                
+                if success:
+                    self.display.print_move_result(True, "AI Mr. X moved")
+                    return True
+                else:
+                    self.display.print_error("AI Mr. X move failed")
+                    return False
+            else:
+                self.display.print_error("AI Mr. X could not find valid moves")
+                return False
     
     def reset_turn_state(self):
         """Reset turn-specific state"""

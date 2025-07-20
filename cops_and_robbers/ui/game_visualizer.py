@@ -8,24 +8,32 @@ from matplotlib.figure import Figure
 import numpy as np
 from ..core.game import Game, Player, GameState, ScotlandYardGame, TicketType, TransportType
 from ..storage.game_loader import GameLoader
+from ..services.game_service import GameService
 from .ui_components import ScrollableFrame, StyledButton, InfoDisplay
 from .setup_controls import SetupControls
 from .game_controls import GameControls
 from .transport_selection import select_transport
 from .game_replay import GameReplayWindow
 from agents import Agent
+from agents.random_agent import RandomMrXAgent, RandomMultiDetectiveAgent
 
 class GameVisualizer:
     """Interactive GUI for Cops and Robbers game"""
     
     def __init__(self, game: Game, loader: 'GameLoader' = None):
         self.loader = loader or GameLoader()
+        self.game_service = GameService(self.loader)
         self.game = game
         self.solver = None
         self.root = tk.Tk()
         self.root.title("🎯 Cops and Robbers Game")
         self.root.geometry(f"{self.root.winfo_screenwidth()}x{self.root.winfo_screenheight()}")
         self.root.configure(bg="#f8f9fa")
+        
+        # Game mode and AI agents
+        self.game_mode = "human_vs_human"
+        self.detective_agent = None
+        self.mr_x_agent = None
         
         # Transport type colors and styles
         self.transport_styles = {
@@ -257,7 +265,12 @@ class GameVisualizer:
             return
         
         try:
-            game_id = self.game.save_game(self.loader)
+            game_id = self.game_service.save_ui_game(
+                self.game, 
+                self.game_mode,
+                self.detective_agent,
+                self.mr_x_agent
+            )
             messagebox.showinfo("💾 Game Saved", f"Game saved as {game_id}")
         except Exception as e:
             messagebox.showerror("Error", f"Failed to save game: {str(e)}")
@@ -330,7 +343,12 @@ class GameVisualizer:
             return
         
         try:
-            game_id = self.game.save_game(self.loader)
+            game_id = self.game_service.save_ui_game(
+                self.game,
+                self.game_mode,
+                self.detective_agent, 
+                self.mr_x_agent
+            )
             messagebox.showinfo("🎉 Game Completed & Saved!", 
                               f"Game automatically saved as: {game_id}\n\n"
                               f"You can replay it anytime from the Load Game menu.")
@@ -586,25 +604,32 @@ class GameVisualizer:
             self.turn_display.pack(fill=tk.X, pady=(0, 10))
             self.moves_display.pack(fill=tk.X, pady=(0, 10))
             
+            # Setup AI agents if not already done
+            if not hasattr(self, 'agents_initialized'):
+                self.setup_ai_agents()
+                self.agents_initialized = True
+            
             # Show Mr. X controls only when it's Mr. X's turn in Scotland Yard
             is_scotland_yard = isinstance(self.game, ScotlandYardGame)
             is_mrx_turn = (self.game.game_state and 
                           self.game.game_state.turn == Player.ROBBER)
             
-            if is_scotland_yard and is_mrx_turn:
+            if is_scotland_yard and is_mrx_turn and self.is_current_player_human():
                 self.mrx_section.pack(fill=tk.X, pady=(0, 10))
             else:
                 self.mrx_section.pack_forget()
             
             # Show only ticket table for Scotland Yard games
             if is_scotland_yard:
-                # Show ticket table for Scotland Yard games
                 if hasattr(self, 'tickets_table_display'):
                     self.tickets_table_display.pack(fill=tk.X, pady=(0, 10))
             else:
                 if hasattr(self, 'tickets_table_display'):
                     self.tickets_table_display.pack_forget()
             
+            # For AI players, automatically make selections but wait for continue button
+            if self.is_current_player_ai():
+                self.make_ai_selections()
 
     def setup_graph_display(self):
         """Setup matplotlib graph display"""
@@ -824,3 +849,130 @@ class GameVisualizer:
         # self.canvas.draw()
         
         # self.update_info()
+
+    def setup_ai_agents(self):
+        """Initialize AI agents based on game mode"""
+        if self.game_mode == "human_vs_human":
+            self.detective_agent = None
+            self.mr_x_agent = None
+        elif self.game_mode == "human_det_vs_ai_mrx":
+            # Human plays as detectives, AI plays as Mr. X
+            self.detective_agent = None
+            self.mr_x_agent = RandomMrXAgent() if isinstance(self.game, ScotlandYardGame) else None
+        elif self.game_mode == "ai_det_vs_human_mrx":
+            # AI plays as detectives, Human plays as Mr. X
+            if isinstance(self.game, ScotlandYardGame):
+                self.detective_agent = RandomMultiDetectiveAgent(self.game.num_cops)
+            else:
+                self.detective_agent = None
+            self.mr_x_agent = None
+        elif self.game_mode == "ai_vs_ai":
+            # AI plays both sides
+            if isinstance(self.game, ScotlandYardGame):
+                self.detective_agent = RandomMultiDetectiveAgent(self.game.num_cops)
+                self.mr_x_agent = RandomMrXAgent()
+            else:
+                self.detective_agent = None
+                self.mr_x_agent = None
+
+    def is_current_player_ai(self):
+        """Check if the current player is AI-controlled"""
+        if not self.game.game_state:
+            return False
+        
+        current_player = self.game.game_state.turn
+        
+        if current_player == Player.COPS:
+            return self.detective_agent is not None
+        else:  # Player.ROBBER
+            return self.mr_x_agent is not None
+
+    def is_current_player_human(self):
+        """Check if the current player is human-controlled"""
+        return not self.is_current_player_ai()
+
+    def make_ai_move(self):
+        """Make an AI move for the current player"""
+        if not self.game.game_state or self.game.is_game_over():
+            return False
+        
+        current_player = self.game.game_state.turn
+        
+        try:
+            if current_player == Player.COPS and self.detective_agent:
+                # AI detectives move
+                detective_moves = self.detective_agent.make_all_moves(self.game)
+                if detective_moves:
+                    success = self.game.make_move(detective_moves=detective_moves)
+                    return success
+                else:
+                    return False
+            
+            elif current_player == Player.ROBBER and self.mr_x_agent:
+                # AI Mr. X moves
+                move_result = self.mr_x_agent.make_move(self.game)
+                if move_result and len(move_result) == 3:
+                    dest, transport, use_double = move_result
+                    success = self.game.make_move(mr_x_moves=[(dest, transport)], use_double_move=use_double)
+                    return success
+                else:
+                    return False
+            
+        except Exception as e:
+            print(f"AI move error: {e}")  # Log to console instead of popup
+            return False
+        
+        return False
+
+    def make_ai_selections(self):
+        """Make AI selections for display but don't execute the move yet"""
+        if not self.game.game_state or self.game.is_game_over():
+            return
+        
+        current_player = self.game.game_state.turn
+        
+        try:
+            if current_player == Player.COPS and self.detective_agent:
+                # Get AI detective moves for display
+                detective_moves = self.detective_agent.make_all_moves(self.game)
+                if detective_moves:
+                    # Set up the selections for display
+                    self.cop_selections = detective_moves
+                    self.selected_nodes = [move[0] for move in detective_moves]
+                    self.current_cop_index = len(detective_moves)  # All detectives selected
+                    self.game_controls.move_button.config(state=tk.NORMAL)
+                    
+            elif current_player == Player.ROBBER and self.mr_x_agent:
+                # Get AI Mr. X move for display
+                move_result = self.mr_x_agent.make_move(self.game)
+                if move_result and len(move_result) == 3:
+                    dest, transport, use_double = move_result
+                    # Set up the selections for display
+                    self.game_controls.mr_x_selections = [(dest, transport)]
+                    self.selected_nodes = [dest]
+                    
+                    # Set the double move checkbox if AI wants to use it
+                    if hasattr(self.game_controls, 'double_move_var'):
+                        self.game_controls.double_move_var.set(use_double)
+                    
+                    self.game_controls.move_button.config(state=tk.NORMAL)
+            
+            # Redraw graph to show AI selections
+            self.draw_graph()
+            
+        except Exception as e:
+            print(f"AI selection error: {e}")  # Log to console instead of popup
+
+    def check_and_make_ai_move(self):
+        """Remove this method - no longer needed"""
+        pass
+
+    def _execute_ai_move(self):
+        """Remove this method - no longer needed"""
+        pass
+        """Remove this method - no longer needed"""
+        pass
+
+    def _execute_ai_move(self):
+        """Remove this method - no longer needed"""
+        pass

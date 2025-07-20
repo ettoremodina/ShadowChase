@@ -4,9 +4,31 @@ A clean, terminal-based implementation of Scotland Yard without GUI dependencies
 
 ## Quick Start
 
+### Interactive Single Game
 ```bash
 cd ScotlandYardRL
 python simple_play/simple_game.py
+```
+
+### Batch Mode (Automated Games)
+```bash
+# Play 10 AI vs AI games
+python simple_play/simple_game.py --batch 10
+
+# Play 50 games on full map with 3 detectives
+python simple_play/simple_game.py --batch 50 --map-size full --detectives 3
+```
+
+### Quick Batch CLI
+```bash
+# Quick test batch (10 games)
+python simple_play/batch_cli.py quick
+
+# Full map testing (5 games)
+python simple_play/batch_cli.py full
+
+# Compare detective counts (20 games each for 2,3,4 detectives)
+python simple_play/batch_cli.py compare
 ```
 
 ## Features
@@ -15,17 +37,49 @@ python simple_play/simple_game.py
 - **Human vs Human**: Control both detectives and Mr. X
 - **Human Detectives vs AI Mr. X**: Play as detectives against AI
 - **AI Detectives vs Human Mr. X**: Play as Mr. X against AI detectives
-- **AI vs AI**: Watch the AI play against itself
+- **AI vs AI**: Watch the AI play against itself (or batch mode)
 
 ### Map Options
-- **Test Map**: 10 nodes, good for learning the game
+- **Test Map**: 10 nodes, good for learning and fast testing
 - **Full Map**: 199 nodes, complete Scotland Yard experience
 
+### Batch Execution
+- Play multiple games automatically with AI vs AI
+- All games are saved automatically
+- Detailed statistics and performance metrics
+- Perfect for data collection and algorithm testing
+
 ### Display Verbosity Levels
-1. **Basic**: Just positions and current turn
+1. **Basic**: Just positions and current turn (perfect for batch mode)
 2. **Standard**: + Available moves and ticket counts
 3. **Detailed**: + Move history and transport details
 4. **Debug**: + All internal game state information
+
+## Command Line Arguments
+
+```bash
+python simple_play/simple_game.py [options]
+
+Options:
+  --batch N              Play N games automatically (AI vs AI)
+  --map-size {test,full} Map size (default: test)
+  --detectives {1,2,3,4} Number of detectives (default: 2)
+  --max-turns N          Maximum turns per game (default: 24)
+  --verbosity {1,2,3,4}  Output verbosity level (default: 2)
+```
+
+## Project Structure
+
+```
+simple_play/
+├── simple_game.py      # Main entry point (cleaned up)
+├── game_utils.py       # Game management utilities (NEW)
+├── batch_cli.py        # Quick CLI for batch operations (NEW)
+├── batch_examples.py   # Usage examples (NEW)
+├── game_logic.py       # Game controller and setup
+├── display_utils.py    # Display formatting utilities
+└── README.md          # This file
+```
 
 ## Move Input Format
 

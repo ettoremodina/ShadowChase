@@ -4,11 +4,13 @@ Simple Scotland Yard Terminal Game
 A clean, terminal-based implementation of Scotland Yard without GUI.
 Choose between human and AI players, multiple difficulty levels, and customizable display.
 
-Usage: python simple_game.py
+Usage: 
+    python simple_game.py              # Interactive single game
+    python simple_game.py --batch N    # Play N games automatically
 """
 import sys
 import os
-import time
+import argparse
 
 # Add the project root to sys.path for imports
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -16,144 +18,82 @@ project_root = os.path.dirname(current_dir)
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
-from cops_and_robbers.core.game import Player
-from simple_play.display_utils import GameDisplay, VerbosityLevel
-from simple_play.game_logic import GameController, GameSetup, get_game_mode, get_verbosity_level
+from simple_play.display_utils import VerbosityLevel
+from simple_play.game_utils import (
+    get_game_configuration, 
+    play_single_game, 
+    play_multiple_games
+)
+
+
+def parse_arguments():
+    """Parse command line arguments"""
+    parser = argparse.ArgumentParser(description='Scotland Yard Terminal Game')
+    parser.add_argument('--batch', type=int, metavar='N', 
+                       help='Play N games automatically (AI vs AI mode)')
+    parser.add_argument('--map-size', choices=['test', 'full'], default='test',
+                       help='Map size: test (10 nodes) or full (199 nodes)')
+    parser.add_argument('--detectives', type=int, default=2, choices=[1, 2, 3, 4],
+                       help='Number of detectives (1-4)')
+    parser.add_argument('--max-turns', type=int, default=24,
+                       help='Maximum turns per game')
+    parser.add_argument('--verbosity', type=int, default=2, choices=[1, 2, 3, 4],
+                       help='Verbosity level (1=basic, 2=moves, 3=detailed, 4=debug)')
+    return parser.parse_args()
 
 
 def main():
-    """Main game loop"""
+    """Main entry point"""
     print("🕵️ SCOTLAND YARD - SIMPLE TERMINAL GAME 🕵️‍♂️")
     print("=" * 60)
     
-    # Get game configuration
-    # map_size, play_mode, num_detectives = "test", "human_det_vs_ai_mrx", 2
-    # verbosity = 4
-    map_size, play_mode, num_detectives = get_game_mode()
-    verbosity = get_verbosity_level()
+    args = parse_arguments()
     
-    # Create display
-    display = GameDisplay(verbosity)
+    # Handle batch mode
+    if args.batch:
+        print(f"🤖 Batch mode: Playing {args.batch} AI vs AI games")
+        results = play_multiple_games(
+            n_games=args.batch,
+            map_size=args.map_size,
+            play_mode="ai_vs_ai",
+            num_detectives=args.detectives,
+            verbosity=VerbosityLevel.BASIC,
+            max_turns=args.max_turns
+        )
+        return results
     
-    # Create and initialize game
-    if map_size == "test":
-        game = GameSetup.create_test_game(num_detectives)
-        GameSetup.initialize_test_positions(game)
-        display.print_info("Created test game (10 nodes)")
-    else:
-        game = GameSetup.create_full_game(num_detectives)
-        GameSetup.initialize_full_positions(game, num_detectives)
-        display.print_info("Created full Scotland Yard game (199 nodes)")
-    
-    # Create controller
-    controller = GameController(game, display)
-    
-    # Game mode info
-    mode_descriptions = {
-        "human_vs_human": "Human vs Human",
-        "human_det_vs_ai_mrx": "Human Detectives vs AI Mr. X",
-        "ai_det_vs_human_mrx": "AI Detectives vs Human Mr. X", 
-        "ai_vs_ai": "AI vs AI"
-    }
-    display.print_info(f"Game mode: {mode_descriptions[play_mode]}")
-    
-    # Show initial help
-    if play_mode != "ai_vs_ai":
-        display.print_input_help()
-    
-    # Main game loop
-    turn_count = 0
-    max_turns = 24  # Safety limit
-    
-    while not game.is_game_over() and turn_count < max_turns:
-        turn_count += 1
-        
-        # Clear screen for clean display
-        if verbosity <= VerbosityLevel.MOVES:
-            display.clear_screen()
-        
-        # Show game state
-        display.print_title(f"Turn {turn_count}")
-        display.print_game_state(game)
-        
-        # Debug info if requested
-        display.print_debug_info(game)
-        
-        current_player = game.game_state.turn
-        
-        # Handle turn based on game mode
-        if current_player == Player.COPS:
-            # Detective turn
-            if play_mode in ["human_vs_human", "human_det_vs_ai_mrx"]:
-                # Human detectives
-                print(f"\n{display.symbols['detective']} DETECTIVES' TURN")
-                
-                # All detectives move simultaneously
-                success = controller.make_all_detective_moves()
-                if not success:
-                    print("\n👋 Game ended by user")
-                    return
-            else:
-                # AI detectives
-                print(f"\n{display.symbols['detective']} AI DETECTIVES' TURN")
-                success = controller.make_ai_move(Player.COPS)
-                if not success:
-                    display.print_error("AI detectives failed to move")
-                
-                if play_mode == "ai_vs_ai":
-                    time.sleep(2)  # Pause for AI vs AI
-        
-        else:
-            # Mr. X turn
-            if play_mode in ["human_vs_human", "ai_det_vs_human_mrx"]:
-                # Human Mr. X
-                print(f"\n{display.symbols['mr_x']} MR. X'S TURN")
-                success = controller.make_human_move(Player.ROBBER)
-                if not success:
-                    print("\n👋 Game ended by user")
-                    return
-            else:
-                # AI Mr. X
-                print(f"\n{display.symbols['mr_x']} AI MR. X'S TURN")
-                success = controller.make_ai_move(Player.ROBBER)
-                if not success:
-                    display.print_error("AI Mr. X failed to move")
-                
-                if play_mode == "ai_vs_ai":
-                    time.sleep(2)  # Pause for AI vs AI
-        
-        # Reset turn state
-        controller.reset_turn_state()
-        
-        # Pause between turns (except for AI vs AI which has its own timing)
-        if play_mode != "ai_vs_ai":
-            input("\n⏯️  Press Enter to continue...")
-    
-    # Game over
-    display.clear_screen()
-    display.print_title("GAME OVER")
-    display.print_game_state(game)
-    
-    if game.is_game_over():
-        winner = game.get_winner()
-        if winner == Player.COPS:
-            print(f"\n🏆 {display.symbols['detective']} DETECTIVES WIN!")
-            print("The detectives have successfully captured Mr. X!")
-        else:
-            print(f"\n🏆 {display.symbols['mr_x']} MR. X WINS!")
-            print("Mr. X has successfully evaded the detectives!")
-    else:
-        print(f"\n⏰ Game ended after {max_turns} turns")
-    
-    print(f"\nTotal turns played: {turn_count}")
-    print("\nThanks for playing Scotland Yard! 🎮")
-
-
-if __name__ == "__main__":
+    # Interactive single game mode
     try:
-        main()
+        map_size, play_mode, num_detectives, verbosity = get_game_configuration()
+        
+        # Override with command line arguments if provided
+        if hasattr(args, 'map_size') and args.map_size:
+            map_size = args.map_size
+        if hasattr(args, 'detectives') and args.detectives:
+            num_detectives = args.detectives
+        if hasattr(args, 'verbosity') and args.verbosity:
+            verbosity = args.verbosity
+        
+        # Play single interactive game
+        game_id, turn_count, completed = play_single_game(
+            map_size=map_size,
+            play_mode=play_mode,
+            num_detectives=num_detectives,
+            verbosity=verbosity,
+            auto_save=False,
+            max_turns=args.max_turns
+        )
+        
+        if completed:
+            print("\nThanks for playing Scotland Yard! 🎮")
+        else:
+            print("\n👋 Game ended early. Thanks for playing!")
+            
     except KeyboardInterrupt:
         print("\n\n👋 Game interrupted by user. Goodbye!")
     except Exception as e:
         print(f"\n❌ An error occurred: {e}")
         print("Please check your game setup and try again.")
+
+if __name__ == "__main__":
+    main()

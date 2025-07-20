@@ -350,10 +350,17 @@ class Game:
             'winner': self.get_winner().value if self.get_winner() else None
         }
     
-    def save_game(self, loader, game_id: str = None, 
-                metadata: Dict = None) -> str:
-        """Save this game using the loader"""
-        return loader.save_game(self, game_id, metadata)
+    def save_game(self, loader=None, game_id: str = None, 
+                  additional_metadata: Dict = None) -> str:
+        """
+        Save this game using the loader.
+        DEPRECATED: Use GameService.save_game() instead for better consistency.
+        """
+        # Maintain backward compatibility but recommend using GameService
+        if loader is None:
+            from ..storage.game_loader import GameLoader
+            loader = GameLoader()
+        return loader.save_game(self, game_id, additional_metadata)
     
     def export_game(self, loader, game_id: str, 
                 format: str = 'json') -> Optional[str]:
@@ -622,4 +629,4 @@ class ScotlandYardGame(Game):
     def get_mr_x_tickets(self) -> Dict[TicketType, int]:
         """Get Mr. X's ticket counts"""
         return self.game_state.mr_x_tickets.copy()
-    
+

@@ -9,6 +9,7 @@ class SetupControls:
     def __init__(self, visualizer):
         self.visualizer = visualizer
         self.setup_section = None
+        self.game_mode = tk.StringVar(value="human_vs_human")
         
     def create_setup_section(self, parent):
         """Create the game setup section"""
@@ -18,6 +19,22 @@ class SetupControls:
         style = ttk.Style()
         style.configure("Setup.TLabelframe.Label", anchor="w", font=('Arial', 11, 'bold'))
         self.setup_section.configure(style="Setup.TLabelframe")
+        
+        # Game mode selection
+        mode_frame = ttk.LabelFrame(self.setup_section, text="🎮 Game Mode")
+        mode_frame.pack(fill=tk.X, padx=10, pady=8)
+        
+        game_modes = [
+            ("human_vs_human", "👥 Human vs Human"),
+            ("human_det_vs_ai_mrx", "👮 Human Detectives vs 🤖 AI Mr. X"),
+            ("ai_det_vs_human_mrx", "🤖 AI Detectives vs 👤 Human Mr. X"),
+            ("ai_vs_ai", "🤖 AI vs AI")
+        ]
+        
+        for mode_value, mode_text in game_modes:
+            radio = ttk.Radiobutton(mode_frame, text=mode_text, 
+                                  variable=self.game_mode, value=mode_value)
+            radio.pack(anchor="w", padx=10, pady=2)
         
         # Instructions
         instruction_frame = ttk.Frame(self.setup_section)
@@ -73,6 +90,10 @@ class SetupControls:
         else:
             self.start_button.config(state=tk.DISABLED)
     
+    def get_selected_mode(self):
+        """Get the selected game mode"""
+        return self.game_mode.get()
+    
     def start_game(self):
         """Start the game with selected positions"""
         if len(self.visualizer.selected_positions) != self.visualizer.game.num_cops + 1:
@@ -100,6 +121,9 @@ class SetupControls:
             messagebox.showerror("Error", str(e))
             return
         
+        # Set the game mode in the visualizer
+        self.visualizer.game_mode = self.get_selected_mode()
+        
         self.visualizer.setup_mode = False
         self.visualizer.selected_positions = []
         self.visualizer.current_cop_index = 0
@@ -110,7 +134,15 @@ class SetupControls:
         self.visualizer.update_ui_visibility()
         self.visualizer.draw_graph()
         
-        # messagebox.showinfo("🎉 Game Started", "Game has been initialized successfully!")
+        # Show game mode info
+        mode_descriptions = {
+            "human_vs_human": "Human vs Human",
+            "human_det_vs_ai_mrx": "Human Detectives vs AI Mr. X",
+            "ai_det_vs_human_mrx": "AI Detectives vs Human Mr. X", 
+            "ai_vs_ai": "AI vs AI"
+        }
+        messagebox.showinfo("🎉 Game Started", 
+                          f"Game initialized successfully!\nMode: {mode_descriptions[self.visualizer.game_mode]}")
 
     def reset_setup(self):
         """Reset game setup"""

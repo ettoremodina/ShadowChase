@@ -65,6 +65,10 @@ class GameLoader:
             'has_ticket_system': isinstance(game, ScotlandYardGame)
         }
         
+        # Add additional metadata (including game mode)
+        if additional_metadata:
+            metadata.update(additional_metadata)
+        
         # Prepare game configuration
         game_config = {
             'graph_data': nx.node_link_data(game.graph),
@@ -395,4 +399,74 @@ class GameLoader:
         
         return game
 
+    def delete_all_games(self, confirm: bool = False) -> bool:
+        """Delete all saved games and metadata with confirmation"""
+        if not confirm:
+            print("⚠️  WARNING: This will delete ALL saved games and metadata!")
+            print("This action cannot be undone.")
+            response = input("Are you sure you want to continue? Type 'DELETE ALL' to confirm: ").strip()
+            
+            if response != "DELETE ALL":
+                print("Operation cancelled.")
+                return False
+        
+        try:
+            deleted_count = 0
+            
+            # Delete all .pkl files in games directory and subdirectories
+            games_dir = f"{self.base_dir}/games"
+            if os.path.exists(games_dir):
+                for root, dirs, files in os.walk(games_dir):
+                    for file in files:
+                        if file.endswith('.pkl'):
+                            file_path = os.path.join(root, file)
+                            os.remove(file_path)
+                            deleted_count += 1
+            
+            # Delete all metadata files
+            metadata_dir = f"{self.base_dir}/metadata"
+            if os.path.exists(metadata_dir):
+                for file in os.listdir(metadata_dir):
+                    if file.endswith('.json'):
+                        os.remove(os.path.join(metadata_dir, file))
+            
+            # Delete all export files
+            exports_dir = f"{self.base_dir}/exports"
+            if os.path.exists(exports_dir):
+                for file in os.listdir(exports_dir):
+                    os.remove(os.path.join(exports_dir, file))
+            
+            # Delete all statistics files
+            stats_dir = f"{self.base_dir}/statistics"
+            if os.path.exists(stats_dir):
+                for file in os.listdir(stats_dir):
+                    os.remove(os.path.join(stats_dir, file))
+            
+            # Clean up empty subdirectories
+            self._clean_empty_directories()
+            
+            print(f"✅ Successfully deleted {deleted_count} games and all associated metadata.")
+            return True
+            
+        except Exception as e:
+            print(f"❌ Error deleting games: {e}")
+            return False
+
+    def _clean_empty_directories(self):
+        """Remove empty subdirectories after bulk deletion"""
+        subdirs_to_clean = [
+            f"{self.base_dir}/games/by_date",
+            f"{self.base_dir}/games/by_graph_type", 
+            f"{self.base_dir}/games/by_outcome"
+        ]
+        
+        for subdir in subdirs_to_clean:
+            if os.path.exists(subdir):
+                # Walk bottom-up to remove empty directories
+                for root, dirs, files in os.walk(subdir, topdown=False):
+                    try:
+                        if not dirs and not files:  # Directory is empty
+                            os.rmdir(root)
+                    except OSError:
+                        pass  # Directory not empty or other issue
 

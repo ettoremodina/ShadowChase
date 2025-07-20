@@ -311,3 +311,44 @@ def get_user_move(display: GameDisplay) -> str:
         if move_input:
             return move_input
         print("❌ Please enter a move")
+
+
+def display_game_start_info(display: GameDisplay, play_mode: str, map_size: str):
+    """Display game initialization information"""
+    mode_descriptions = {
+        "human_vs_human": "Human vs Human",
+        "human_det_vs_ai_mrx": "Human Detectives vs AI Mr. X",
+        "ai_det_vs_human_mrx": "AI Detectives vs Human Mr. X", 
+        "ai_vs_ai": "AI vs AI"
+    }
+    
+    if map_size == "test":
+        display.print_info("Created test game (10 nodes)")
+    else:
+        display.print_info("Created full Scotland Yard game (199 nodes)")
+    
+    display.print_info(f"Game mode: {mode_descriptions[play_mode]}")
+    
+    # Show initial help
+    if play_mode != "ai_vs_ai":
+        display.print_input_help()
+
+
+def display_game_over(game: ScotlandYardGame, display: GameDisplay, turn_count: int, max_turns: int):
+    """Display game over information"""
+    display.clear_screen()
+    display.print_title("GAME OVER")
+    display.print_game_state(game)
+    
+    if game.is_game_over():
+        winner = game.get_winner()
+        if winner == Player.COPS:
+            print(f"\n🏆 {display.symbols['detective']} DETECTIVES WIN!")
+            print("The detectives have successfully captured Mr. X!")
+        else:
+            print(f"\n🏆 {display.symbols['mr_x']} MR. X WINS!")
+            print("Mr. X has successfully evaded the detectives!")
+    else:
+        print(f"\n⏰ Game ended after {max_turns} turns")
+    
+    print(f"\nTotal turns played: {turn_count}")

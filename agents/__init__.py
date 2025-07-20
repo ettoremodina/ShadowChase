@@ -6,7 +6,7 @@ including basic random agents and more sophisticated AI strategies.
 """
 
 from .base_agent import Agent, DetectiveAgent, MrXAgent, MultiDetectiveAgent
-from .random_agent import RandomDetectiveAgent, RandomMrXAgent, RandomMultiDetectiveAgent, SmartRandomMrXAgent
+from .random_agent import RandomMrXAgent, RandomMultiDetectiveAgent
 
 __all__ = [
     'Agent',

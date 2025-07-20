@@ -10,7 +10,6 @@ Usage:
 """
 import sys
 import os
-import argparse
 
 # Add the project root to sys.path for imports
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -22,24 +21,9 @@ from simple_play.display_utils import VerbosityLevel
 from simple_play.game_utils import (
     get_game_configuration, 
     play_single_game, 
-    play_multiple_games
+    play_multiple_games,
+    parse_arguments
 )
-
-
-def parse_arguments():
-    """Parse command line arguments"""
-    parser = argparse.ArgumentParser(description='Scotland Yard Terminal Game')
-    parser.add_argument('--batch', type=int, metavar='N', 
-                       help='Play N games automatically (AI vs AI mode)')
-    parser.add_argument('--map-size', choices=['test', 'full'], default='test',
-                       help='Map size: test (10 nodes) or full (199 nodes)')
-    parser.add_argument('--detectives', type=int, default=2, choices=[1, 2, 3, 4],
-                       help='Number of detectives (1-4)')
-    parser.add_argument('--max-turns', type=int, default=24,
-                       help='Maximum turns per game')
-    parser.add_argument('--verbosity', type=int, default=2, choices=[1, 2, 3, 4],
-                       help='Verbosity level (1=basic, 2=moves, 3=detailed, 4=debug)')
-    return parser.parse_args()
 
 
 def main():
@@ -65,14 +49,6 @@ def main():
     # Interactive single game mode
     try:
         map_size, play_mode, num_detectives, verbosity = get_game_configuration()
-        
-        # Override with command line arguments if provided
-        if hasattr(args, 'map_size') and args.map_size:
-            map_size = args.map_size
-        if hasattr(args, 'detectives') and args.detectives:
-            num_detectives = args.detectives
-        if hasattr(args, 'verbosity') and args.verbosity:
-            verbosity = args.verbosity
         
         # Play single interactive game
         game_id, turn_count, completed = play_single_game(

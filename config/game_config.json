@@ -35,6 +35,5 @@
   "default_game_mode": "human_vs_human",
   "default_num_detectives": 3,
   "default_map_size": "test",
-  "parallel_edge_offset": 0.02,
-  "mr_x_reveal_frequency": 3
+  "parallel_edge_offset": 0.02
 }

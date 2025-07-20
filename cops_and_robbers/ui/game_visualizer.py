@@ -17,6 +17,9 @@ from .game_replay import GameReplayWindow
 from .base_visualizer import BaseVisualizer
 from agents.random_agent import RandomMrXAgent, RandomMultiDetectiveAgent
 
+
+NODE_SIZE = 300  # Default node size for visualization
+
 class GameVisualizer(BaseVisualizer):
     """Interactive GUI for Cops and Robbers game"""
     
@@ -290,26 +293,8 @@ class GameVisualizer(BaseVisualizer):
                     # Load the game
                     loaded_game = self.loader.load_game(game_id)
                     if loaded_game:
-                        # Ask user what they want to do
-                        choice = messagebox.askyesnocancel(
-                            "Load Game Options",
-                            f"Game {game_id} loaded successfully!\n\n"
-                            "Yes: Play from current state\n"
-                            "No: View replay of entire game\n"
-                            "Cancel: Cancel loading"
-                        )
-                        
-                        if choice is True:
-                            # Load game for playing
-                            self.game = loaded_game
-                            self.setup_mode = False
-                            self.update_ui_visibility()
-                            self.draw_graph()
-                            messagebox.showinfo("Success", f"Game {game_id} loaded for playing")
-                        
-                        elif choice is False:
-                            # Open replay window
-                            self.open_game_replay(game_id, loaded_game)
+                        # Always open replay window directly
+                        self.open_game_replay(game_id, loaded_game)
                             
                     else:
                         messagebox.showerror("Error", f"Failed to load game {game_id}")
@@ -633,10 +618,10 @@ class GameVisualizer(BaseVisualizer):
                         node_colors.append('blue')
                     else:
                         node_colors.append('red')
-                    node_sizes.append(600)
+                    node_sizes.append(NODE_SIZE)
                 else:
                     node_colors.append('lightgray')
-                    node_sizes.append(300)
+                    node_sizes.append(NODE_SIZE)
             else:
                 if self.game.game_state:
                     if node in self.active_player_positions:
@@ -644,27 +629,27 @@ class GameVisualizer(BaseVisualizer):
                             node_colors.append('cyan')
                         else:
                             node_colors.append('orange')
-                        node_sizes.append(700)
+                        node_sizes.append(NODE_SIZE)
                     elif node in self.cop_selections:
                         node_colors.append('purple')
-                        node_sizes.append(600)
+                        node_sizes.append(NODE_SIZE)
                     elif node in self.game.game_state.cop_positions:
                         node_colors.append('blue')
-                        node_sizes.append(500)
+                        node_sizes.append(NODE_SIZE)
                     elif node == self.game.game_state.robber_position:
                         is_scotland_yard = isinstance(self.game, ScotlandYardGame)
                         if not is_scotland_yard or self.game.game_state.mr_x_visible:
                             node_colors.append('red')
-                            node_sizes.append(500)
+                            node_sizes.append(NODE_SIZE)
                         else:
                             node_colors.append('lightgray')
-                            node_sizes.append(300)
+                            node_sizes.append(NODE_SIZE)
                     else:
                         node_colors.append('lightgray')
-                        node_sizes.append(300)
+                        node_sizes.append(NODE_SIZE)
                 else:
                     node_colors.append('lightgray')
-                    node_sizes.append(300)
+                    node_sizes.append(NODE_SIZE)
         
         return node_colors, node_sizes
 

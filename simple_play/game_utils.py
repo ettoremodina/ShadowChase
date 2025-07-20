@@ -4,6 +4,7 @@ Contains game configuration, saving, and batch execution functions.
 """
 import time
 from datetime import datetime
+import argparse
 from typing import Tuple, Optional
 from cops_and_robbers.core.game import Player, ScotlandYardGame
 from cops_and_robbers.services.game_service import GameService
@@ -11,6 +12,20 @@ from simple_play.display_utils import GameDisplay, VerbosityLevel, display_game_
 from simple_play.game_logic import GameController, GameSetup
 
 
+def parse_arguments():
+    """Parse command line arguments"""
+    parser = argparse.ArgumentParser(description='Scotland Yard Terminal Game')
+    parser.add_argument('--batch', type=int, metavar='N', 
+                       help='Play N games automatically (AI vs AI mode)')
+    parser.add_argument('--map-size', choices=['test', 'full', 'extracted'], default='test',
+                       help='Map size: test (10 nodes), full (199 nodes), or extracted (custom extracted board)')
+    parser.add_argument('--detectives', type=int, default=2, choices=[1, 2, 3, 4],
+                       help='Number of detectives (1-4)')
+    parser.add_argument('--max-turns', type=int, default=24,
+                       help='Maximum turns per game')
+    parser.add_argument('--verbosity', type=int, default=2, choices=[1, 2, 3, 4],
+                       help='Verbosity level (1=basic, 2=moves, 3=detailed, 4=debug)')
+    return parser.parse_args()
 
 def get_game_configuration() -> Tuple[str, str, int, int]:
     """Get game configuration from user or defaults"""
@@ -30,8 +45,8 @@ def create_and_initialize_game(map_size: str, num_detectives: int) -> ScotlandYa
         game = GameSetup.create_test_game(num_detectives)
         GameSetup.initialize_test_positions(game)
     else:
-        game = GameSetup.create_full_game(num_detectives)
-        GameSetup.initialize_full_positions(game, num_detectives)
+        game = GameSetup.create_extracted_board_game(num_detectives)
+        GameSetup.initialize_extracted_board_positions(game, num_detectives)
     
     return game
 
@@ -197,6 +212,8 @@ def play_single_game(map_size: str = "test", play_mode: str = "ai_vs_ai",
     
     # Save game
     game_id = None
+    if play_mode == "ai_vs_ai":
+        auto_save = True  # Always auto-save in AI vs AI mode
     if auto_save:
         game_id = save_game_automatically(game, play_mode, map_size, num_detectives, turn_count, display)
     elif verbosity >= VerbosityLevel.MOVES:

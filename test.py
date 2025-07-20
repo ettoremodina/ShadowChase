@@ -292,8 +292,19 @@ def demo_simple_test_scotland_yard():
     visualizer = GameVisualizer(game)
     visualizer.run()
 
+def demo_extracted_board_game(num_detectives: int = 3):
+    """Create Scotland Yard game using the extracted board data"""
+    game = create_extracted_board_game(num_detectives)
+
+    visualizer = GameVisualizer(game)
+    visualizer.run()
+
+
+
+
+
 if __name__ == "__main__":
-    demo_test_scotland_yard()
+    demo_extracted_board_game()
 # Run tests
 # if __name__ == "__main__":
 #     print("Choose a demo:")

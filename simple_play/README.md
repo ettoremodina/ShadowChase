@@ -61,12 +61,42 @@ python simple_play/batch_cli.py compare
 python simple_play/simple_game.py [options]
 
 Options:
-  --batch N              Play N games automatically (AI vs AI)
-  --map-size {test,full} Map size (default: test)
-  --detectives {1,2,3,4} Number of detectives (default: 2)
-  --max-turns N          Maximum turns per game (default: 24)
-  --verbosity {1,2,3,4}  Output verbosity level (default: 2)
+  --batch N                        Play N games automatically (AI vs AI)
+  --map-size {test,full,extracted} Map size (default: test)
+  --detectives {1,2,3,4}           Number of detectives (default: 2)
+  --max-turns N                    Maximum turns per game (default: 24)
+  --verbosity {1,2,3,4}            Output verbosity level (default: 2)
 ```
+
+### Map Options
+- **test**: 10-node test map for learning and quick testing
+- **full**: Complete 199-node Scotland Yard board (CSV-based)
+- **extracted**: Your custom extracted board from `board_progress.json`
+
+### Using the Extracted Board
+1. First extract your board using the board creator:
+   ```bash
+   # Extract nodes and edges from your board image
+   python createBoard.py --phase nodes --image board.jpeg
+   python createBoard.py --phase taxi --image board.jpeg  
+   python createBoard.py --phase bus --image board.jpeg
+   python createBoard.py --phase underground --image board.jpeg
+   python createBoard.py --phase ferry --image board.jpeg
+   ```
+
+2. Then use it in games:
+   ```bash
+   # Interactive game with extracted board
+   python simple_play/simple_game.py --map-size extracted
+   
+   # Batch testing with extracted board
+   python simple_play/simple_game.py --batch 10 --map-size extracted --detectives 3
+   ```
+
+3. Visualize your extracted board:
+   ```bash
+   python visualize_board.py
+   ```
 
 ## Project Structure
 

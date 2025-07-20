@@ -145,3 +145,15 @@ def create_simple_test_scotland_yard_game(num_cops: int = 2,
         # Add a flag to indicate this is a Scotland Yard map but with basic rules
         game.is_scotland_yard_map = True
         return game
+
+def create_extracted_board_game(num_detectives: int = 3) -> ScotlandYardGame:
+    """Create Scotland Yard game using extracted board data from board_progress.json"""
+    try:
+        from board_loader import create_extracted_board_game as _create_game
+        return _create_game(num_detectives)
+    except ImportError:
+        print("Warning: board_loader not available, falling back to CSV data")
+        return create_scotlandYard_game(num_detectives)
+    except FileNotFoundError:
+        print("Warning: board_progress.json not found, falling back to CSV data")
+        return create_scotlandYard_game(num_detectives)

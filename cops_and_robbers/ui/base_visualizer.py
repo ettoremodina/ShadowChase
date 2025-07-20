@@ -36,8 +36,31 @@ class BaseVisualizer:
         self.canvas = FigureCanvasTkAgg(self.fig, parent_frame)
         self.canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True)
         
-        # Calculate graph layout once
-        self.pos = nx.spring_layout(self.game.graph, seed=42, k=1, iterations=50)
+        # Check if game has extracted node positions
+        if hasattr(self.game, 'node_positions') and self.game.node_positions:
+            # Use extracted board positions (need to normalize for matplotlib)
+            positions = self.game.node_positions
+            
+            # Normalize positions to fit in standard layout bounds
+            x_coords = [pos[0] for pos in positions.values()]
+            y_coords = [pos[1] for pos in positions.values()]
+            
+            x_min, x_max = min(x_coords), max(x_coords)
+            y_min, y_max = min(y_coords), max(y_coords)
+            
+            # Normalize to roughly [-1, 1] range like spring layout
+            x_range = x_max - x_min
+            y_range = y_max - y_min
+            scale = max(x_range, y_range)
+            
+            self.pos = {}
+            for node, (x, y) in positions.items():
+                normalized_x = 2 * (x - x_min) / scale - 1
+                normalized_y = 2 * (y - y_min) / scale - 1
+                self.pos[node] = (normalized_x, -normalized_y)  # Flip Y to match image coordinates
+        else:
+            # Calculate graph layout using spring layout
+            self.pos = nx.spring_layout(self.game.graph, seed=42, k=1, iterations=50)
     
     def calculate_parallel_edge_positions(self, u, v, transport_types, offset_distance=0.02):
         """Calculate parallel positions for multiple edges between two nodes"""
@@ -154,7 +177,7 @@ class BaseVisualizer:
                                               label=style['name']))
         
         if legend_handles:
-            self.ax.legend(handles=legend_handles, loc='upper right')
+            self.ax.legend(handles=legend_handles, loc='lower right')
     
     def get_ticket_emoji(self, ticket_used):
         """Get emoji for ticket type"""

@@ -306,8 +306,20 @@ class GameSetup:
     @staticmethod
     def create_full_game(num_detectives: int = 3) -> ScotlandYardGame:
         """Create a full Scotland Yard game (full map)"""
-        from cops_and_robbers.examples.example_games import create_scotlandYard_game
-        return create_scotlandYard_game(num_detectives)
+        # Try to use extracted board first, fall back to CSV
+        try:
+            from cops_and_robbers.examples.example_games import create_extracted_board_game
+            return create_extracted_board_game(num_detectives)
+        except:
+            # Fall back to original CSV-based game
+            from cops_and_robbers.examples.example_games import create_scotlandYard_game
+            return create_scotlandYard_game(num_detectives)
+    
+    @staticmethod
+    def create_extracted_board_game(num_detectives: int = 3) -> ScotlandYardGame:
+        """Create a Scotland Yard game using extracted board data"""
+        from cops_and_robbers.examples.example_games import create_extracted_board_game
+        return create_extracted_board_game(num_detectives)
     
     @staticmethod
     def initialize_test_positions(game: ScotlandYardGame) -> None:
@@ -316,15 +328,22 @@ class GameSetup:
         mr_x_position = 9
         game.initialize_scotland_yard_game(detective_positions, mr_x_position)
     
+    
     @staticmethod
-    def initialize_full_positions(game: ScotlandYardGame, num_detectives: int) -> None:
-        """Initialize with predefined full game positions"""
-        # Predefined starting positions for full Scotland Yard
-        detective_start_options = [1, 13, 26, 34, 50, 53, 91, 94, 103, 112, 138, 141, 155, 174, 197]
-        mr_x_start_options = [35, 45, 51, 71, 78, 104, 106, 127, 132, 166, 170, 172]
+    def initialize_extracted_board_positions(game: ScotlandYardGame, num_detectives: int) -> None:
+        """Initialize with positions suitable for the extracted board"""
+        # Get available nodes from the game graph
+        available_nodes = list(game.graph.nodes())
         
-        detective_positions = detective_start_options[:num_detectives]
-        mr_x_position = random.choice(mr_x_start_options)
+        if len(available_nodes) < num_detectives + 1:
+            raise ValueError(f"Not enough nodes ({len(available_nodes)}) for {num_detectives} detectives + Mr. X")
+        
+        # Use predefined positions if they exist on the extracted board
+        starting_cards = [13,26,29,34,50,53,91,103,112,132,138,141,155,174,197,94, 117, 198]
+        sample = random.sample(starting_cards, num_detectives+1)
+
+        detective_positions = sample[1:num_detectives+1]        
+        mr_x_position = sample[0]  # First position is Mr. X
         
         game.initialize_scotland_yard_game(detective_positions, mr_x_position)
 
@@ -337,7 +356,7 @@ def get_game_mode() -> Tuple[str, str, int]:
     # Map size
     print("\n📍 Choose map size:")
     print("1. Test map (10 nodes) - Good for learning")
-    print("2. Full map (199 nodes) - Complete Scotland Yard")
+    print("2. Extracted board (199 nodes) - Your custom extracted board")
     
     while True:
         map_choice = input("Map size (1-2): ").strip()
@@ -346,22 +365,24 @@ def get_game_mode() -> Tuple[str, str, int]:
             num_detectives = 2
             break
         elif map_choice == "2":
-            map_size = "full"
-            # Number of detectives for full game
-            print("\n👮 Number of detectives:")
-            print("2. Two detectives (easier)")
-            print("3. Three detectives (standard)")
-            print("4. Four detectives (harder)")
-            
-            while True:
-                det_choice = input("Number of detectives (2-4): ").strip()
-                if det_choice in ["2", "3", "4"]:
-                    num_detectives = int(det_choice)
-                    break
-                print("❌ Please enter 2, 3, or 4")
-            break
+            map_size = "extracted"
+            # Check if extracted board is available
+            try:
+                from board_loader import load_board_graph_from_json
+                graph, positions = load_board_graph_from_json()
+                print(f"✓ Found extracted board with {len(graph.nodes())} nodes")
+                num_detectives = 5
+                break
+            except FileNotFoundError:
+                print("❌ board_progress.json not found. Please extract board data first using createBoard.py")
+                print("Falling back to other options...")
+                continue
+            except ImportError:
+                print("❌ Board loader not available. Please check your installation.")
+                print("Falling back to other options...")
+                continue
         else:
-            print("❌ Please enter 1 or 2")
+            print("Please enter 1, 2, or 3")
     
     # Play mode
     print(f"\n🎭 Choose play mode:")

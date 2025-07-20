@@ -383,32 +383,32 @@ class ScotlandYardGame(Game):
         # Initialize detective tickets
         detective_tickets = {}
         for i in range(len(detective_positions)):
-            # detective_tickets[i] = {
-            #     TicketType.TAXI: 10,
-            #     TicketType.BUS: 8, 
-            #     TicketType.UNDERGROUND: 4
-            # }
             detective_tickets[i] = {
-                TicketType.TAXI: 1,
-                TicketType.BUS: 1, 
-                TicketType.UNDERGROUND: 1
+                TicketType.TAXI: 10,
+                TicketType.BUS: 8, 
+                TicketType.UNDERGROUND: 4
             }
+            # detective_tickets[i] = {
+            #     TicketType.TAXI: 1,
+            #     TicketType.BUS: 1, 
+            #     TicketType.UNDERGROUND: 1
+            # }
         
         # Initialize Mr. X tickets
-        # mr_x_tickets = {
-        #     TicketType.TAXI: 4,
-        #     TicketType.BUS: 3,
-        #     TicketType.UNDERGROUND: 3,
-        #     TicketType.BLACK: 5,
-        #     TicketType.DOUBLE_MOVE: 2
-        # }
         mr_x_tickets = {
-            TicketType.TAXI: 1,#4,
+            TicketType.TAXI: 4,
             TicketType.BUS: 3,
             TicketType.UNDERGROUND: 3,
-            TicketType.BLACK: 1,#5,
+            TicketType.BLACK: 5,
             TicketType.DOUBLE_MOVE: 2
         }
+        # mr_x_tickets = {
+        #     TicketType.TAXI: 1,#4,
+        #     TicketType.BUS: 3,
+        #     TicketType.UNDERGROUND: 3,
+        #     TicketType.BLACK: 1,#5,
+        #     TicketType.DOUBLE_MOVE: 2
+        # }
         
         self.game_state = GameState(
             detective_positions, mr_x_position, Player.ROBBER, 0,

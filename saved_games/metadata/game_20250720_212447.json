@@ -1,0 +1,18 @@
+{
+  "game_id": "game_20250720_212447",
+  "created_at": "2025-07-20T21:24:47.899524",
+  "graph_type": "custom",
+  "num_nodes": 199,
+  "num_edges": 439,
+  "num_cops": 3,
+  "total_turns": 5,
+  "winner": "mr_x",
+  "game_completed": true,
+  "has_ticket_system": true,
+  "game_mode": "ai_vs_ai",
+  "player_types": {
+    "detectives": "AI",
+    "mr_x": "AI"
+  },
+  "source": "ui_game"
+}

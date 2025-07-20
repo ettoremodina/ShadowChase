@@ -10,6 +10,8 @@ from ..storage.game_loader import GameLoader
 from .ui_components import StyledButton, InfoDisplay
 from .base_visualizer import BaseVisualizer
 
+NODE_SIZE = 300
+
 
 class GameReplayWindow(BaseVisualizer):
     """Window for replaying saved games step by step"""
@@ -125,6 +127,30 @@ class GameReplayWindow(BaseVisualizer):
     
     def setup_graph_display(self):
         """Setup matplotlib graph display"""
+        # Debug: Check if game has node positions
+        if hasattr(self.game, 'node_positions') and self.game.node_positions:
+            print(f"🎬 Replay: Using extracted board positions ({len(self.game.node_positions)} nodes)")
+        else:
+            print("🎬 Replay: No node positions found, using spring layout")
+            # If the game doesn't have node_positions but we can detect it's an extracted board,
+            # try to load them from the board_progress.json file
+            try:
+                from board_loader import load_board_graph_from_json
+                _, node_positions = load_board_graph_from_json()
+                
+                # Check if this game uses the same nodes as the extracted board
+                game_nodes = set(self.game.graph.nodes())
+                extracted_nodes = set(node_positions.keys())
+                
+                if game_nodes == extracted_nodes:
+                    print("🎬 Replay: Loading node positions from board_progress.json")
+                    self.game.node_positions = node_positions
+                else:
+                    print(f"🎬 Replay: Node sets don't match (game: {len(game_nodes)}, extracted: {len(extracted_nodes)})")
+            except Exception as e:
+                print(f"🎬 Replay: Could not load board positions: {e}")
+        
+        # Call parent method which handles both extracted positions and spring layout
         super().setup_graph_display(self.graph_frame)
     
     def on_scale_change(self, value):
@@ -266,15 +292,18 @@ class GameReplayWindow(BaseVisualizer):
         node_sizes = []
         
         for node in self.game.graph.nodes():
-            if node in state.cop_positions:
+            if node in state.cop_positions and node == state.robber_position:
+                node_colors.append('yellow')
+                node_sizes.append(NODE_SIZE)
+            elif node in state.cop_positions:
                 node_colors.append('blue')
-                node_sizes.append(500)
+                node_sizes.append(NODE_SIZE)
             elif node == state.robber_position:  
                 node_colors.append('red')
-                node_sizes.append(500)
+                node_sizes.append(NODE_SIZE)
             else:
                 node_colors.append('lightgray')
-                node_sizes.append(300)
+                node_sizes.append(NODE_SIZE)
         
         return node_colors, node_sizes
 

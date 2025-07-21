@@ -257,7 +257,7 @@ class GameController:
     def make_ai_move(self, player: Player) -> bool:
         """Make an AI move using the agent system"""
         if player == Player.COPS:
-            detective_moves = self.agent_detectives.make_move(self.game)
+            detective_moves = self.agent_detectives.choose_all_moves(self.game)
             if detective_moves:
                 success = self.game.make_move(detective_moves=detective_moves)
                 if success:
@@ -270,14 +270,9 @@ class GameController:
                 self.display.print_error("AI Detectives could not find valid moves")
                 return False
         else:  # Player.ROBBER
-            dest, transport, use_double  = self.agent_mrx.make_move(self.game)
+            dest, transport, use_double  = self.agent_mrx.choose_move(self.game)
             if dest is not None and transport is not None:
-                # Handle potential double move and black ticket usage
-                if use_double:
-                    success = self.game.make_move(mr_x_moves=[(dest, transport)], use_double_move=use_double)
-                else:
-                    success = self.game.make_move(mr_x_moves=[(dest, transport)])
-                
+                success = self.game.make_move(mr_x_moves=[(dest, transport)], use_double_move=use_double)
                 if success:
                     self.display.print_move_result(True, "AI Mr. X moved")
                     return True

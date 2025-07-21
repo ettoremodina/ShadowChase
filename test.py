@@ -292,11 +292,46 @@ def demo_simple_test_scotland_yard():
     visualizer = GameVisualizer(game)
     visualizer.run()
 
-def demo_extracted_board_game(num_detectives: int = 3):
+def demo_extracted_board_game(num_detectives: int = 3, auto_init: bool = True):
     """Create Scotland Yard game using the extracted board data"""
     game = create_extracted_board_game(num_detectives)
 
-    visualizer = GameVisualizer(game)
+    # Define predefined positions using the method from game_logic.py
+    if auto_init:
+        import random
+        starting_cards = [13,26,29,34,50,53,91,103,112,132,138,141,155,174,197,94, 117, 198]
+        available_nodes = list(game.graph.nodes())
+        
+        # Filter starting cards to only include nodes that exist in the graph
+        valid_starting_cards = [pos for pos in starting_cards if pos in available_nodes]
+        
+        # Ensure we have enough valid positions
+        if len(valid_starting_cards) < num_detectives + 1:
+            # Add more random positions if needed
+            remaining_nodes = [n for n in available_nodes if n not in valid_starting_cards]
+            additional_needed = (num_detectives + 1) - len(valid_starting_cards)
+            valid_starting_cards.extend(random.sample(remaining_nodes, min(additional_needed, len(remaining_nodes))))
+        
+        sample = random.sample(valid_starting_cards, num_detectives + 1)
+        detective_positions = sample[1:num_detectives+1]        
+        mr_x_position = sample[0]
+        
+        positions = detective_positions + [mr_x_position]
+    else:
+        positions = None
+
+    # Initialize visualizer with positions but don't auto-start
+    visualizer = GameVisualizer(game, auto_positions=positions)
+    
+    # # Set game mode to human vs human by default (can be changed in UI)
+    # mode_map = {
+    #     "human_vs_human": {'detectives': 'Human', 'mr_x': 'Human'},
+    #     "human_det_vs_ai_mrx": {'detectives': 'Human', 'mr_x': 'AI'},
+    #     "ai_det_vs_human_mrx": {'detectives': 'AI', 'mr_x': 'Human'},
+    #     "ai_vs_ai": {'detectives': 'AI', 'mr_x': 'AI'}
+    # }
+    # visualizer.game_mode = mode_map['ai_vs_ai']
+    
     visualizer.run()
 
 
@@ -304,7 +339,7 @@ def demo_extracted_board_game(num_detectives: int = 3):
 
 
 if __name__ == "__main__":
-    demo_extracted_board_game()
+    demo_extracted_board_game(5)
 # Run tests
 # if __name__ == "__main__":
 #     print("Choose a demo:")

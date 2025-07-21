@@ -23,7 +23,7 @@ NODE_SIZE = 300  # Default node size for visualization
 class GameVisualizer(BaseVisualizer):
     """Interactive GUI for Cops and Robbers game"""
     
-    def __init__(self, game: Game, loader: 'GameLoader' = None):
+    def __init__(self, game: Game, loader: 'GameLoader' = None, auto_positions: list = None):
         super().__init__(game)
         self.loader = loader or GameLoader()
         self.game_service = GameService(self.loader)
@@ -39,7 +39,7 @@ class GameVisualizer(BaseVisualizer):
         self.mr_x_agent = None
         
         # Game state
-        self.selected_positions = []
+        self.selected_positions = auto_positions or []
         self.setup_mode = True
         self.current_player_moves = {}
         self.highlighted_edges = []
@@ -60,6 +60,10 @@ class GameVisualizer(BaseVisualizer):
         self.setup_ui()
         self.setup_graph_display()
         
+        # If auto_positions were provided, enable the start button but don't auto-start
+        if auto_positions and len(auto_positions) == self.game.num_cops + 1:
+            self.setup_controls.start_button.config(state=tk.NORMAL)
+
     def setup_ui(self):
         """Setup the improved user interface"""
         # Configure ttk styles
@@ -704,7 +708,7 @@ class GameVisualizer(BaseVisualizer):
         try:
             if current_player == Player.COPS and self.detective_agent:
                 # AI detectives move
-                detective_moves = self.detective_agent.make_all_moves(self.game)
+                detective_moves = self.detective_agent.choose_all_moves(self.game)
                 if detective_moves:
                     success = self.game.make_move(detective_moves=detective_moves)
                     return success
@@ -713,7 +717,7 @@ class GameVisualizer(BaseVisualizer):
             
             elif current_player == Player.ROBBER and self.mr_x_agent:
                 # AI Mr. X moves
-                move_result = self.mr_x_agent.make_move(self.game)
+                move_result = self.mr_x_agent.choose_move(self.game)
                 if move_result and len(move_result) == 3:
                     dest, transport, use_double = move_result
                     success = self.game.make_move(mr_x_moves=[(dest, transport)], use_double_move=use_double)
@@ -737,7 +741,7 @@ class GameVisualizer(BaseVisualizer):
         try:
             if current_player == Player.COPS and self.detective_agent:
                 # Get AI detective moves for display
-                detective_moves = self.detective_agent.make_all_moves(self.game)
+                detective_moves = self.detective_agent.choose_all_moves(self.game)
                 if detective_moves:
                     # Set up the selections for display
                     self.cop_selections = detective_moves
@@ -747,7 +751,7 @@ class GameVisualizer(BaseVisualizer):
                     
             elif current_player == Player.ROBBER and self.mr_x_agent:
                 # Get AI Mr. X move for display
-                move_result = self.mr_x_agent.make_move(self.game)
+                move_result = self.mr_x_agent.choose_move(self.game)
                 if move_result and len(move_result) == 3:
                     dest, transport, use_double = move_result
                     # Set up the selections for display
@@ -779,3 +783,26 @@ class GameVisualizer(BaseVisualizer):
     def _execute_ai_move(self):
         """Remove this method - no longer needed"""
         pass
+
+    def set_auto_positions(self, positions: list):
+        """Set positions programmatically and optionally start the game"""
+        if len(positions) != self.game.num_cops + 1:
+            raise ValueError(f"Expected {self.game.num_cops + 1} positions, got {len(positions)}")
+        
+        self.selected_positions = positions
+        
+        # Enable start button
+        cop_positions = self.selected_positions[:self.game.num_cops]
+        robber_position = self.selected_positions[self.game.num_cops]
+        
+        if robber_position not in cop_positions:
+            self.setup_controls.start_button.config(state=tk.NORMAL)
+        
+        self.draw_graph()
+
+    def auto_start_game(self):
+        """Automatically start the game with current selected positions"""
+        if len(self.selected_positions) == self.game.num_cops + 1:
+            self.setup_controls.start_game()
+        else:
+            raise ValueError("Not enough positions selected for auto-start")

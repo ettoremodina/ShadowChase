@@ -194,7 +194,7 @@ class ScotlandYardMovement(MovementRule):
 class ScotlandYardWinCondition(WinCondition):
     """Scotland Yard specific win conditions"""
     
-    def __init__(self, graph: nx.Graph, max_turns: int = 22):
+    def __init__(self, graph: nx.Graph, max_turns: int = 24):
         self.graph = graph
         self.max_turns = max_turns
         self.movement_rule = ScotlandYardMovement()
@@ -293,8 +293,8 @@ class Game:
         if self.game_state is None:
             raise ValueError("Game not initialized")
         
-        if self.is_game_over():
-            return False
+        # if self.is_game_over():
+        #     return False
         
         if self.game_state.turn == Player.COPS:
             if new_positions is None or len(new_positions) != self.num_cops:
@@ -471,7 +471,8 @@ class ScotlandYardGame(Game):
             # Mr. X can use specific ticket or black ticket
             if mr_x_tickets.get(required_ticket, 0) > 0:
                 valid_moves.add((dest, transport))
-
+            if mr_x_tickets.get(TicketType.BLACK, 0) > 0:
+                valid_moves.add((dest, TransportType.BLACK))
         return valid_moves
 
     def can_use_double_move(self) -> bool:
@@ -537,10 +538,8 @@ class ScotlandYardGame(Game):
             new_pos, transport_to_use = mr_x_moves[0]
             
             # Determine ticket to consume
-            if transport_to_use == TransportType.BLACK:
-                ticket_to_consume = TicketType.BLACK
-            else:
-                ticket_to_consume = TicketType[transport_to_use.name]
+            ticket_to_consume = TicketType[transport_to_use.name]
+            self.game_state.mr_x_tickets[ticket_to_consume] -= 1
 
             # Handle double move ticket consumption
             if use_double_move and not self.game_state.double_move_active:
@@ -551,15 +550,15 @@ class ScotlandYardGame(Game):
                 turn_data['double_move_used'] = True
 
             # Check and consume ticket
-            actual_ticket_used = None
-            if self.game_state.mr_x_tickets.get(ticket_to_consume, 0) > 0:
-                self.game_state.mr_x_tickets[ticket_to_consume] -= 1
-                actual_ticket_used = ticket_to_consume
-            elif self.game_state.mr_x_tickets.get(TicketType.BLACK, 0) > 0:
-                self.game_state.mr_x_tickets[TicketType.BLACK] -= 1
-                actual_ticket_used = TicketType.BLACK
-            else:
-                return False
+            # actual_ticket_used = None
+            # if self.game_state.mr_x_tickets.get(ticket_to_consume, 0) > 0:
+            #     # self.game_state.mr_x_tickets[ticket_to_consume] -= 1
+            #     # actual_ticket_used = ticket_to_consume
+            # # elif self.game_state.mr_x_tickets.get(TicketType.BLACK, 0) > 0:
+            #     # self.game_state.mr_x_tickets[TicketType.BLACK] -= 1
+            #     # actual_ticket_used = TicketType.BLACK
+            # else:
+            #     return False
 
             # Execute the move
             self.game_state.mr_x_moves_log.append((new_pos, transport_to_use))
@@ -569,7 +568,7 @@ class ScotlandYardGame(Game):
             mr_x_move_data = {
                 'edge': (old_pos, new_pos),
                 'transport_used': transport_to_use.value,
-                'ticket_used': actual_ticket_used.value,
+                'ticket_used': ticket_to_consume.value,
                 'double_move_part': 1 if self.game_state.double_move_active else 0
             }
             turn_data['mr_x_moves'].append(mr_x_move_data)
@@ -581,21 +580,17 @@ class ScotlandYardGame(Game):
                     # This is the first move of a double move - stay on Mr. X's turn
                     mr_x_move_data['double_move_part'] = 1
                     self.game_state.turn = Player.ROBBER
-                    self.game_state.turn_count += 1
-                    self.game_state.mr_x_visible = self.game_state.turn_count in self.reveal_turns
                 else:
                     # This is the second move of a double move - end it
                     mr_x_move_data['double_move_part'] = 2
                     self.game_state.double_move_active = False
-                    self.game_state.turn_count += 1
-                    self.game_state.mr_x_visible = self.game_state.turn_count in self.reveal_turns
                     self.game_state.turn = Player.COPS
             else:
                 # Regular single move
-                self.game_state.turn_count += 1
-                self.game_state.mr_x_visible = self.game_state.turn_count in self.reveal_turns
                 self.game_state.turn = Player.COPS
 
+        self.game_state.turn_count += 1
+        self.game_state.mr_x_visible = self.game_state.turn_count in self.reveal_turns
         # Add turn data to ticket history
         self.ticket_history.append(turn_data)
         self.game_history.append(self.game_state.copy())

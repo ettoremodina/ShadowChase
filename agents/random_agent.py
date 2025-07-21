@@ -13,21 +13,22 @@ from .base_agent import DetectiveAgent, MrXAgent, MultiDetectiveAgent
 class RandomMrXAgent(MrXAgent):
     """Mr. X agent that makes random valid moves"""
     
-    def make_move(self, game: ScotlandYardGame) -> Optional[Tuple[int, TransportType, bool]]:
+    def choose_move(self, game: ScotlandYardGame) -> Optional[Tuple[int, TransportType, bool]]:
         """Make a random valid move for Mr. X"""
         valid_moves = list(game.get_valid_moves(Player.ROBBER))
         
         if not valid_moves:
             return None
+        valid_moves = [move for move in valid_moves if move[1] != TransportType.BLACK]  # Exclude black ticket
+        if not valid_moves:
+            return None
         
         destination, transport = random.choice(valid_moves)
-        
         use_double = (self.should_use_double_move(game) and random.choice([True, False]))
 
         # Decide whether to use black ticket randomly
         if self._should_use_black_ticket(game, transport):
             transport = TransportType.BLACK
-
         return (destination, transport, use_double)
     
     def should_use_double_move(self, game: ScotlandYardGame) -> bool:
@@ -43,16 +44,14 @@ class RandomMrXAgent(MrXAgent):
         required_ticket = TicketType[required_transport.name]
         if tickets.get(required_ticket, 0) == 0:
             return tickets.get(TicketType.BLACK, 0) > 0
-        
-        # Otherwise, randomly use black ticket 20% of the time if available
-        return (tickets.get(TicketType.BLACK, 0) > 0 and 
-                random.random() < 0.2)
+        else:
+            return (tickets.get(TicketType.BLACK, 0) > 0 and random.random() < 0.5)
 
 
 class RandomMultiDetectiveAgent(MultiDetectiveAgent):
     """Agent that controls all detectives with random moves"""
     
-    def make_all_moves(self, game: ScotlandYardGame) -> List[Tuple[int, TransportType]]:
+    def choose_all_moves(self, game: ScotlandYardGame) -> List[Tuple[int, TransportType]]:
         """Make random moves for all detectives"""
         detective_moves = []
         pending_moves = []

@@ -17,7 +17,7 @@ class Agent(ABC):
         self.player = player
     
     @abstractmethod
-    def make_move(self, game: ScotlandYardGame) -> Optional[Tuple]:
+    def choose_move(self, game: ScotlandYardGame) -> Optional[Tuple]:
         """
         Make a move based on the current game state.
         
@@ -47,7 +47,7 @@ class DetectiveAgent(Agent):
         self.detective_id = detective_id
     
     @abstractmethod
-    def make_move(self, game: ScotlandYardGame) -> Optional[Tuple[int, TransportType]]:
+    def choose_move(self, game: ScotlandYardGame) -> Optional[Tuple[int, TransportType]]:
         """
         Make a move for this detective.
         
@@ -75,7 +75,7 @@ class MrXAgent(Agent):
         super().__init__(Player.ROBBER)
     
     @abstractmethod
-    def make_move(self, game: ScotlandYardGame) -> Optional[Tuple[int, TransportType]]:
+    def choose_move(self, game: ScotlandYardGame) -> Optional[Tuple[int, TransportType]]:
         """
         Make a move for Mr. X.
         
@@ -119,9 +119,22 @@ class MultiDetectiveAgent(Agent):
     def __init__(self, num_detectives: int):
         super().__init__(Player.COPS)
         self.num_detectives = num_detectives
+
+    # @abstractmethod
+    def choose_move(self, game: ScotlandYardGame) -> List[Tuple[int, TransportType]]:
+        """
+        Make moves for all detectives.
+        
+        Args:
+            game: The current ScotlandYard game instance
+            
+        Returns:
+            List of moves, one for each detective as (destination, transport_type)
+        """
+        pass
     
     @abstractmethod
-    def make_all_moves(self, game: ScotlandYardGame) -> List[Tuple[int, TransportType]]:
+    def choose_all_moves(self, game: ScotlandYardGame) -> List[Tuple[int, TransportType]]:
         """
         Make moves for all detectives.
         

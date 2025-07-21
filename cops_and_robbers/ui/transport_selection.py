@@ -86,6 +86,8 @@ class TransportSelectionDialog:
         
         # Add regular transport options
         for i, transport in enumerate(self.available_transports):
+            if transport == TransportType.BLACK:
+                continue
             transport_frame = ttk.Frame(options_frame)
             transport_frame.pack(fill=tk.X, padx=10, pady=5)
             

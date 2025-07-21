@@ -117,7 +117,7 @@ class GameVisualizer(BaseVisualizer):
         
         # Create ticket table display for Scotland Yard games but don't pack it yet
         self.tickets_table_display = InfoDisplay(self.scrollable_controls.scrollable_frame,
-                                                "🎫 Ticket Table", height=8)
+                                                "🎫 Ticket Table", height=10)
         # Don't pack it here - let update_ui_visibility() control when it appears
         
         # Save/Load section
@@ -387,10 +387,10 @@ class GameVisualizer(BaseVisualizer):
             valid_moves = self.game.get_valid_moves(Player.ROBBER, robber_pos)
             
             self.current_player_moves[robber_pos] = {}
+            mr_x_tickets = self.game.get_mr_x_tickets()
             for move in valid_moves:
                 if is_scotland_yard:
                     dest, transport = move
-                    mr_x_tickets = self.game.get_mr_x_tickets()
                     
                     # Initialize destination if not exists
                     if dest not in self.current_player_moves[robber_pos]:

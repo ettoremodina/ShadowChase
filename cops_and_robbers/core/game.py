@@ -26,6 +26,7 @@ class GameState:
     """Represents the current state of the game"""
     def __init__(self, cop_positions: List[int], robber_position: int, 
                  turn: Player, turn_count: int = 0,
+                 robber_turn_count: int = 1,
                  detective_tickets: Dict[int, Dict[TicketType, int]] = None,
                  mr_x_tickets: Dict[TicketType, int] = None,
                  mr_x_visible: bool = True,
@@ -33,6 +34,7 @@ class GameState:
         self.cop_positions = cop_positions.copy()
         self.robber_position = robber_position
         self.turn = turn
+        self.robber_turn_count = robber_turn_count
         self.turn_count = turn_count
         # Scotland Yard specific
         self.detective_tickets = detective_tickets or {}
@@ -46,6 +48,7 @@ class GameState:
         new_state = GameState(
             self.cop_positions, self.robber_position, 
             self.turn, self.turn_count,
+            self.robber_turn_count,
             {k: v.copy() for k, v in self.detective_tickets.items()},
             self.mr_x_tickets.copy(),
             self.mr_x_visible,
@@ -205,7 +208,7 @@ class ScotlandYardWinCondition(WinCondition):
     
     def is_mr_x_win(self, game_state: GameState) -> bool:
         # Mr. X wins if max turns reached
-        if game_state.turn_count >= self.max_turns:
+        if game_state.robber_turn_count >= self.max_turns:
             return True
         
         # Mr. X wins if all detectives are stuck
@@ -411,14 +414,14 @@ class ScotlandYardGame(Game):
         # }
         
         self.game_state = GameState(
-            detective_positions, mr_x_position, Player.ROBBER, 0,
+            detective_positions, mr_x_position, Player.ROBBER, 0,  0,
             detective_tickets, mr_x_tickets, False, []
         )
         self.game_history = [self.game_state.copy()]
         self.ticket_history = []
 
     def get_valid_moves(self, player: Player, position: int = None, pending_moves: List[Tuple[int, TransportType]] = None) -> Set[Tuple[int, TransportType]]:
-        """Get valid moves for a player considering tickets.
+        """Get valid moves for a player considering tickets.    
         Returns a set of (destination, transport_type) tuples.
         """
         if self.game_state is None:
@@ -588,9 +591,10 @@ class ScotlandYardGame(Game):
             else:
                 # Regular single move
                 self.game_state.turn = Player.COPS
+            self.game_state.robber_turn_count += 1
 
         self.game_state.turn_count += 1
-        self.game_state.mr_x_visible = self.game_state.turn_count in self.reveal_turns
+        self.game_state.mr_x_visible = self.game_state.robber_turn_count in self.reveal_turns
         # Add turn data to ticket history
         self.ticket_history.append(turn_data)
         self.game_history.append(self.game_state.copy())

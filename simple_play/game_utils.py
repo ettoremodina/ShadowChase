@@ -106,7 +106,7 @@ def offer_save_option(game: ScotlandYardGame, play_mode: str, map_size: str,
 
 
 def execute_single_turn(controller: GameController, game: ScotlandYardGame, 
-                       play_mode: str, display: GameDisplay, turn_count: int) -> bool:
+                       play_mode: str, display: GameDisplay) -> bool:
     """Execute a single game turn. Returns True if turn completed successfully, False if user quit"""
     current_player = game.game_state.turn
     
@@ -178,9 +178,10 @@ def play_single_game(map_size: str = "test", play_mode: str = "ai_vs_ai",
     
     # Main game loop
     turn_count = 0
+    robber_turn_count = 0
     game_completed = False
     
-    while not game.is_game_over() and turn_count < max_turns:
+    while not game.is_game_over():
         turn_count += 1
         
         # Clear screen for clean display (only for interactive modes)
@@ -194,7 +195,7 @@ def play_single_game(map_size: str = "test", play_mode: str = "ai_vs_ai",
             display.print_debug_info(game)
         
         # Execute turn
-        success = execute_single_turn(controller, game, play_mode, display, turn_count)
+        success = execute_single_turn(controller, game, play_mode, display)
         if not success:
             # User quit early
             break

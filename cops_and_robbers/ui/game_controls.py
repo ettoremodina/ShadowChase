@@ -286,7 +286,7 @@ class GameControls:
                 for target_pos, transports in moves.items():
                     if is_scotland_yard:
                         transport_names = []
-                        for t in transports:
+                        for t in sorted(set(transports)):
                             if t == 1: transport_names.append("🚕 Taxi")
                             elif t == 2: transport_names.append("🚌 Bus") 
                             elif t == 3: transport_names.append("🚇 Underground")
@@ -450,7 +450,7 @@ class GameControls:
                 for target_pos, transports in moves.items():
                     if is_scotland_yard:
                         transport_names = []
-                        for t in transports:
+                        for t in sorted(set(transports)):
                             if t == 1: transport_names.append("🚕 Taxi")
                             elif t == 2: transport_names.append("🚌 Bus") 
                             elif t == 3: transport_names.append("🚇 Underground")

@@ -118,7 +118,7 @@ class GameReplayWindow(BaseVisualizer):
         self.info_display.pack(fill=tk.X, pady=(0, 10))
         
         # Tickets display
-        self.tickets_display = InfoDisplay(left_panel, "🎫 Ticket Information", height=8)
+        self.tickets_display = InfoDisplay(left_panel, "🎫 Ticket Information", height=10)
         self.tickets_display.pack(fill=tk.X, pady=(0, 10))
         
         # Right panel for graph

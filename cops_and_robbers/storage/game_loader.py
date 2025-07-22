@@ -2,6 +2,7 @@
 import os
 import json
 import pickle
+import random
 from datetime import datetime
 from tkinter import ttk
 from typing import Dict, List, Optional, Tuple
@@ -167,9 +168,11 @@ class GameLoader:
         return export_file
     
     def _generate_game_id(self) -> str:
-        """Generate unique game ID"""
+        """Generate unique game ID using timestamp and random suffix"""
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        return f"game_{timestamp}"
+        # Add 3-digit random suffix to avoid collisions
+        suffix = random.randint(100, 999)
+        return f"game_{timestamp}_{suffix}"
     
     def _determine_graph_type(self, graph: nx.Graph) -> str:
         """Determine graph type for categorization"""
@@ -317,6 +320,7 @@ class GameLoader:
         
         return True
     
+
     def _export_to_csv(self, record: GameRecord, filename: str):
         """Export game history to CSV format"""
         import csv

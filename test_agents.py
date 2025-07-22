@@ -12,8 +12,8 @@ def main():
     from agents import AgentSelector, AgentType
     
     # Configuration
-    test_name = "test1" 
-    games_per_combo = 10
+    test_name = "test2" 
+    games_per_combo = 30
     num_detectives = 5
     map_size = "extracted"
 

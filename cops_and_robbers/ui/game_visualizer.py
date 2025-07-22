@@ -2,6 +2,7 @@ import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
 import networkx as nx
 import os
+import pickle
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.figure import Figure
@@ -303,19 +304,53 @@ class GameVisualizer(BaseVisualizer):
         except Exception as e:
             messagebox.showerror("Error", f"Failed to save game: {str(e)}")
     
+    def load_game_from_file(self, file_path: str):
+        """Load a game directly from a file path, bypassing the GameLoader's directory assumptions"""
+        try:
+            print(f"📂 Loading game from: {file_path}")
+            
+            with open(file_path, 'rb') as f:
+                game_record = pickle.load(f)
+                
+            print(f"📦 Loaded object type: {type(game_record)}")
+            
+            # If it's already a ScotlandYardGame object, return it directly
+            if isinstance(game_record, ScotlandYardGame):
+                print("✅ Found ScotlandYardGame object directly")
+                return game_record
+                
+            # If it's a GameRecord, reconstruct the game from it
+            if hasattr(game_record, 'game_history') and hasattr(game_record, 'game_config'):
+                print("🔧 Reconstructing game from GameRecord")
+                reconstructed = self.loader._reconstruct_game_from_record(game_record)
+                print(f"✅ Reconstruction result: {type(reconstructed)}")
+                return reconstructed
+                
+            # Handle legacy format or other structures
+            print(f"❌ Unrecognized game format: {type(game_record)}")
+            if hasattr(game_record, '__dict__'):
+                print(f"📋 Available attributes: {list(game_record.__dict__.keys())}")
+            return None
+            
+        except Exception as e:
+            print(f"❌ Error loading game from {file_path}: {e}")
+            import traceback
+            traceback.print_exc()
+            return None
+
     def show_load_dialog(self):
         """Show file browser to load a saved game"""
         try:
-            # Open file browser in the saved games directory
-            saved_games_dir = self.loader.base_dir
-            if not os.path.exists(saved_games_dir):
+            # Open file browser in the root saved_games directory to allow access to all folders
+            saved_games_root = "saved_games"
+            if not os.path.exists(saved_games_root):
                 messagebox.showinfo("No Games", "No saved games directory found")
                 return
             
-            # Show file dialog
+            # Show file dialog starting from the root saved_games directory
             game_file = filedialog.askopenfilename(
                 title="Load Saved Game",
-                initialdir=f"{saved_games_dir}/games",
+                initialdir=saved_games_root,
                 filetypes=[("Game files", "*.pkl"), ("All files", "*.*")]
             )
             
@@ -324,8 +359,8 @@ class GameVisualizer(BaseVisualizer):
                 game_id = os.path.basename(game_file).replace('.pkl', '')
                 
                 try:
-                    # Load the game
-                    loaded_game = self.loader.load_game(game_id)
+                    # Load the game directly from the selected file path
+                    loaded_game = self.load_game_from_file(game_file)
                     if loaded_game:
                         # Always open replay window directly
                         self.open_game_replay(game_id, loaded_game)

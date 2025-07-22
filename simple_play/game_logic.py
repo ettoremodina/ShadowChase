@@ -413,9 +413,10 @@ def get_verbosity_level() -> int:
     print("2. Standard - + Available moves and tickets")
     print("3. Detailed - + Move history and transport details")
     print("4. Debug - + All internal game state")
+    print("5. Heuristics - + Possible Mr. X positions analysis")
     
     while True:
-        verb_choice = input("Verbosity level (1-4): ").strip()
-        if verb_choice in ["1", "2", "3", "4"]:
+        verb_choice = input("Verbosity level (1-5): ").strip()
+        if verb_choice in ["1", "2", "3", "4", "5"]:
             return int(verb_choice)
-        print("❌ Please enter 1, 2, 3, or 4")
+        print("❌ Please enter 1, 2, 3, 4, or 5")

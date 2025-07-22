@@ -419,6 +419,7 @@ class ScotlandYardGame(Game):
         )
         self.game_history = [self.game_state.copy()]
         self.ticket_history = []
+        self.last_visible_position = None
 
     def get_valid_moves(self, player: Player, position: int = None, pending_moves: List[Tuple[int, TransportType]] = None) -> Set[Tuple[int, TransportType]]:
         """Get valid moves for a player considering tickets.    
@@ -595,6 +596,9 @@ class ScotlandYardGame(Game):
 
         self.game_state.turn_count += 1
         self.game_state.mr_x_visible = self.game_state.robber_turn_count in self.reveal_turns
+        if self.game_state.mr_x_visible:
+            # If Mr. X is visible, update last visible position
+            self.last_visible_position = self.game_state.robber_position
         # Add turn data to ticket history
         self.ticket_history.append(turn_data)
         self.game_history.append(self.game_state.copy())
@@ -609,12 +613,10 @@ class ScotlandYardGame(Game):
             return Player.COPS
         else:
             return Player.ROBBER
-    
-    def get_mr_x_visible_position(self) -> Optional[int]:
-        """Get Mr. X's position if visible"""
-        if self.game_state.mr_x_visible:
-            return self.game_state.robber_position
-        return None
+
+    def get_mr_x_last_visible_position(self) -> Optional[int]:
+        """Get Mr. X's last visible position"""
+        return self.last_visible_position
     
     def _all_detectives_moved(self) -> bool:
         """Check if all detectives have moved this turn"""

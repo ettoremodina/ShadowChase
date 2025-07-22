@@ -17,6 +17,13 @@ from .game_replay import GameReplayWindow
 from .base_visualizer import BaseVisualizer
 from agents.random_agent import RandomMrXAgent, RandomMultiDetectiveAgent
 
+# Import heuristics for position analysis
+try:
+    from agents.heuristics import GameHeuristics
+    HEURISTICS_AVAILABLE = True
+except ImportError:
+    HEURISTICS_AVAILABLE = False
+
 
 NODE_SIZE = 300  # Default node size for visualization
 
@@ -52,6 +59,9 @@ class GameVisualizer(BaseVisualizer):
         self.use_black_ticket = tk.BooleanVar()
         self.mr_x_selections = []
 
+        # Heuristics for position analysis
+        self.heuristics = None
+        
         # UI Controllers
         self.setup_controls = SetupControls(self)
         self.game_controls = GameControls(self)
@@ -63,6 +73,20 @@ class GameVisualizer(BaseVisualizer):
         # If auto_positions were provided, enable the start button but don't auto-start
         if auto_positions and len(auto_positions) == self.game.num_cops + 1:
             self.setup_controls.start_button.config(state=tk.NORMAL)
+
+    def _initialize_heuristics(self):
+        """Initialize heuristics calculator for position analysis"""
+        if not HEURISTICS_AVAILABLE:
+            return
+            
+        if isinstance(self.game, ScotlandYardGame) and self.game.game_state:
+            try:
+                self.heuristics = GameHeuristics(self.game)
+            except Exception as e:
+                print(f"Failed to initialize heuristics: {e}")
+                import traceback
+                traceback.print_exc()
+                self.heuristics = None
 
     def setup_ui(self):
         """Setup the improved user interface"""
@@ -589,6 +613,9 @@ class GameVisualizer(BaseVisualizer):
         nx.draw_networkx_nodes(self.game.graph, self.pos, ax=self.ax,
                               node_color=node_colors, node_size=node_sizes)
         
+        # Draw heuristic shadows for possible Mr. X positions (only during detective turns)
+        self._draw_heuristic_shadows()
+        
         # Draw black dotted rings around selected nodes
         for node in self.selected_nodes:
             if node in self.pos:
@@ -656,6 +683,60 @@ class GameVisualizer(BaseVisualizer):
                     node_sizes.append(NODE_SIZE)
         
         return node_colors, node_sizes
+
+    def _draw_heuristic_shadows(self):
+        """Draw subtle shadows on nodes where Mr. X could possibly be located"""
+        # Only draw shadows if heuristics are enabled and available
+        if not (self.setup_controls.get_heuristics_enabled() and 
+                HEURISTICS_AVAILABLE and 
+                isinstance(self.game, ScotlandYardGame) and 
+                self.game.game_state and
+                not self.setup_mode):
+            return
+            
+        # Only show during detective turns (when Mr. X is hidden)
+        if (self.game.game_state.turn != Player.COPS or 
+            self.game.game_state.mr_x_visible):
+            return
+            
+        # Initialize or update heuristics
+        if self.heuristics is None:
+            self._initialize_heuristics()
+        else:
+            # Update heuristics with current game state
+            self.heuristics.update_game_state(self.game)
+        
+        if self.heuristics is None:
+            return
+            
+        try:
+            # Get possible Mr. X positions
+            possible_positions = self.heuristics.get_possible_mr_x_positions()
+            
+            if not possible_positions:
+                return
+            
+            # Draw shadows for each possible position
+            for node in possible_positions:
+                if node in self.pos:
+                    x, y = self.pos[node]
+                    
+                    # Draw a more visible shadow circle behind the node for testing
+                    shadow = plt.Circle((x, y), 0.042, 
+                                      fill=True, color='red', alpha=0.4, zorder=0)
+                    self.ax.add_patch(shadow)
+                    
+                    # Draw a more visible red ring around possible positions
+                    ring = plt.Circle((x, y), 0.042, fill=False, color='darkred', 
+                                    linewidth=2.5, alpha=0.8, linestyle=':')
+                    self.ax.add_patch(ring)
+                    
+        except Exception as e:
+            print(f"Error drawing heuristic shadows: {e}")
+            import traceback
+            traceback.print_exc()
+            # Disable heuristics if there's an error
+            self.heuristics = None
 
     def setup_ai_agents(self):
         """Initialize AI agents based on game mode"""

@@ -48,7 +48,8 @@ def main():
     
     # Interactive single game mode
     try:
-        map_size, play_mode, num_detectives, verbosity = get_game_configuration()
+        # map_size, play_mode, num_detectives, verbosity = get_game_configuration()
+        map_size, play_mode, num_detectives, verbosity = "extracted", "ai_vs_ai", 5, VerbosityLevel.HEURISTICS
         
         # Play single interactive game
         game_id, turn_count, completed = play_single_game(

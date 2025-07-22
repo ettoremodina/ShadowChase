@@ -61,6 +61,12 @@ class GameControls:
             self.visualizer.current_cop_index = 0
             self.visualizer.selected_nodes = []
             
+            # Update heuristics if they're enabled and available
+            if (hasattr(self.visualizer, 'heuristics') and self.visualizer.heuristics and 
+                hasattr(self.visualizer.setup_controls, 'get_heuristics_enabled') and
+                self.visualizer.setup_controls.get_heuristics_enabled()):
+                self.visualizer.heuristics.update_game_state(self.visualizer.game)
+            
             # Update UI
             self.visualizer.update_ui_visibility()
             self.visualizer.draw_graph()
@@ -554,6 +560,13 @@ class GameControls:
             
             self.use_black_ticket.set(False)
             self.visualizer.update_ui_visibility()
+            
+            # Update heuristics if they're enabled and available
+            if (hasattr(self.visualizer, 'heuristics') and self.visualizer.heuristics and 
+                hasattr(self.visualizer.setup_controls, 'get_heuristics_enabled') and
+                self.visualizer.setup_controls.get_heuristics_enabled()):
+                self.visualizer.heuristics.update_game_state(self.visualizer.game)
+            
             self.visualizer.draw_graph()
     
             # Check for game over

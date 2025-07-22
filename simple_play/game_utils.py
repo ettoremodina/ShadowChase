@@ -23,8 +23,8 @@ def parse_arguments():
                        help='Number of detectives (1-4)')
     parser.add_argument('--max-turns', type=int, default=24,
                        help='Maximum turns per game')
-    parser.add_argument('--verbosity', type=int, default=2, choices=[1, 2, 3, 4],
-                       help='Verbosity level (1=basic, 2=moves, 3=detailed, 4=debug)')
+    parser.add_argument('--verbosity', type=int, default=2, choices=[1, 2, 3, 4, 5],
+                       help='Verbosity level (1=basic, 2=moves, 3=detailed, 4=debug, 5=heuristics)')
     return parser.parse_args()
 
 def get_game_configuration() -> Tuple[str, str, int, int]:
@@ -168,6 +168,9 @@ def play_single_game(map_size: str = "test", play_mode: str = "ai_vs_ai",
     
     # Create and initialize game
     game = create_and_initialize_game(map_size, num_detectives)
+    
+    # Set the game in display for heuristics initialization
+    display.set_game(game)
     
     # Create controller
     controller = GameController(game, display)

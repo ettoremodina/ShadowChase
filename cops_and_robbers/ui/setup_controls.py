@@ -10,6 +10,7 @@ class SetupControls:
         self.visualizer = visualizer
         self.setup_section = None
         self.game_mode = tk.StringVar(value="human_vs_human")
+        self.heuristics_enabled = tk.BooleanVar(value=False)  # New heuristics toggle
         
     def create_setup_section(self, parent):
         """Create the game setup section"""
@@ -35,6 +36,19 @@ class SetupControls:
             radio = ttk.Radiobutton(mode_frame, text=mode_text, 
                                   variable=self.game_mode, value=mode_value)
             radio.pack(anchor="w", padx=10, pady=2)
+        
+        # Heuristics visualization toggle (only for Scotland Yard games)
+        if isinstance(self.visualizer.game, ScotlandYardGame):
+            heuristics_frame = ttk.LabelFrame(self.setup_section, text="🧠 Heuristics")
+            heuristics_frame.pack(fill=tk.X, padx=10, pady=8)
+            
+            heuristics_checkbox = ttk.Checkbutton(
+                heuristics_frame, 
+                text="🔍 Show possible Mr. X positions (detective turns only)",
+                variable=self.heuristics_enabled,
+                command=self._on_heuristics_toggle
+            )
+            heuristics_checkbox.pack(anchor="w", padx=10, pady=5)
         
         # Instructions
         instruction_frame = ttk.Frame(self.setup_section)
@@ -62,6 +76,19 @@ class SetupControls:
         self.reset_button.pack(fill=tk.X, pady=3)
         
         return self.setup_section
+    
+    def _on_heuristics_toggle(self):
+        """Handle heuristics toggle change"""
+        if self.heuristics_enabled.get():
+            # Initialize heuristics when enabled
+            self.visualizer._initialize_heuristics()
+        # Redraw graph to show/hide heuristics
+        if not self.visualizer.setup_mode:
+            self.visualizer.draw_graph()
+    
+    def get_heuristics_enabled(self):
+        """Get whether heuristics visualization is enabled"""
+        return self.heuristics_enabled.get()
     
     def update_status(self):
         """Update the setup status display"""
@@ -123,6 +150,10 @@ class SetupControls:
         
         # Set the game mode in the visualizer
         self.visualizer.game_mode = self.get_selected_mode()
+        
+        # Initialize heuristics if enabled
+        if self.heuristics_enabled.get():
+            self.visualizer._initialize_heuristics()
         
         self.visualizer.setup_mode = False
         self.visualizer.selected_positions = []

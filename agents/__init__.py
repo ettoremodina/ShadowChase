@@ -7,6 +7,7 @@ including basic random agents and more sophisticated AI strategies.
 
 from .base_agent import Agent, DetectiveAgent, MrXAgent, MultiDetectiveAgent
 from .random_agent import RandomMrXAgent, RandomMultiDetectiveAgent
+from .heuristics import GameHeuristics
 
 __all__ = [
     'Agent',

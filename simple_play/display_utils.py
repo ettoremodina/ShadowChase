@@ -6,12 +6,21 @@ from typing import Dict, List, Tuple, Optional, Set
 from cops_and_robbers.core.game import ScotlandYardGame, Player, TicketType, TransportType
 
 
+# Import heuristics for advanced analysis
+try:
+    from agents.heuristics import GameHeuristics
+    HEURISTICS_AVAILABLE = True
+except ImportError:
+    HEURISTICS_AVAILABLE = False
+
+
 class VerbosityLevel:
     """Verbosity level constants"""
     BASIC = 1      # Basic game state (positions, turn)
     MOVES = 2      # + Available moves and tickets  
     DETAILED = 3   # + Move history and detailed transport info
     DEBUG = 4      # + All internal game mechanics
+    HEURISTICS = 5 # + Heuristic analysis (possible Mr. X positions)
 
 
 class GameDisplay:
@@ -20,6 +29,7 @@ class GameDisplay:
     def __init__(self, verbosity: int = VerbosityLevel.MOVES):
         self.verbosity = verbosity
         self.move_history = []
+        self.heuristics = None  # Will be initialized when game is set
         
         # Display symbols
         self.symbols = {
@@ -33,6 +43,15 @@ class GameDisplay:
             'visible': '👁️',
             'hidden': '❓'
         }
+    
+    def set_game(self, game: ScotlandYardGame):
+        """Set the game instance and initialize heuristics if needed"""
+        if HEURISTICS_AVAILABLE and self.verbosity >= VerbosityLevel.HEURISTICS:
+            try:
+                self.heuristics = GameHeuristics(game)
+            except Exception as e:
+                print(f"⚠️ Warning: Could not initialize heuristics: {e}")
+                self.heuristics = None
     
     def clear_screen(self):
         """Clear terminal screen"""
@@ -75,6 +94,10 @@ class GameDisplay:
         # Show move history if verbosity >= DETAILED
         if self.verbosity >= VerbosityLevel.DETAILED:
             self._print_move_history(game)
+        
+        # Show heuristic analysis if verbosity >= HEURISTICS
+        if self.verbosity >= VerbosityLevel.HEURISTICS:
+            self._print_heuristic_analysis(game)
         
         print()
     
@@ -237,8 +260,65 @@ class GameDisplay:
         state = game.game_state
         print(f"  Double move active: {state.double_move_active}")
         print(f"  Reveal turns: {game.reveal_turns}")
-        print(f"  Next reveal: {min([t for t in game.reveal_turns if t > state.turn_count], default='None')}")
-        print(f"  Game history length: {len(game.game_history)}")
+        print(f"  Next reveal: {min([t for t in game.reveal_turns if t > state.robber_turn_count], default='None')}")
+        print(f"  Game history length (MrX turns): {state.robber_turn_count}")
+
+    def _print_heuristic_analysis(self, game: ScotlandYardGame):
+        """Print heuristic analysis (verbosity level 5)"""
+        if not HEURISTICS_AVAILABLE:
+            print("\n🔍 HEURISTIC ANALYSIS:")
+            print("  ❌ Heuristics module not available")
+            return
+        
+        if not self.heuristics:
+            try:
+                self.heuristics = GameHeuristics(game)
+            except Exception as e:
+                print("\n🔍 HEURISTIC ANALYSIS:")
+                print(f"  ❌ Could not initialize heuristics: {e}")
+                return
+        
+        # Update game state in heuristics
+        self.heuristics.update_game_state(game)
+        
+        print("\n🔍 HEURISTIC ANALYSIS:")
+        
+        # Basic distance information
+        distances = self.heuristics.get_mr_x_distances_from_detectives()
+        if distances:
+            print(f"  📏 Distances from Mr. X to detectives: {distances}")
+            min_dist = self.heuristics.get_minimum_distance_to_mr_x()
+            if min_dist >= 0:
+                print(f"  📏 Closest detective distance: {min_dist}")
+        
+        # Possible positions analysis
+        possible_positions = self.heuristics.get_possible_mr_x_positions()
+        if possible_positions:
+            sorted_positions = sorted(possible_positions)
+            if len(sorted_positions) == 1:
+                if game.game_state.mr_x_visible:
+                    print(f"  🎯 Mr. X position: {sorted_positions[0]} (VISIBLE)")
+                else:
+                    print(f"  🎯 Mr. X known position: {sorted_positions[0]}")
+            else:
+                print(f"  🎯 Possible Mr. X positions ({len(sorted_positions)}): {sorted_positions}")
+                
+                # Distance analysis to possible positions
+                detective_distances = self.heuristics.get_detective_distances_to_possible_mr_x_positions()
+                if detective_distances:
+                    print(f"  📊 Detective distances to possible positions:")
+                    for det_idx, distances in detective_distances.items():
+                        valid_distances = [d for d in distances if d >= 0]
+                        if valid_distances:
+                            min_d = min(valid_distances)
+                            max_d = max(valid_distances)
+                            print(f"    Detective {det_idx + 1}: min={min_d}, max={max_d}")
+                
+                min_possible_dist = self.heuristics.get_minimum_distance_to_possible_mr_x_positions()
+                if min_possible_dist >= 0:
+                    print(f"  🎯 Minimum distance to any possible position: {min_possible_dist}")
+        else:
+            print("  ❓ No possible position analysis available")
 
 
 def format_transport_input(user_input: str) -> Tuple[Optional[int], Optional[TransportType], bool, bool]:

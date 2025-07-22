@@ -6,22 +6,25 @@ import random
 from typing import List, Tuple, Optional
 from cops_and_robbers.core.game import ScotlandYardGame, Player, TicketType, TransportType
 from .display_utils import GameDisplay, format_transport_input
-from agents.random_agent import RandomMrXAgent, RandomMultiDetectiveAgent
+from agents import AgentType, AgentSelector, get_agent_registry
 
 
 class GameController:
     """Handles game logic and flow"""
     
-    def __init__(self, game: ScotlandYardGame, display: GameDisplay):
+    def __init__(self, game: ScotlandYardGame, display: GameDisplay, 
+                 mr_x_agent_type: AgentType = AgentType.RANDOM, 
+                 detective_agent_type: AgentType = AgentType.RANDOM):
         self.game = game
         self.display = display
         self.current_detective = 0
         self.double_move_first = False
         
-        # Initialize agents
+        # Initialize agents using the registry
+        registry = get_agent_registry()
         num_detectives = len(game.game_state.cop_positions)
-        self.agent_mrx = RandomMrXAgent()
-        self.agent_detectives = RandomMultiDetectiveAgent(num_detectives)
+        self.agent_mrx = registry.create_mr_x_agent(mr_x_agent_type)
+        self.agent_detectives = registry.create_multi_detective_agent(detective_agent_type, num_detectives)
     
     def make_all_detective_moves(self) -> bool:
         """Handle all detective moves simultaneously"""
@@ -343,8 +346,8 @@ class GameSetup:
         game.initialize_scotland_yard_game(detective_positions, mr_x_position)
 
 
-def get_game_mode() -> Tuple[str, str, int]:
-    """Get game configuration from user"""
+def get_game_mode() -> Tuple[str, str, int, AgentType, AgentType]:
+    """Get game configuration from user, including agent types for AI players"""
     print("\n🎮 GAME SETUP")
     print("=" * 50)
     
@@ -403,7 +406,33 @@ def get_game_mode() -> Tuple[str, str, int]:
         else:
             print("❌ Please enter 1, 2, 3, or 4")
     
-    return map_size, play_mode, num_detectives
+    # Get agent configurations for AI players
+    mr_x_agent_type = AgentType.RANDOM
+    detective_agent_type = AgentType.RANDOM
+    
+    if play_mode in ["human_det_vs_ai_mrx", "ai_vs_ai"]:
+        print(f"\n🤖 Select AI Agent for Mr. X:")
+        mr_x_agent_type = AgentSelector.get_user_agent_choice("Choose Mr. X AI agent type")
+    
+    if play_mode in ["ai_det_vs_human_mrx", "ai_vs_ai"]:
+        print(f"\n🕵️ Select AI Agent for Detectives:")
+        detective_agent_type = AgentSelector.get_user_agent_choice("Choose Detective AI agent type")
+    
+    return map_size, play_mode, num_detectives, mr_x_agent_type, detective_agent_type
+
+
+def get_agent_configuration() -> Tuple[AgentType, AgentType]:
+    """Get agent configuration separately for use in batch mode"""
+    print(f"\n🤖 AI AGENT CONFIGURATION")
+    print("=" * 50)
+    
+    print(f"\n🤖 Select AI Agent for Mr. X:")
+    mr_x_agent_type = AgentSelector.get_user_agent_choice("Choose Mr. X AI agent type")
+    
+    print(f"\n🕵️ Select AI Agent for Detectives:")
+    detective_agent_type = AgentSelector.get_user_agent_choice("Choose Detective AI agent type")
+    
+    return mr_x_agent_type, detective_agent_type
 
 
 def get_verbosity_level() -> int:

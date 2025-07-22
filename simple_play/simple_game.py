@@ -24,6 +24,7 @@ from simple_play.game_utils import (
     play_multiple_games,
     parse_arguments
 )
+from agents import AgentType, AgentSelector
 
 
 def main():
@@ -36,20 +37,33 @@ def main():
     # Handle batch mode
     if args.batch:
         print(f"🤖 Batch mode: Playing {args.batch} AI vs AI games")
+        
+        # Get agent configuration for batch mode
+        print(f"\n🤖 AI AGENT CONFIGURATION FOR BATCH MODE")
+        print("=" * 50)
+        
+        print(f"\n🤖 Select AI Agent for Mr. X:")
+        mr_x_agent_type = AgentSelector.get_user_agent_choice("Choose Mr. X AI agent type")
+        
+        print(f"\n🕵️ Select AI Agent for Detectives:")
+        detective_agent_type = AgentSelector.get_user_agent_choice("Choose Detective AI agent type")
+        
         results = play_multiple_games(
             n_games=args.batch,
             map_size=args.map_size,
             play_mode="ai_vs_ai",
             num_detectives=args.detectives,
             verbosity=VerbosityLevel.BASIC,
-            max_turns=args.max_turns
+            max_turns=args.max_turns,
+            mr_x_agent_type=mr_x_agent_type,
+            detective_agent_type=detective_agent_type
         )
         return results
     
     # Interactive single game mode
     try:
-        # map_size, play_mode, num_detectives, verbosity = get_game_configuration()
-        map_size, play_mode, num_detectives, verbosity = "extracted", "ai_vs_ai", 5, VerbosityLevel.HEURISTICS
+        # Get full game configuration including agent types
+        map_size, play_mode, num_detectives, verbosity, mr_x_agent, detective_agent = get_game_configuration()
         
         # Play single interactive game
         game_id, turn_count, completed = play_single_game(
@@ -58,7 +72,9 @@ def main():
             num_detectives=num_detectives,
             verbosity=verbosity,
             auto_save=False,
-            max_turns=args.max_turns
+            max_turns=args.max_turns,
+            mr_x_agent_type=mr_x_agent,
+            detective_agent_type=detective_agent
         )
         
         if completed:

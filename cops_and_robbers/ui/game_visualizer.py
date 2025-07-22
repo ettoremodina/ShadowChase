@@ -15,7 +15,7 @@ from .game_controls import GameControls
 from .transport_selection import select_transport
 from .game_replay import GameReplayWindow
 from .base_visualizer import BaseVisualizer
-from agents.random_agent import RandomMrXAgent, RandomMultiDetectiveAgent
+from agents import AgentType, get_agent_registry
 
 # Import heuristics for position analysis
 try:
@@ -36,7 +36,7 @@ class GameVisualizer(BaseVisualizer):
         self.game_service = GameService(self.loader)
         self.solver = None
         self.root = tk.Tk()
-        self.root.title("🎯 Cops and Robbers Game")
+        self.root.title("Cops and Robbers Game")
         self.root.geometry(f"{self.root.winfo_screenwidth()}x{self.root.winfo_screenheight()}")
         self.root.configure(bg="#f8f9fa")
         
@@ -44,6 +44,10 @@ class GameVisualizer(BaseVisualizer):
         self.game_mode = "human_vs_human"
         self.detective_agent = None
         self.mr_x_agent = None
+        
+        # Agent types for UI selection
+        self.mr_x_agent_type = AgentType.RANDOM
+        self.detective_agent_type = AgentType.RANDOM
         
         # Game state
         self.selected_positions = auto_positions or []
@@ -291,7 +295,9 @@ class GameVisualizer(BaseVisualizer):
                 self.game, 
                 self.game_mode,
                 self.detective_agent,
-                self.mr_x_agent
+                self.mr_x_agent,
+                self.detective_agent_type.value if hasattr(self.detective_agent_type, 'value') else None,
+                self.mr_x_agent_type.value if hasattr(self.mr_x_agent_type, 'value') else None
             )
             messagebox.showinfo("💾 Game Saved", f"Game saved as {game_id}")
         except Exception as e:
@@ -351,7 +357,9 @@ class GameVisualizer(BaseVisualizer):
                 self.game,
                 self.game_mode,
                 self.detective_agent, 
-                self.mr_x_agent
+                self.mr_x_agent,
+                self.detective_agent_type.value if hasattr(self.detective_agent_type, 'value') else None,
+                self.mr_x_agent_type.value if hasattr(self.mr_x_agent_type, 'value') else None
             )
             messagebox.showinfo("🎉 Game Completed & Saved!", 
                               f"Game automatically saved as: {game_id}\n\n"
@@ -627,7 +635,7 @@ class GameVisualizer(BaseVisualizer):
         # Draw labels
         nx.draw_networkx_labels(self.game.graph, self.pos, ax=self.ax, font_size=8)
         
-        self.ax.set_title("🎯 Cops and Robbers Game", fontsize=14, fontweight='bold')
+        self.ax.set_title("Cops and Robbers Game", fontsize=14, fontweight='bold')
         
         # Use base class method for legend
         self.draw_transport_legend()
@@ -739,26 +747,28 @@ class GameVisualizer(BaseVisualizer):
             self.heuristics = None
 
     def setup_ai_agents(self):
-        """Initialize AI agents based on game mode"""
+        """Initialize AI agents based on game mode and selected agent types"""
+        registry = get_agent_registry()
+        
         if self.game_mode == "human_vs_human":
             self.detective_agent = None
             self.mr_x_agent = None
         elif self.game_mode == "human_det_vs_ai_mrx":
             # Human plays as detectives, AI plays as Mr. X
             self.detective_agent = None
-            self.mr_x_agent = RandomMrXAgent() if isinstance(self.game, ScotlandYardGame) else None
+            self.mr_x_agent = registry.create_mr_x_agent(self.mr_x_agent_type) if isinstance(self.game, ScotlandYardGame) else None
         elif self.game_mode == "ai_det_vs_human_mrx":
             # AI plays as detectives, Human plays as Mr. X
             if isinstance(self.game, ScotlandYardGame):
-                self.detective_agent = RandomMultiDetectiveAgent(self.game.num_cops)
+                self.detective_agent = registry.create_multi_detective_agent(self.detective_agent_type, self.game.num_cops)
             else:
                 self.detective_agent = None
             self.mr_x_agent = None
         elif self.game_mode == "ai_vs_ai":
             # AI plays both sides
             if isinstance(self.game, ScotlandYardGame):
-                self.detective_agent = RandomMultiDetectiveAgent(self.game.num_cops)
-                self.mr_x_agent = RandomMrXAgent()
+                self.detective_agent = registry.create_multi_detective_agent(self.detective_agent_type, self.game.num_cops)
+                self.mr_x_agent = registry.create_mr_x_agent(self.mr_x_agent_type)
             else:
                 self.detective_agent = None
                 self.mr_x_agent = None

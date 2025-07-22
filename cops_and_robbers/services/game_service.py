@@ -85,16 +85,35 @@ class GameService:
     def save_ui_game(self, game: ScotlandYardGame,
                      game_mode: str,
                      detective_agent = None,
-                     mr_x_agent = None) -> str:
+                     mr_x_agent = None,
+                     detective_agent_type: str = None,
+                     mr_x_agent_type: str = None) -> str:
         """Save a game from the UI with appropriate metadata"""
+        
+        # Determine player types with agent information
+        detective_type = 'Human'
+        mr_x_type = 'Human'
+        
+        if detective_agent:
+            detective_type = f'AI ({detective_agent_type.title() if detective_agent_type else "AI"})'
+        
+        if mr_x_agent:
+            mr_x_type = f'AI ({mr_x_agent_type.title() if mr_x_agent_type else "AI"})'
+        
         player_types = {
-            'detectives': 'AI' if detective_agent else 'Human',
-            'mr_x': 'AI' if mr_x_agent else 'Human'
+            'detectives': detective_type,
+            'mr_x': mr_x_type
         }
         
         additional_metadata = {
             'source': 'ui_game'
         }
+        
+        # Add agent type metadata if provided
+        if detective_agent_type:
+            additional_metadata['detective_agent_type'] = detective_agent_type
+        if mr_x_agent_type:
+            additional_metadata['mr_x_agent_type'] = mr_x_agent_type
         
         return self.save_game(game, game_mode, player_types, additional_metadata)
     
@@ -102,7 +121,9 @@ class GameService:
                           play_mode: str,
                           map_size: str,
                           num_detectives: int,
-                          turn_count: int) -> str:
+                          turn_count: int,
+                          mr_x_agent_type: str = None,
+                          detective_agent_type: str = None) -> str:
         """Save a game from terminal play with appropriate metadata"""
         additional_metadata = {
             'source': 'terminal_game',
@@ -110,14 +131,23 @@ class GameService:
             'num_cops': num_detectives  # Use standard field name
         }
         
-        return self.save_game(game, play_mode, self._get_player_types_from_mode(play_mode), additional_metadata)
+        # Add AI agent type information if provided
+        if mr_x_agent_type:
+            additional_metadata['mr_x_agent_type'] = mr_x_agent_type
+        if detective_agent_type:
+            additional_metadata['detective_agent_type'] = detective_agent_type
+        
+        return self.save_game(game, play_mode, self._get_player_types_from_mode(play_mode, mr_x_agent_type, detective_agent_type), additional_metadata)
     
-    def _get_player_types_from_mode(self, play_mode: str) -> Dict[str, str]:
-        """Convert play mode to player types"""
+    def _get_player_types_from_mode(self, play_mode: str, mr_x_agent_type: str = None, detective_agent_type: str = None) -> Dict[str, str]:
+        """Convert play mode to player types with AI agent type details"""
         mode_map = {
             "human_vs_human": {'detectives': 'Human', 'mr_x': 'Human'},
-            "human_det_vs_ai_mrx": {'detectives': 'Human', 'mr_x': 'AI'},
-            "ai_det_vs_human_mrx": {'detectives': 'AI', 'mr_x': 'Human'},
-            "ai_vs_ai": {'detectives': 'AI', 'mr_x': 'AI'}
+            "human_det_vs_ai_mrx": {'detectives': 'Human', 'mr_x': f'AI ({mr_x_agent_type.title() if mr_x_agent_type else "AI"})'},
+            "ai_det_vs_human_mrx": {'detectives': f'AI ({detective_agent_type.title() if detective_agent_type else "AI"})', 'mr_x': 'Human'},
+            "ai_vs_ai": {
+                'detectives': f'AI ({detective_agent_type.title() if detective_agent_type else "AI"})', 
+                'mr_x': f'AI ({mr_x_agent_type.title() if mr_x_agent_type else "AI"})'
+            }
         }
         return mode_map.get(play_mode, {'detectives': 'Human', 'mr_x': 'Human'})

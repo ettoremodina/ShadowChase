@@ -2,6 +2,7 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 from .ui_components import StyledButton, InfoDisplay
 from ..core.game import ScotlandYardGame
+from agents import AgentSelector
 
 class SetupControls:
     """Handles game setup UI and logic"""
@@ -11,6 +12,10 @@ class SetupControls:
         self.setup_section = None
         self.game_mode = tk.StringVar(value="human_vs_human")
         self.heuristics_enabled = tk.BooleanVar(value=False)  # New heuristics toggle
+        
+        # Agent selection variables
+        self.mr_x_agent_type = tk.StringVar(value="random")
+        self.detective_agent_type = tk.StringVar(value="random")
         
     def create_setup_section(self, parent):
         """Create the game setup section"""
@@ -34,8 +39,36 @@ class SetupControls:
         
         for mode_value, mode_text in game_modes:
             radio = ttk.Radiobutton(mode_frame, text=mode_text, 
-                                  variable=self.game_mode, value=mode_value)
+                                  variable=self.game_mode, value=mode_value,
+                                  command=self._on_game_mode_change)
             radio.pack(anchor="w", padx=10, pady=2)
+        
+        # Agent selection (only shown when AI is involved)
+        self.agent_frame = ttk.LabelFrame(self.setup_section, text="🤖 AI Agent Selection")
+        
+        # Mr. X agent selection
+        mr_x_subframe = ttk.Frame(self.agent_frame)
+        mr_x_subframe.pack(fill=tk.X, padx=10, pady=5)
+        ttk.Label(mr_x_subframe, text="Mr. X AI Agent:", font=('Arial', 9, 'bold')).pack(anchor="w")
+        
+        agent_choices = AgentSelector.get_agent_choices_for_ui()
+        self.mr_x_agent_combo = ttk.Combobox(mr_x_subframe, textvariable=self.mr_x_agent_type,
+                                           values=[choice[1] for choice in agent_choices],
+                                           state="readonly")
+        self.mr_x_agent_combo.pack(fill=tk.X, pady=(2, 0))
+        
+        # Detective agent selection
+        det_subframe = ttk.Frame(self.agent_frame)
+        det_subframe.pack(fill=tk.X, padx=10, pady=5)
+        ttk.Label(det_subframe, text="Detective AI Agent:", font=('Arial', 9, 'bold')).pack(anchor="w")
+        
+        self.detective_agent_combo = ttk.Combobox(det_subframe, textvariable=self.detective_agent_type,
+                                                values=[choice[1] for choice in agent_choices],
+                                                state="readonly")
+        self.detective_agent_combo.pack(fill=tk.X, pady=(2, 0))
+        
+        # Initially hide agent selection and update based on game mode
+        self._on_game_mode_change()
         
         # Heuristics visualization toggle (only for Scotland Yard games)
         if isinstance(self.visualizer.game, ScotlandYardGame):
@@ -85,6 +118,32 @@ class SetupControls:
         # Redraw graph to show/hide heuristics
         if not self.visualizer.setup_mode:
             self.visualizer.draw_graph()
+    
+    def _on_game_mode_change(self):
+        """Handle game mode change to show/hide agent selection"""
+        game_mode = self.game_mode.get()
+        
+        # Determine which AI agents are needed
+        needs_mr_x_ai = game_mode in ["human_det_vs_ai_mrx", "ai_vs_ai"]
+        needs_detective_ai = game_mode in ["ai_det_vs_human_mrx", "ai_vs_ai"]
+        
+        if needs_mr_x_ai or needs_detective_ai:
+            # Show agent selection frame
+            self.agent_frame.pack(fill=tk.X, padx=10, pady=8)
+            
+            # Show/hide individual agent selections based on need
+            if needs_mr_x_ai:
+                self.mr_x_agent_combo.pack_info()  # Make sure it's visible
+            else:
+                self.mr_x_agent_combo.pack_forget()  # Hide it
+            
+            if needs_detective_ai:
+                self.detective_agent_combo.pack_info()  # Make sure it's visible
+            else:
+                self.detective_agent_combo.pack_forget()  # Hide it
+        else:
+            # Hide entire agent selection frame
+            self.agent_frame.pack_forget()
     
     def get_heuristics_enabled(self):
         """Get whether heuristics visualization is enabled"""
@@ -150,6 +209,25 @@ class SetupControls:
         
         # Set the game mode in the visualizer
         self.visualizer.game_mode = self.get_selected_mode()
+        
+        # Set selected agent types
+        from agents import AgentType
+        try:
+            # Map combobox values back to AgentType enums
+            agent_choices = AgentSelector.get_agent_choices_for_ui()
+            agent_value_map = {choice[1]: choice[0] for choice in agent_choices}
+            
+            mr_x_display_name = self.mr_x_agent_type.get()
+            detective_display_name = self.detective_agent_type.get()
+            
+            if mr_x_display_name in agent_value_map:
+                self.visualizer.mr_x_agent_type = AgentType(agent_value_map[mr_x_display_name])
+            
+            if detective_display_name in agent_value_map:
+                self.visualizer.detective_agent_type = AgentType(agent_value_map[detective_display_name])
+        
+        except Exception as e:
+            print(f"Warning: Failed to set agent types: {e}")
         
         # Initialize heuristics if enabled
         if self.heuristics_enabled.get():

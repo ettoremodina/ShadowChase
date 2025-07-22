@@ -10,6 +10,8 @@ from cops_and_robbers.core.game import Player, ScotlandYardGame
 from cops_and_robbers.services.game_service import GameService
 from simple_play.display_utils import GameDisplay, VerbosityLevel, display_game_start_info, display_game_over
 from simple_play.game_logic import GameController, GameSetup
+from agents import AgentType
+from agents import AgentType
 
 
 def parse_arguments():
@@ -27,16 +29,16 @@ def parse_arguments():
                        help='Verbosity level (1=basic, 2=moves, 3=detailed, 4=debug, 5=heuristics)')
     return parser.parse_args()
 
-def get_game_configuration() -> Tuple[str, str, int, int]:
+def get_game_configuration() -> Tuple[str, str, int, int, AgentType, AgentType]:
     """Get game configuration from user or defaults"""
     try:
         from simple_play.game_logic import get_game_mode, get_verbosity_level
-        map_size, play_mode, num_detectives = get_game_mode()
+        map_size, play_mode, num_detectives, mr_x_agent, detective_agent = get_game_mode()
         verbosity = get_verbosity_level()
-        return map_size, play_mode, num_detectives, verbosity
+        return map_size, play_mode, num_detectives, verbosity, mr_x_agent, detective_agent
     except Exception:
         # Default configuration if interactive selection fails
-        return "test", "ai_vs_ai", 2, VerbosityLevel.MOVES
+        return "test", "ai_vs_ai", 2, VerbosityLevel.MOVES, AgentType.RANDOM, AgentType.RANDOM
 
 
 def create_and_initialize_game(map_size: str, num_detectives: int) -> ScotlandYardGame:
@@ -52,12 +54,19 @@ def create_and_initialize_game(map_size: str, num_detectives: int) -> ScotlandYa
 
 
 def save_game_session(game: ScotlandYardGame, play_mode: str, map_size: str, 
-                     num_detectives: int, turn_count: int, display: GameDisplay) -> Optional[str]:
+                     num_detectives: int, turn_count: int, display: GameDisplay,
+                     mr_x_agent_type=None, detective_agent_type=None) -> Optional[str]:
     """Save a completed game session with metadata"""
     try:
         game_service = GameService()
+        
+        # Convert agent types to strings if they are AgentType enums
+        mr_x_agent_str = mr_x_agent_type.value if hasattr(mr_x_agent_type, 'value') else mr_x_agent_type
+        detective_agent_str = detective_agent_type.value if hasattr(detective_agent_type, 'value') else detective_agent_type
+        
         game_id = game_service.save_terminal_game(
-            game, play_mode, map_size, num_detectives, turn_count
+            game, play_mode, map_size, num_detectives, turn_count,
+            mr_x_agent_str, detective_agent_str
         )
         display.print_info(f"Game saved successfully! Game ID: {game_id}")
         return game_id
@@ -67,19 +76,22 @@ def save_game_session(game: ScotlandYardGame, play_mode: str, map_size: str,
 
 
 def save_game_automatically(game: ScotlandYardGame, play_mode: str, map_size: str,
-                          num_detectives: int, turn_count: int, display: GameDisplay) -> Optional[str]:
+                          num_detectives: int, turn_count: int, display: GameDisplay,
+                          mr_x_agent_type=None, detective_agent_type=None) -> Optional[str]:
     """Save game without user confirmation"""
     if not game.game_history:  # Don't save if no moves were made
         return None
     
-    game_id = save_game_session(game, play_mode, map_size, num_detectives, turn_count, display)
+    game_id = save_game_session(game, play_mode, map_size, num_detectives, turn_count, display,
+                               mr_x_agent_type, detective_agent_type)
     if game_id and display.verbosity >= VerbosityLevel.MOVES:
         print(f"✅ Game {game_id} saved automatically")
     return game_id
 
 
 def offer_save_option(game: ScotlandYardGame, play_mode: str, map_size: str, 
-                     num_detectives: int, turn_count: int, display: GameDisplay):
+                     num_detectives: int, turn_count: int, display: GameDisplay,
+                     mr_x_agent_type=None, detective_agent_type=None):
     """Offer the user option to save the game with confirmation"""
     if not game.game_history:  # Don't save if no moves were made
         return
@@ -91,7 +103,8 @@ def offer_save_option(game: ScotlandYardGame, play_mode: str, map_size: str,
         save_choice = input("Would you like to save this game? (y/n): ").strip().lower()
         
         if save_choice in ['y', 'yes']:
-            game_id = save_game_session(game, play_mode, map_size, num_detectives, turn_count, display)
+            game_id = save_game_session(game, play_mode, map_size, num_detectives, turn_count, display,
+                                       mr_x_agent_type, detective_agent_type)
             if game_id:
                 print(f"✅ Game saved as: {game_id}")
                 print(f"📁 Game files saved to: saved_games/")
@@ -156,9 +169,20 @@ def execute_single_turn(controller: GameController, game: ScotlandYardGame,
 
 def play_single_game(map_size: str = "test", play_mode: str = "ai_vs_ai", 
                     num_detectives: int = 2, verbosity: int = VerbosityLevel.BASIC,
-                    auto_save: bool = False, max_turns: int = 24) -> Tuple[Optional[str], int, bool]:
+                    auto_save: bool = False, max_turns: int = 24,
+                    mr_x_agent_type=None, detective_agent_type=None) -> Tuple[Optional[str], int, bool]:
     """
     Play a single game with specified parameters.
+    
+    Args:
+        map_size: Size of the game map
+        play_mode: Game mode (human_vs_human, ai_vs_ai, etc.)
+        num_detectives: Number of detectives
+        verbosity: Display verbosity level
+        auto_save: Whether to automatically save the game
+        max_turns: Maximum number of turns
+        mr_x_agent_type: Type of agent for Mr. X (defaults to RANDOM)
+        detective_agent_type: Type of agent for detectives (defaults to RANDOM)
     
     Returns:
         Tuple of (game_id if saved, turn_count, game_completed_normally)
@@ -172,8 +196,14 @@ def play_single_game(map_size: str = "test", play_mode: str = "ai_vs_ai",
     # Set the game in display for heuristics initialization
     display.set_game(game)
     
-    # Create controller
-    controller = GameController(game, display)
+    # Set default agent types if not provided
+    if mr_x_agent_type is None:
+        mr_x_agent_type = AgentType.RANDOM
+    if detective_agent_type is None:
+        detective_agent_type = AgentType.RANDOM
+    
+    # Create controller with agent types
+    controller = GameController(game, display, mr_x_agent_type, detective_agent_type)
     
     # Show game start info only if verbosity is high enough
     if verbosity >= VerbosityLevel.MOVES:
@@ -219,24 +249,44 @@ def play_single_game(map_size: str = "test", play_mode: str = "ai_vs_ai",
     if play_mode == "ai_vs_ai":
         auto_save = True  # Always auto-save in AI vs AI mode
     if auto_save:
-        game_id = save_game_automatically(game, play_mode, map_size, num_detectives, turn_count, display)
+        game_id = save_game_automatically(game, play_mode, map_size, num_detectives, turn_count, display,
+                                         mr_x_agent_type, detective_agent_type)
     elif verbosity >= VerbosityLevel.MOVES:
-        offer_save_option(game, play_mode, map_size, num_detectives, turn_count, display)
+        offer_save_option(game, play_mode, map_size, num_detectives, turn_count, display,
+                         mr_x_agent_type, detective_agent_type)
     
     return game_id, turn_count, game_completed
 
 
 def play_multiple_games(n_games: int, map_size: str = "test", play_mode: str = "ai_vs_ai",
                        num_detectives: int = 2, verbosity: int = VerbosityLevel.BASIC,
-                       max_turns: int = 24) -> dict:
+                       max_turns: int = 24, mr_x_agent_type=None, detective_agent_type=None) -> dict:
     """
     Play N games automatically with the specified parameters.
     All games are saved automatically without confirmation.
     
+    Args:
+        n_games: Number of games to play
+        map_size: Size of the game map
+        play_mode: Game mode (should be ai_vs_ai for batch)
+        num_detectives: Number of detectives
+        verbosity: Display verbosity level
+        max_turns: Maximum number of turns per game
+        mr_x_agent_type: Type of agent for Mr. X
+        detective_agent_type: Type of agent for detectives
+    
     Returns:
         Dictionary with game statistics
     """
+    # Set default agent types if not provided
+    if mr_x_agent_type is None:
+        mr_x_agent_type = AgentType.RANDOM
+    if detective_agent_type is None:
+        detective_agent_type = AgentType.RANDOM
+    
     print(f"🎮 BATCH GAME EXECUTION - {n_games} games")
+    print(f"   Mr. X Agent: {mr_x_agent_type.value.title()}")
+    print(f"   Detective Agent: {detective_agent_type.value.title()}")
     print("=" * 50)
     
     results = {
@@ -247,6 +297,8 @@ def play_multiple_games(n_games: int, map_size: str = "test", play_mode: str = "
         'timeout_games': 0,
         'total_turns': 0,
         'saved_games': [],
+        'mr_x_agent': mr_x_agent_type.value,
+        'detective_agent': detective_agent_type.value,
         'start_time': datetime.now(),
         'end_time': None
     }
@@ -261,7 +313,9 @@ def play_multiple_games(n_games: int, map_size: str = "test", play_mode: str = "
                 num_detectives=num_detectives,
                 verbosity=VerbosityLevel.BASIC,  # Minimal output for batch
                 auto_save=True,
-                max_turns=max_turns
+                max_turns=max_turns,
+                mr_x_agent_type=mr_x_agent_type,
+                detective_agent_type=detective_agent_type
             )
             
             results['total_turns'] += turn_count
@@ -299,5 +353,7 @@ def play_multiple_games(n_games: int, map_size: str = "test", play_mode: str = "
     print(f"Average turns per game: {results['total_turns']/results['completed_games']:.1f}" if results['completed_games'] > 0 else "N/A")
     print(f"Execution time: {duration}")
     print(f"Games per minute: {results['completed_games']/(duration.total_seconds()/60):.1f}" if duration.total_seconds() > 0 else "N/A")
+    print(f"Mr. X Agent: {results['mr_x_agent'].title()}")
+    print(f"Detective Agent: {results['detective_agent'].title()}")
     
     return results

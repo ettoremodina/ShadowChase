@@ -1,0 +1,22 @@
+{
+  "game_id": "game_20250722_211349",
+  "created_at": "2025-07-22T21:13:49.627753",
+  "graph_type": "custom",
+  "num_nodes": 10,
+  "num_edges": 37,
+  "num_cops": 2,
+  "total_turns": 6,
+  "winner": "cops",
+  "game_completed": true,
+  "has_ticket_system": true,
+  "game_mode": "ai_vs_ai",
+  "player_types": {
+    "detectives": "AI (Random)",
+    "mr_x": "AI (Random)"
+  },
+  "source": "terminal_game",
+  "map_size": "test",
+  "mr_x_agent_type": "random",
+  "detective_agent_type": "random",
+  "execution_time_seconds": 6.017
+}

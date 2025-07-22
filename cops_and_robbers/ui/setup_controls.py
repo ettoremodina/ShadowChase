@@ -2,7 +2,6 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 from .ui_components import StyledButton, InfoDisplay
 from ..core.game import ScotlandYardGame
-from agents import AgentSelector
 
 class SetupControls:
     """Handles game setup UI and logic"""
@@ -51,6 +50,8 @@ class SetupControls:
         mr_x_subframe.pack(fill=tk.X, padx=10, pady=5)
         ttk.Label(mr_x_subframe, text="Mr. X AI Agent:", font=('Arial', 9, 'bold')).pack(anchor="w")
         
+        # Import locally to avoid circular import
+        from agents import AgentSelector
         agent_choices = AgentSelector.get_agent_choices_for_ui()
         self.mr_x_agent_combo = ttk.Combobox(mr_x_subframe, textvariable=self.mr_x_agent_type,
                                            values=[choice[1] for choice in agent_choices],
@@ -211,7 +212,7 @@ class SetupControls:
         self.visualizer.game_mode = self.get_selected_mode()
         
         # Set selected agent types
-        from agents import AgentType
+        from agents import AgentType, AgentSelector
         try:
             # Map combobox values back to AgentType enums
             agent_choices = AgentSelector.get_agent_choices_for_ui()

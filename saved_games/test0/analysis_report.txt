@@ -1,0 +1,68 @@
+SCOTLAND YARD GAME ANALYSIS REPORT
+==================================================
+
+Generated: 2025-07-22 21:21:34
+Analysis Directory: saved_games\test0
+
+OVERALL STATISTICS
+--------------------
+Total Games: 8
+Detective Wins: 8 (100.0%)
+Mr. X Wins: 0 (0.0%)
+Incomplete Games: 0
+Average Game Length: 10.8 turns
+Average Execution Time: 10.779 seconds
+Average Time per Turn: 1.003 seconds
+Games with Timing Data: 8
+Completion Rate: 100.0%
+
+AGENT COMBINATION PERFORMANCE
+--------------------------------
+heuristic_vs_heuristic:
+  Games: 2
+  Detective Win Rate: 100.0%
+  Mr. X Win Rate: 0.0%
+  Avg Game Length: 9.0 turns
+  Completion Rate: 100.0%
+  Avg Execution Time: 9.025 seconds
+  Games per Minute: 6.6
+  Avg Time per Turn: 1.003 seconds
+
+heuristic_vs_random:
+  Games: 2
+  Detective Win Rate: 100.0%
+  Mr. X Win Rate: 0.0%
+  Avg Game Length: 17.5 turns
+  Completion Rate: 100.0%
+  Avg Execution Time: 17.543 seconds
+  Games per Minute: 3.4
+  Avg Time per Turn: 1.002 seconds
+
+random_vs_heuristic:
+  Games: 2
+  Detective Win Rate: 100.0%
+  Mr. X Win Rate: 0.0%
+  Avg Game Length: 8.5 turns
+  Completion Rate: 100.0%
+  Avg Execution Time: 8.524 seconds
+  Games per Minute: 7.0
+  Avg Time per Turn: 1.003 seconds
+
+random_vs_random:
+  Games: 2
+  Detective Win Rate: 100.0%
+  Mr. X Win Rate: 0.0%
+  Avg Game Length: 8.0 turns
+  Completion Rate: 100.0%
+  Avg Execution Time: 8.024 seconds
+  Games per Minute: 7.5
+  Avg Time per Turn: 1.003 seconds
+
+GENERATED VISUALIZATIONS
+-------------------------
+- agent_performance_matrix.jpg
+- comprehensive_dashboard.jpg
+- execution_time_analysis.jpg
+- game_length_analysis.jpg
+- temporal_analysis.jpg
+- win_rates_by_agent.jpg

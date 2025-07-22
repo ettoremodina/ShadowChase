@@ -15,7 +15,6 @@ from .game_controls import GameControls
 from .transport_selection import select_transport
 from .game_replay import GameReplayWindow
 from .base_visualizer import BaseVisualizer
-from agents import AgentType, get_agent_registry
 
 # Import heuristics for position analysis
 try:
@@ -45,7 +44,8 @@ class GameVisualizer(BaseVisualizer):
         self.detective_agent = None
         self.mr_x_agent = None
         
-        # Agent types for UI selection
+        # Agent types for UI selection - import locally to avoid circular import
+        from agents import AgentType
         self.mr_x_agent_type = AgentType.RANDOM
         self.detective_agent_type = AgentType.RANDOM
         
@@ -748,6 +748,7 @@ class GameVisualizer(BaseVisualizer):
 
     def setup_ai_agents(self):
         """Initialize AI agents based on game mode and selected agent types"""
+        from agents import get_agent_registry
         registry = get_agent_registry()
         
         if self.game_mode == "human_vs_human":

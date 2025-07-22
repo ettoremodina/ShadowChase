@@ -25,8 +25,8 @@ class GameRecord:
 class GameLoader:
     """Handles saving and loading of games with organized folder structure"""
     
-    def __init__(self, base_directory: str = "saved_games"):
-        self.base_dir = base_directory
+    def __init__(self, base_directory: str = "fritto_misto"):
+        self.base_dir = "saved_games/" + base_directory
         self.ensure_directory_structure()
     
     def ensure_directory_structure(self):
@@ -165,54 +165,6 @@ class GameLoader:
             return None
         
         return export_file
-    
-    def generate_statistics(self) -> Dict:
-        """Generate statistics about saved games"""
-        games = self.list_games()
-        
-        if not games:
-            return {}
-        
-        stats = {
-            'total_games': len(games),
-            'completed_games': sum(1 for g in games if g['game_completed']),
-            'cops_wins': sum(1 for g in games if g['winner'] == 'cops'),
-            'robber_wins': sum(1 for g in games if g['winner'] == 'robber'),
-            'graph_types': {},
-            'average_game_length': 0,
-            'games_by_date': {}
-        }
-        
-        total_turns = 0
-        completed_count = 0
-        
-        for game in games:
-            # Graph type statistics
-            graph_type = game['graph_type']
-            if graph_type not in stats['graph_types']:
-                stats['graph_types'][graph_type] = 0
-            stats['graph_types'][graph_type] += 1
-            
-            # Average game length
-            if game['game_completed']:
-                total_turns += game['total_turns']
-                completed_count += 1
-            
-            # Games by date
-            date = game['created_at'][:10]  # Extract date part
-            if date not in stats['games_by_date']:
-                stats['games_by_date'][date] = 0
-            stats['games_by_date'][date] += 1
-        
-        if completed_count > 0:
-            stats['average_game_length'] = total_turns / completed_count
-        
-        # Save statistics
-        stats_file = f"{self.base_dir}/statistics/stats_{datetime.now().strftime('%Y%m%d')}.json"
-        with open(stats_file, 'w') as f:
-            json.dump(stats, f, indent=2)
-        
-        return stats
     
     def _generate_game_id(self) -> str:
         """Generate unique game ID"""

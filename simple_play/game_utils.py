@@ -11,7 +11,6 @@ from cops_and_robbers.services.game_service import GameService
 from simple_play.display_utils import GameDisplay, VerbosityLevel, display_game_start_info, display_game_over
 from simple_play.game_logic import GameController, GameSetup
 from agents import AgentType
-from agents import AgentType
 
 
 def parse_arguments():
@@ -21,12 +20,18 @@ def parse_arguments():
                        help='Play N games automatically (AI vs AI mode)')
     parser.add_argument('--map-size', choices=['test', 'full', 'extracted'], default='test',
                        help='Map size: test (10 nodes), full (199 nodes), or extracted (custom extracted board)')
-    parser.add_argument('--detectives', type=int, default=2, choices=[1, 2, 3, 4],
-                       help='Number of detectives (1-4)')
+    parser.add_argument('--detectives', type=int, default=2, choices=[1, 2, 3, 4, 5],
+                       help='Number of detectives (1-5)')
     parser.add_argument('--max-turns', type=int, default=24,
                        help='Maximum turns per game')
     parser.add_argument('--verbosity', type=int, default=2, choices=[1, 2, 3, 4, 5],
                        help='Verbosity level (1=basic, 2=moves, 3=detailed, 4=debug, 5=heuristics)')
+    parser.add_argument('--save-dir', type=str, default='fritto_misto',
+                       help='Directory for saving games (default: fritto_misto)')
+    parser.add_argument('--mr-x-agent', type=str, choices=['random', 'heuristic'], default='random',
+                       help='Mr. X agent type (default: random)')
+    parser.add_argument('--detective-agent', type=str, choices=['random', 'heuristic'], default='random',
+                       help='Detective agent type (default: random)')
     return parser.parse_args()
 
 def get_game_configuration() -> Tuple[str, str, int, int, AgentType, AgentType]:
@@ -55,10 +60,12 @@ def create_and_initialize_game(map_size: str, num_detectives: int) -> ScotlandYa
 
 def save_game_session(game: ScotlandYardGame, play_mode: str, map_size: str, 
                      num_detectives: int, turn_count: int, display: GameDisplay,
-                     mr_x_agent_type=None, detective_agent_type=None) -> Optional[str]:
+                     mr_x_agent_type=None, detective_agent_type=None, save_dir: str = "fritto_misto", execution_time: float = None) -> Optional[str]:
     """Save a completed game session with metadata"""
     try:
-        game_service = GameService()
+        from cops_and_robbers.storage.game_loader import GameLoader
+        game_loader = GameLoader(save_dir)
+        game_service = GameService(game_loader)
         
         # Convert agent types to strings if they are AgentType enums
         mr_x_agent_str = mr_x_agent_type.value if hasattr(mr_x_agent_type, 'value') else mr_x_agent_type
@@ -66,9 +73,10 @@ def save_game_session(game: ScotlandYardGame, play_mode: str, map_size: str,
         
         game_id = game_service.save_terminal_game(
             game, play_mode, map_size, num_detectives, turn_count,
-            mr_x_agent_str, detective_agent_str
+            mr_x_agent_str, detective_agent_str, execution_time
         )
         display.print_info(f"Game saved successfully! Game ID: {game_id}")
+        display.print_info(f"Saved to directory: {save_dir}")
         return game_id
     except Exception as e:
         display.print_error(f"Failed to save game: {e}")
@@ -77,21 +85,21 @@ def save_game_session(game: ScotlandYardGame, play_mode: str, map_size: str,
 
 def save_game_automatically(game: ScotlandYardGame, play_mode: str, map_size: str,
                           num_detectives: int, turn_count: int, display: GameDisplay,
-                          mr_x_agent_type=None, detective_agent_type=None) -> Optional[str]:
+                          mr_x_agent_type=None, detective_agent_type=None, save_dir: str = "fritto_misto", execution_time: float = None) -> Optional[str]:
     """Save game without user confirmation"""
     if not game.game_history:  # Don't save if no moves were made
         return None
     
     game_id = save_game_session(game, play_mode, map_size, num_detectives, turn_count, display,
-                               mr_x_agent_type, detective_agent_type)
+                               mr_x_agent_type, detective_agent_type, save_dir, execution_time)
     if game_id and display.verbosity >= VerbosityLevel.MOVES:
-        print(f"✅ Game {game_id} saved automatically")
+        print(f"✅ Game {game_id} saved automatically to {save_dir}")
     return game_id
 
 
 def offer_save_option(game: ScotlandYardGame, play_mode: str, map_size: str, 
                      num_detectives: int, turn_count: int, display: GameDisplay,
-                     mr_x_agent_type=None, detective_agent_type=None):
+                     mr_x_agent_type=None, detective_agent_type=None, save_dir: str = "fritto_misto"):
     """Offer the user option to save the game with confirmation"""
     if not game.game_history:  # Don't save if no moves were made
         return
@@ -104,12 +112,12 @@ def offer_save_option(game: ScotlandYardGame, play_mode: str, map_size: str,
         
         if save_choice in ['y', 'yes']:
             game_id = save_game_session(game, play_mode, map_size, num_detectives, turn_count, display,
-                                       mr_x_agent_type, detective_agent_type)
+                                       mr_x_agent_type, detective_agent_type, save_dir, None)
             if game_id:
                 print(f"✅ Game saved as: {game_id}")
-                print(f"📁 Game files saved to: saved_games/")
-                print(f"   - Main game file: saved_games/games/{game_id}.pkl")
-                print(f"   - Metadata: saved_games/metadata/{game_id}.json")
+                print(f"📁 Game files saved to: {save_dir}/")
+                print(f"   - Main game file: {save_dir}/games/{game_id}.pkl")
+                print(f"   - Metadata: {save_dir}/metadata/{game_id}.json")
             break
         elif save_choice in ['n', 'no']:
             print("Game not saved.")
@@ -170,7 +178,7 @@ def execute_single_turn(controller: GameController, game: ScotlandYardGame,
 def play_single_game(map_size: str = "test", play_mode: str = "ai_vs_ai", 
                     num_detectives: int = 2, verbosity: int = VerbosityLevel.BASIC,
                     auto_save: bool = False, max_turns: int = 24,
-                    mr_x_agent_type=None, detective_agent_type=None) -> Tuple[Optional[str], int, bool]:
+                    mr_x_agent_type=None, detective_agent_type=None, save_dir: str = "fritto_misto") -> Tuple[Optional[str], int, bool]:
     """
     Play a single game with specified parameters.
     
@@ -183,10 +191,14 @@ def play_single_game(map_size: str = "test", play_mode: str = "ai_vs_ai",
         max_turns: Maximum number of turns
         mr_x_agent_type: Type of agent for Mr. X (defaults to RANDOM)
         detective_agent_type: Type of agent for detectives (defaults to RANDOM)
+        save_dir: Directory for saving games (defaults to "fritto_misto")
     
     Returns:
         Tuple of (game_id if saved, turn_count, game_completed_normally)
     """
+    # Start timing the game execution
+    start_time = time.time()
+    
     # Create display
     display = GameDisplay(verbosity)
     
@@ -240,27 +252,30 @@ def play_single_game(map_size: str = "test", play_mode: str = "ai_vs_ai",
     # Check if game completed normally
     game_completed = game.is_game_over() or turn_count >= max_turns
     
+    # Calculate execution time
+    end_time = time.time()
+    execution_time = end_time - start_time
+
     # Display game over info if verbosity allows
     if verbosity >= VerbosityLevel.MOVES:
         display_game_over(game, display, turn_count, max_turns)
-    
+
     # Save game
     game_id = None
     if play_mode == "ai_vs_ai":
         auto_save = True  # Always auto-save in AI vs AI mode
     if auto_save:
         game_id = save_game_automatically(game, play_mode, map_size, num_detectives, turn_count, display,
-                                         mr_x_agent_type, detective_agent_type)
+                                         mr_x_agent_type, detective_agent_type, save_dir, execution_time)
     elif verbosity >= VerbosityLevel.MOVES:
         offer_save_option(game, play_mode, map_size, num_detectives, turn_count, display,
-                         mr_x_agent_type, detective_agent_type)
-    
+                         mr_x_agent_type, detective_agent_type, save_dir)
+
     return game_id, turn_count, game_completed
-
-
 def play_multiple_games(n_games: int, map_size: str = "test", play_mode: str = "ai_vs_ai",
                        num_detectives: int = 2, verbosity: int = VerbosityLevel.BASIC,
-                       max_turns: int = 24, mr_x_agent_type=None, detective_agent_type=None) -> dict:
+                       max_turns: int = 24, mr_x_agent_type=None, detective_agent_type=None, 
+                       save_dir: str = "fritto_misto") -> dict:
     """
     Play N games automatically with the specified parameters.
     All games are saved automatically without confirmation.
@@ -274,6 +289,7 @@ def play_multiple_games(n_games: int, map_size: str = "test", play_mode: str = "
         max_turns: Maximum number of turns per game
         mr_x_agent_type: Type of agent for Mr. X
         detective_agent_type: Type of agent for detectives
+        save_dir: Directory for saving games
     
     Returns:
         Dictionary with game statistics
@@ -287,6 +303,7 @@ def play_multiple_games(n_games: int, map_size: str = "test", play_mode: str = "
     print(f"🎮 BATCH GAME EXECUTION - {n_games} games")
     print(f"   Mr. X Agent: {mr_x_agent_type.value.title()}")
     print(f"   Detective Agent: {detective_agent_type.value.title()}")
+    print(f"   Save Directory: {save_dir}")
     print("=" * 50)
     
     results = {
@@ -315,7 +332,8 @@ def play_multiple_games(n_games: int, map_size: str = "test", play_mode: str = "
                 auto_save=True,
                 max_turns=max_turns,
                 mr_x_agent_type=mr_x_agent_type,
-                detective_agent_type=detective_agent_type
+                detective_agent_type=detective_agent_type,
+                save_dir=save_dir
             )
             
             results['total_turns'] += turn_count

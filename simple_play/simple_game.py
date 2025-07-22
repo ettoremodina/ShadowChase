@@ -38,15 +38,12 @@ def main():
     if args.batch:
         print(f"🤖 Batch mode: Playing {args.batch} AI vs AI games")
         
-        # Get agent configuration for batch mode
-        print(f"\n🤖 AI AGENT CONFIGURATION FOR BATCH MODE")
-        print("=" * 50)
+        # Convert string agent types to AgentType enum
+        mr_x_agent_type = AgentType.RANDOM if args.mr_x_agent == 'random' else AgentType.HEURISTIC
+        detective_agent_type = AgentType.RANDOM if args.detective_agent == 'random' else AgentType.HEURISTIC
         
-        print(f"\n🤖 Select AI Agent for Mr. X:")
-        mr_x_agent_type = AgentSelector.get_user_agent_choice("Choose Mr. X AI agent type")
-        
-        print(f"\n🕵️ Select AI Agent for Detectives:")
-        detective_agent_type = AgentSelector.get_user_agent_choice("Choose Detective AI agent type")
+        print(f"Mr. X Agent: {args.mr_x_agent}")
+        print(f"Detective Agent: {args.detective_agent}")
         
         results = play_multiple_games(
             n_games=args.batch,
@@ -56,7 +53,8 @@ def main():
             verbosity=VerbosityLevel.BASIC,
             max_turns=args.max_turns,
             mr_x_agent_type=mr_x_agent_type,
-            detective_agent_type=detective_agent_type
+            detective_agent_type=detective_agent_type,
+            save_dir=args.save_dir
         )
         return results
     
@@ -74,7 +72,8 @@ def main():
             auto_save=False,
             max_turns=args.max_turns,
             mr_x_agent_type=mr_x_agent,
-            detective_agent_type=detective_agent
+            detective_agent_type=detective_agent,
+            save_dir=args.save_dir
         )
         
         if completed:

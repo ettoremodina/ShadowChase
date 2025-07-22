@@ -123,7 +123,8 @@ class GameService:
                           num_detectives: int,
                           turn_count: int,
                           mr_x_agent_type: str = None,
-                          detective_agent_type: str = None) -> str:
+                          detective_agent_type: str = None,
+                          execution_time: float = None) -> str:
         """Save a game from terminal play with appropriate metadata"""
         additional_metadata = {
             'source': 'terminal_game',
@@ -136,6 +137,10 @@ class GameService:
             additional_metadata['mr_x_agent_type'] = mr_x_agent_type
         if detective_agent_type:
             additional_metadata['detective_agent_type'] = detective_agent_type
+            
+        # Add execution time if provided
+        if execution_time is not None:
+            additional_metadata['execution_time_seconds'] = round(execution_time, 3)
         
         return self.save_game(game, play_mode, self._get_player_types_from_mode(play_mode, mr_x_agent_type, detective_agent_type), additional_metadata)
     

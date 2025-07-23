@@ -140,7 +140,7 @@ class GameService:
             
         # Add execution time if provided
         if execution_time is not None:
-            additional_metadata['execution_time_seconds'] = round(execution_time, 3)
+            additional_metadata['execution_time_seconds'] = round(execution_time, 5)
         
         return self.save_game(game, play_mode, self._get_player_types_from_mode(play_mode, mr_x_agent_type, detective_agent_type), additional_metadata)
     

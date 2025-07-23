@@ -12,7 +12,7 @@ def main():
     from agents import AgentSelector, AgentType
     
     # Configuration
-    test_name = "test2" 
+    test_name = "test0" 
     games_per_combo = 30
     num_detectives = 5
     map_size = "extracted"
@@ -40,7 +40,7 @@ def main():
                 "--save-dir", save_dir,
                 "--mr-x-agent", mr_x,
                 "--detective-agent", detective,
-                "--verbosity", "1"
+                "--verbosity", "0"
             ]
             
             try:

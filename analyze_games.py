@@ -738,8 +738,8 @@ Average Game Length: {summary['average_game_length']:.1f} turns
             f.write(f"Mr. X Wins: {summary.get('mr_x_wins', 0):,} ({summary.get('mr_x_win_rate', 0):.1f}%)\n")
             f.write(f"Incomplete Games: {summary.get('incomplete_games', 0):,}\n")
             f.write(f"Average Game Length: {summary.get('average_game_length', 0):.1f} turns\n")
-            f.write(f"Average Execution Time: {summary.get('average_execution_time', 0):.3f} seconds\n")
-            f.write(f"Average Time per Turn: {summary.get('average_time_per_turn', 0):.3f} seconds\n")
+            f.write(f"Average Execution Time: {summary.get('average_execution_time', 0):.5f} seconds\n")
+            f.write(f"Average Time per Turn: {summary.get('average_time_per_turn', 0):.5f} seconds\n")
             f.write(f"Games with Timing Data: {summary.get('games_with_timing', 0):,}\n")
             f.write(f"Completion Rate: {summary.get('completion_rate', 0):.1f}%\n\n")
             
@@ -760,7 +760,7 @@ Average Game Length: {summary['average_game_length']:.1f} turns
                         exec_times = self.statistics.execution_times[combo]
                         if exec_times:
                             avg_exec_time = np.mean(exec_times)
-                            f.write(f"  Avg Execution Time: {avg_exec_time:.3f} seconds\n")
+                            f.write(f"  Avg Execution Time: {avg_exec_time:.5f} seconds\n")
                             f.write(f"  Games per Minute: {60/avg_exec_time:.1f}\n")
                             
                             # Calculate average time per turn for this combination
@@ -771,7 +771,7 @@ Average Game Length: {summary['average_game_length']:.1f} turns
                                     total_turns = sum(game_lengths)
                                     if total_turns > 0:
                                         avg_time_per_turn = total_time / total_turns
-                                        f.write(f"  Avg Time per Turn: {avg_time_per_turn:.3f} seconds\n")
+                                        f.write(f"  Avg Time per Turn: {avg_time_per_turn:.5f} seconds\n")
                     
                     f.write("\n")
             

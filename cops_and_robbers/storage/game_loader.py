@@ -3,6 +3,7 @@ import os
 import json
 import pickle
 import random
+import uuid
 from datetime import datetime
 from tkinter import ttk
 from typing import Dict, List, Optional, Tuple
@@ -72,7 +73,7 @@ class GameLoader:
         
         # Prepare game configuration
         game_config = {
-            'graph_data': nx.node_link_data(game.graph),
+            'graph_data': nx.node_link_data(game.graph, edges="links"),
             'num_cops': game.num_cops,
             'movement_rules': {
                 'cop_movement': self._serialize_movement_rule(game.cop_movement),
@@ -168,11 +169,15 @@ class GameLoader:
         return export_file
     
     def _generate_game_id(self) -> str:
-        """Generate unique game ID using timestamp and random suffix"""
+        """Generate unique game ID using UUID4 for guaranteed uniqueness"""
+        # Generate a UUID4 (random UUID) and take first 8 characters for readability
+        unique_id = str(uuid.uuid4()).replace('-', '')[:16]
+        
+        # Add readable timestamp prefix for easier identification
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        # Add 3-digit random suffix to avoid collisions
-        suffix = random.randint(100, 999)
-        return f"game_{timestamp}_{suffix}"
+        
+        # Combine timestamp with UUID for both readability and guaranteed uniqueness
+        return f"game_{timestamp}_{unique_id}"
     
     def _determine_graph_type(self, graph: nx.Graph) -> str:
         """Determine graph type for categorization"""

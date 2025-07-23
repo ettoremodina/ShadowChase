@@ -1,0 +1,6 @@
+{
+  "taxi": "#FFFF00",
+  "bus": "#FF4500",
+  "underground": "#FF0000",
+  "ferry": "#8A2BE2"
+}

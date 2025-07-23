@@ -16,6 +16,7 @@ except ImportError:
 
 class VerbosityLevel:
     """Verbosity level constants"""
+    SILENT = 0     # No move messages, only errors and incomplete game tracking
     BASIC = 1      # Basic game state (positions, turn)
     MOVES = 2      # + Available moves and tickets  
     DETAILED = 3   # + Move history and detailed transport info
@@ -228,9 +229,14 @@ class GameDisplay:
     
     def print_move_result(self, success: bool, move_description: str):
         """Print result of a move attempt"""
-        if success:
-            print(f"✅ {move_description}")
-        else:
+        # Only print move results if verbosity is BASIC or higher
+        if self.verbosity >= VerbosityLevel.BASIC:
+            if success:
+                print(f"✅ {move_description}")
+            else:
+                print(f"❌ Failed: {move_description}")
+        # Always print failures for debugging purposes
+        elif not success:
             print(f"❌ Failed: {move_description}")
     
     def print_error(self, message: str):

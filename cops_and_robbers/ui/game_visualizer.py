@@ -36,7 +36,7 @@ class GameVisualizer(BaseVisualizer):
         self.game_service = GameService(self.loader)
         self.solver = None
         self.root = tk.Tk()
-        self.root.title("Cops and Robbers Game")
+        self.root.title("Scotland Yard Game")
         self.root.geometry(f"{self.root.winfo_screenwidth()}x{self.root.winfo_screenheight()}")
         self.root.configure(bg="#f8f9fa")
         
@@ -669,9 +669,9 @@ class GameVisualizer(BaseVisualizer):
         
         # Draw labels
         nx.draw_networkx_labels(self.game.graph, self.pos, ax=self.ax, font_size=8)
-        
-        self.ax.set_title("Cops and Robbers Game", fontsize=14, fontweight='bold')
-        
+
+        self.ax.set_title("Scotland Yard Game", fontsize=14, fontweight='bold')
+
         # Use base class method for legend
         self.draw_transport_legend()
         

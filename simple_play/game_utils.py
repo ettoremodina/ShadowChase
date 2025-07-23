@@ -24,8 +24,8 @@ def parse_arguments():
                        help='Number of detectives (1-5)')
     parser.add_argument('--max-turns', type=int, default=24,
                        help='Maximum turns per game')
-    parser.add_argument('--verbosity', type=int, default=2, choices=[1, 2, 3, 4, 5],
-                       help='Verbosity level (1=basic, 2=moves, 3=detailed, 4=debug, 5=heuristics)')
+    parser.add_argument('--verbosity', type=int, default=2, choices=[0, 1, 2, 3, 4, 5],
+                       help='Verbosity level (0=silent, 1=basic, 2=moves, 3=detailed, 4=debug, 5=heuristics)')
     parser.add_argument('--save-dir', type=str, default='fritto_misto',
                        help='Directory for saving games (default: fritto_misto)')
     parser.add_argument('--mr-x-agent', type=str, choices=['random', 'heuristic'], default='random',
@@ -75,8 +75,9 @@ def save_game_session(game: ScotlandYardGame, play_mode: str, map_size: str,
             game, play_mode, map_size, num_detectives, turn_count,
             mr_x_agent_str, detective_agent_str, execution_time
         )
-        display.print_info(f"Game saved successfully! Game ID: {game_id}")
-        display.print_info(f"Saved to directory: {save_dir}")
+        if display.verbosity >= VerbosityLevel.BASIC:
+            display.print_info(f"Game saved successfully! Game ID: {game_id}")
+            display.print_info(f"Saved to directory: {save_dir}")
         return game_id
     except Exception as e:
         display.print_error(f"Failed to save game: {e}")
@@ -142,7 +143,8 @@ def execute_single_turn(controller: GameController, game: ScotlandYardGame,
                 return False  # User quit
         else:
             # AI detectives
-            print(f"\n{display.symbols['detective']} AI DETECTIVES' TURN")
+            if display.verbosity >= VerbosityLevel.BASIC:
+                print(f"\n{display.symbols['detective']} AI DETECTIVES' TURN")
             success = controller.make_ai_move(Player.COPS)
             if not success:
                 display.print_error("AI detectives failed to move")
@@ -160,7 +162,8 @@ def execute_single_turn(controller: GameController, game: ScotlandYardGame,
                 return False  # User quit
         else:
             # AI Mr. X
-            print(f"\n{display.symbols['mr_x']} AI MR. X'S TURN")
+            if display.verbosity >= VerbosityLevel.BASIC:
+                print(f"\n{display.symbols['mr_x']} AI MR. X'S TURN")
             success = controller.make_ai_move(Player.ROBBER)
             if not success:
                 display.print_error("AI Mr. X failed to move")
@@ -301,10 +304,11 @@ def play_multiple_games(n_games: int, map_size: str = "test", play_mode: str = "
         detective_agent_type = AgentType.RANDOM
     
     print(f"🎮 BATCH GAME EXECUTION - {n_games} games")
-    print(f"   Mr. X Agent: {mr_x_agent_type.value.title()}")
-    print(f"   Detective Agent: {detective_agent_type.value.title()}")
-    print(f"   Save Directory: {save_dir}")
-    print("=" * 50)
+    if verbosity >= VerbosityLevel.BASIC:
+        print(f"   Mr. X Agent: {mr_x_agent_type.value.title()}")
+        print(f"   Detective Agent: {detective_agent_type.value.title()}")
+        print(f"   Save Directory: {save_dir}")
+        print("=" * 50)
     
     results = {
         'total_games': n_games,
@@ -314,6 +318,7 @@ def play_multiple_games(n_games: int, map_size: str = "test", play_mode: str = "
         'timeout_games': 0,
         'total_turns': 0,
         'saved_games': [],
+        'incomplete_games': [],  # Track incomplete game IDs
         'mr_x_agent': mr_x_agent_type.value,
         'detective_agent': detective_agent_type.value,
         'start_time': datetime.now(),
@@ -321,14 +326,15 @@ def play_multiple_games(n_games: int, map_size: str = "test", play_mode: str = "
     }
     
     for game_num in range(1, n_games + 1):
-        print(f"\n🔄 Playing game {game_num}/{n_games}...")
+        if verbosity >= VerbosityLevel.BASIC:
+            print(f"\n🔄 Playing game {game_num}/{n_games}...")
         
         try:
             game_id, turn_count, completed = play_single_game(
                 map_size=map_size,
                 play_mode=play_mode,
                 num_detectives=num_detectives,
-                verbosity=VerbosityLevel.BASIC,  # Minimal output for batch
+                verbosity=verbosity,  # Use the passed verbosity instead of hardcoded BASIC
                 auto_save=True,
                 max_turns=max_turns,
                 mr_x_agent_type=mr_x_agent_type,
@@ -348,11 +354,17 @@ def play_multiple_games(n_games: int, map_size: str = "test", play_mode: str = "
                     # Could be enhanced to check winner from saved game
             else:
                 results['timeout_games'] += 1
+                if game_id:
+                    results['incomplete_games'].append(game_id)
+                    # Print incomplete game ID if verbosity allows basic output or higher
+                    if verbosity >= VerbosityLevel.BASIC:
+                        print(f"❌ Game {game_num} incomplete: {game_id}")
             
             # Progress indicator
             if game_num % 10 == 0 or game_num == n_games:
                 progress = (game_num / n_games) * 100
-                print(f"📊 Progress: {progress:.1f}% ({game_num}/{n_games})")
+                if verbosity >= VerbosityLevel.BASIC:
+                    print(f"📊 Progress: {progress:.1f}% ({game_num}/{n_games})")
         
         except Exception as e:
             print(f"❌ Error in game {game_num}: {e}")
@@ -363,15 +375,23 @@ def play_multiple_games(n_games: int, map_size: str = "test", play_mode: str = "
     
     # Print final statistics
     print(f"\n📈 BATCH EXECUTION COMPLETE")
-    print("=" * 40)
-    print(f"Total games: {results['total_games']}")
-    print(f"Completed games: {results['completed_games']}")
-    print(f"Games saved: {len(results['saved_games'])}")
-    print(f"Total turns played: {results['total_turns']}")
-    print(f"Average turns per game: {results['total_turns']/results['completed_games']:.1f}" if results['completed_games'] > 0 else "N/A")
-    print(f"Execution time: {duration}")
-    print(f"Games per minute: {results['completed_games']/(duration.total_seconds()/60):.1f}" if duration.total_seconds() > 0 else "N/A")
-    print(f"Mr. X Agent: {results['mr_x_agent'].title()}")
-    print(f"Detective Agent: {results['detective_agent'].title()}")
+    if verbosity >= VerbosityLevel.BASIC:
+        print("=" * 40)
+        print(f"Total games: {results['total_games']}")
+        print(f"Completed games: {results['completed_games']}")
+        print(f"Incomplete games: {len(results['incomplete_games'])}")
+        if results['incomplete_games']:
+            print(f"Incomplete game IDs: {', '.join(results['incomplete_games'])}")
+        print(f"Games saved: {len(results['saved_games'])}")
+        print(f"Total turns played: {results['total_turns']}")
+        print(f"Average turns per game: {results['total_turns']/results['completed_games']:.1f}" if results['completed_games'] > 0 else "N/A")
+        print(f"Execution time: {duration}")
+        print(f"Games per minute: {results['completed_games']/(duration.total_seconds()/60):.1f}" if duration.total_seconds() > 0 else "N/A")
+        print(f"Mr. X Agent: {results['mr_x_agent'].title()}")
+        print(f"Detective Agent: {results['detective_agent'].title()}")
+    else:
+        # For silent mode, still show incomplete games
+        if results['incomplete_games']:
+            print(f"Incomplete games ({len(results['incomplete_games'])}): {', '.join(results['incomplete_games'])}")
     
     return results

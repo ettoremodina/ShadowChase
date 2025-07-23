@@ -1,0 +1,24 @@
+{
+  "total_nodes": 199,
+  "total_edges": 439,
+  "transport_types": [
+    "taxi",
+    "bus",
+    "underground",
+    "ferry"
+  ],
+  "transport_mapping": {
+    "taxi": 1,
+    "bus": 2,
+    "underground": 3,
+    "ferry": 4
+  },
+  "board_bounds": {
+    "min_x": 15.0,
+    "max_x": 1237.0,
+    "min_y": 11.0,
+    "max_y": 948.0
+  },
+  "source_file": "board_progress.json",
+  "created_by": "create_board_data.py"
+}

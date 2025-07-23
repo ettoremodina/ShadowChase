@@ -50,7 +50,7 @@ def main():
             map_size=args.map_size,
             play_mode="ai_vs_ai",
             num_detectives=args.detectives,
-            verbosity=VerbosityLevel.BASIC,
+            verbosity=args.verbosity,  # Use the verbosity from command line args
             max_turns=args.max_turns,
             mr_x_agent_type=mr_x_agent_type,
             detective_agent_type=detective_agent_type,

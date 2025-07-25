@@ -1,0 +1,43 @@
+{
+  "algorithm": "dqn",
+  "network_parameters": {
+    "hidden_layers": [512, 256, 128],
+    "activation": "relu",
+    "output_activation": "linear",
+    "dropout_rate": 0.1
+  },
+  "training_parameters": {
+    "num_episodes": 5000,
+    "batch_size": 32,
+    "learning_rate": 0.001,
+    "gamma": 0.95,
+    "epsilon_start": 1.0,
+    "epsilon_end": 0.01,
+    "epsilon_decay": 0.995,
+    "target_update_frequency": 100,
+    "replay_buffer_size": 10000,
+    "min_replay_buffer_size": 1000
+  },
+  "game_parameters": {
+    "map_size": "test",
+    "num_detectives": 2,
+    "max_turns_per_game": 24,
+    "evaluation_interval": 200
+  },
+  "feature_extraction": {
+    "include_distances": true,
+    "include_tickets": true,
+    "include_board_state": true,
+    "include_game_phase": true,
+    "include_transport_connectivity": true,
+    "include_possible_positions": true,
+    "max_nodes": 200,
+    "distance_normalization": 20.0
+  },
+  "saving": {
+    "save_interval": 1000,
+    "save_best_model": true,
+    "save_training_history": true,
+    "checkpoint_frequency": 500
+  }
+}

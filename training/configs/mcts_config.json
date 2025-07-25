@@ -1,0 +1,31 @@
+{
+  "algorithm": "mcts",
+  "search_parameters": {
+    "num_simulations": 1000,
+    "exploration_constant": 1.414,
+    "max_depth": 50,
+    "simulation_policy": "random"
+  },
+  "training_parameters": {
+    "num_episodes": 1000,
+    "evaluation_interval": 100,
+    "map_size": "test",
+    "num_detectives": 2,
+    "max_turns_per_game": 24
+  },
+  "feature_extraction": {
+    "include_distances": true,
+    "include_tickets": true,
+    "include_board_state": true,
+    "include_game_phase": true,
+    "include_transport_connectivity": true,
+    "include_possible_positions": true,
+    "max_nodes": 200,
+    "distance_normalization": 20.0
+  },
+  "saving": {
+    "save_interval": 500,
+    "save_best_model": true,
+    "save_training_history": true
+  }
+}

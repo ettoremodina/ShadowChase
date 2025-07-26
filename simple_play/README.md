@@ -159,7 +159,7 @@ Verbosity level (1-4): 2
   TURN 1
 ============================================================
 
-🎯 TURN 1 - ROBBER'S TURN
+🎯 TURN 1 - MrX'S TURN
 
 🕵️ DETECTIVES:
   Detective 1: Position 1
@@ -203,8 +203,8 @@ simple_play/
 
 The simple play system integrates with the existing Scotland Yard codebase:
 
-- Uses `cops_and_robbers.core.game.ScotlandYardGame` for game logic
-- Uses `cops_and_robbers.examples.example_games` for game creation
+- Uses `ScotlandYard.core.game.ScotlandYardGame` for game logic
+- Uses `ScotlandYard.examples.example_games` for game creation
 - Compatible with existing AI solvers (uses random moves for now)
 
 ## Customization
@@ -220,4 +220,4 @@ Add new play modes in `game_logic.py` by extending the `get_game_mode` function.
 
 ---
 
-**Note**: This is a simplified interface focused on clean terminal gameplay. For full graphical visualization, use the existing GUI system in `cops_and_robbers.ui.game_visualizer`.
+**Note**: This is a simplified interface focused on clean terminal gameplay. For full graphical visualization, use the existing GUI system in `ScotlandYard.ui.game_visualizer`.

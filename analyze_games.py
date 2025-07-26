@@ -43,7 +43,7 @@ class GameStatistics:
             return {}
         
         total_games = len(self.games)
-        detective_wins = sum(1 for g in self.games if g.get('winner') == 'cops')
+        detective_wins = sum(1 for g in self.games if g.get('winner') == 'detectives')
         mr_x_wins = sum(1 for g in self.games if g.get('winner') == 'mr_x')
         incomplete_games = total_games - detective_wins - mr_x_wins
         
@@ -182,7 +182,7 @@ class GameAnalyzer:
                 combinations[combo]['completed_games'] += 1
                 combinations[combo]['total_turns'] += game.get('total_turns', 0)
                 
-                if game.get('winner') == 'cops':
+                if game.get('winner') == 'detectives':
                     combinations[combo]['detective_wins'] += 1
                 elif game.get('winner') == 'mr_x':
                     combinations[combo]['mr_x_wins'] += 1
@@ -234,7 +234,7 @@ class GameAnalyzer:
             
             if game.get('winner') == 'mr_x':
                 mr_x_performance[mr_x_agent]['wins'] += 1
-            elif game.get('winner') == 'cops':
+            elif game.get('winner') == 'detectives':
                 detective_performance[detective_agent]['wins'] += 1
         
         # Calculate win rates

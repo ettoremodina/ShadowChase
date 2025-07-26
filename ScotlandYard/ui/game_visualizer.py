@@ -28,7 +28,7 @@ except ImportError:
 NODE_SIZE = 300  # Default node size for visualization
 
 class GameVisualizer(BaseVisualizer):
-    """Interactive GUI for Cops and Robbers game"""
+    """Interactive GUI for detectives and MrXs game"""
     
     def __init__(self, game: Game, loader: 'GameLoader' = None, auto_positions: list = None):
         super().__init__(game)
@@ -56,8 +56,8 @@ class GameVisualizer(BaseVisualizer):
         self.current_player_moves = {}
         self.highlighted_edges = []
         self.active_player_positions = []
-        self.current_cop_index = 0
-        self.cop_selections = []
+        self.current_detective_index = 0
+        self.detective_selections = []
         self.selected_nodes = []
         
         # Mr. X special moves state
@@ -76,7 +76,7 @@ class GameVisualizer(BaseVisualizer):
         self.setup_graph_display()
         
         # If auto_positions were provided, enable the start button but don't auto-start
-        if auto_positions and len(auto_positions) == self.game.num_cops + 1:
+        if auto_positions and len(auto_positions) == self.game.num_detectives + 1:
             self.setup_controls.start_button.config(state=tk.NORMAL)
 
     def _initialize_heuristics(self):
@@ -198,22 +198,22 @@ class GameVisualizer(BaseVisualizer):
             
         if self.setup_mode:
             info_text = "🎯 Setup Mode\n"
-            info_text += f"📊 Need: {self.game.num_cops} cops + 1 robber\n"
+            info_text += f"📊 Need: {self.game.num_detectives} detectives + 1 MrX\n"
             info_text += f"✅ Selected: {len(self.selected_positions)}\n"
         elif self.game.game_state:
             state_info = self.game.get_state_representation()
             info_text = f"🎮 Turn: {state_info['turn'].title()}\n"
             info_text += f"📊 Turn count: {state_info['turn_count']}\n"
-            info_text += f"👮 Cop positions: {state_info['cop_positions']}\n"
+            info_text += f"👮 detective positions: {state_info['detective_positions']}\n"
             
             is_scotland_yard = isinstance(self.game, ScotlandYardGame)
             if is_scotland_yard:
                 if self.game.game_state.mr_x_visible:
-                    info_text += f"🕵️‍♂️ Mr. X position: {state_info['robber_position']} (VISIBLE)\n"
+                    info_text += f"🕵️‍♂️ Mr. X position: {state_info['MrX_position']} (VISIBLE)\n"
                 else:
                     info_text += f"🕵️‍♂️ Mr. X position: HIDDEN\n"
             else:
-                info_text += f"🏃 Robber position: {state_info['robber_position']}\n"
+                info_text += f"🏃 MrX position: {state_info['MrX_position']}\n"
             
             if self.game.is_game_over():
                 winner = self.game.get_winner()
@@ -267,15 +267,15 @@ class GameVisualizer(BaseVisualizer):
         if node in self.selected_positions:
             self.selected_positions.remove(node)
         else:
-            if len(self.selected_positions) < self.game.num_cops + 1:
+            if len(self.selected_positions) < self.game.num_detectives + 1:
                 self.selected_positions.append(node)
         
         # Enable start button when we have enough positions
-        if len(self.selected_positions) == self.game.num_cops + 1:
-            cop_positions = self.selected_positions[:self.game.num_cops]
-            robber_position = self.selected_positions[self.game.num_cops]
+        if len(self.selected_positions) == self.game.num_detectives + 1:
+            detective_positions = self.selected_positions[:self.game.num_detectives]
+            MrX_position = self.selected_positions[self.game.num_detectives]
             
-            if robber_position not in cop_positions:
+            if MrX_position not in detective_positions:
                 self.setup_controls.start_button.config(state=tk.NORMAL)
             else:
                 self.setup_controls.start_button.config(state=tk.DISABLED)
@@ -420,64 +420,64 @@ class GameVisualizer(BaseVisualizer):
         is_scotland_yard = isinstance(self.game, ScotlandYardGame)
         current_player = self.game.game_state.turn
     
-        if current_player == Player.COPS:
-            self.game.game_state.double_move_active = False # Reset on cops' turn
+        if current_player == Player.DETECTIVES:
+            self.game.game_state.double_move_active = False # Reset on detectives' turn
             self.game_controls.mr_x_selections = []
-            if self.current_cop_index < self.game.num_cops:
-                cop_pos = self.game.game_state.cop_positions[self.current_cop_index]
-                self.active_player_positions = [cop_pos]
+            if self.current_detective_index < self.game.num_detectives:
+                detective_pos = self.game.game_state.detective_positions[self.current_detective_index]
+                self.active_player_positions = [detective_pos]
                 
                 # The get_valid_moves method in ScotlandYardGame already filters by tickets and occupied positions.
                 if is_scotland_yard:
-                    valid_moves = self.game.get_valid_moves(Player.COPS, cop_pos, pending_moves=self.cop_selections)
+                    valid_moves = self.game.get_valid_moves(Player.DETECTIVES, detective_pos, pending_moves=self.detective_selections)
                 else:
-                    valid_moves = self.game.get_valid_moves(Player.COPS, cop_pos)
+                    valid_moves = self.game.get_valid_moves(Player.DETECTIVES, detective_pos)
                 
-                self.current_player_moves[cop_pos] = {}
+                self.current_player_moves[detective_pos] = {}
                 for move in valid_moves:
                     if is_scotland_yard:
                         dest, transport = move
-                        if dest not in self.current_player_moves[cop_pos]:
-                            self.current_player_moves[cop_pos][dest] = []
-                        self.current_player_moves[cop_pos][dest].append(transport.value)
-                        self.highlighted_edges.append((cop_pos, dest, transport.value))
+                        if dest not in self.current_player_moves[detective_pos]:
+                            self.current_player_moves[detective_pos][dest] = []
+                        self.current_player_moves[detective_pos][dest].append(transport.value)
+                        self.highlighted_edges.append((detective_pos, dest, transport.value))
                     else: # Standard Game
                         dest = move
-                        self.current_player_moves[cop_pos][dest] = [1] # Generic transport
-                        self.highlighted_edges.append((cop_pos, dest, 1))
+                        self.current_player_moves[detective_pos][dest] = [1] # Generic transport
+                        self.highlighted_edges.append((detective_pos, dest, 1))
 
-        else:  # Robber's turn
-            # Always use the current robber position, regardless of double move state
-            robber_pos = self.game.game_state.robber_position
-            self.active_player_positions = [robber_pos]
+        else:  # MrX's turn
+            # Always use the current MrX position, regardless of double move state
+            MrX_pos = self.game.game_state.MrX_position
+            self.active_player_positions = [MrX_pos]
             
-            valid_moves = self.game.get_valid_moves(Player.ROBBER, robber_pos)
+            valid_moves = self.game.get_valid_moves(Player.MRX, MrX_pos)
             
-            self.current_player_moves[robber_pos] = {}
+            self.current_player_moves[MrX_pos] = {}
             mr_x_tickets = self.game.get_mr_x_tickets()
             for move in valid_moves:
                 if is_scotland_yard:
                     dest, transport = move
                     
                     # Initialize destination if not exists
-                    if dest not in self.current_player_moves[robber_pos]:
-                        self.current_player_moves[robber_pos][dest] = []
+                    if dest not in self.current_player_moves[MrX_pos]:
+                        self.current_player_moves[MrX_pos][dest] = []
                     
                     # Check if Mr. X can use the specific transport type
                     required_ticket = TicketType[transport.name]
                     if mr_x_tickets.get(required_ticket, 0) > 0:
-                        self.current_player_moves[robber_pos][dest].append(transport.value)
-                        self.highlighted_edges.append((robber_pos, dest, transport.value))
+                        self.current_player_moves[MrX_pos][dest].append(transport.value)
+                        self.highlighted_edges.append((MrX_pos, dest, transport.value))
                     
                     # Check if Mr. X can use black ticket for this destination
                     if mr_x_tickets.get(TicketType.BLACK, 0) > 0:
-                        if TransportType.BLACK.value not in self.current_player_moves[robber_pos][dest]:
-                            self.current_player_moves[robber_pos][dest].append(TransportType.BLACK.value)
-                            self.highlighted_edges.append((robber_pos, dest, TransportType.BLACK.value))
+                        if TransportType.BLACK.value not in self.current_player_moves[MrX_pos][dest]:
+                            self.current_player_moves[MrX_pos][dest].append(TransportType.BLACK.value)
+                            self.highlighted_edges.append((MrX_pos, dest, TransportType.BLACK.value))
                 else: # Standard Game
                     dest = move
-                    self.current_player_moves[robber_pos][dest] = [1]
-                    self.highlighted_edges.append((robber_pos, dest, 1))
+                    self.current_player_moves[MrX_pos][dest] = [1]
+                    self.highlighted_edges.append((MrX_pos, dest, 1))
 
     def handle_game_click(self, node):
         """Handle a node click during the game by checking against available moves."""
@@ -494,11 +494,11 @@ class GameVisualizer(BaseVisualizer):
         is_scotland_yard = isinstance(self.game, ScotlandYardGame)
         current_player = self.game.game_state.turn
     
-        if current_player == Player.COPS:
+        if current_player == Player.DETECTIVES:
             if is_scotland_yard:
                 # Get available moves for this detective (already filtered by tickets)
-                cop_pos = self.game.game_state.cop_positions[self.current_cop_index]
-                valid_moves = self.game.get_valid_moves(Player.COPS, cop_pos, pending_moves=self.cop_selections)
+                detective_pos = self.game.game_state.detective_positions[self.current_detective_index]
+                valid_moves = self.game.get_valid_moves(Player.DETECTIVES, detective_pos, pending_moves=self.detective_selections)
                 
                 # Filter for only the clicked destination - these are already ticket-filtered
                 available_transports = []
@@ -514,7 +514,7 @@ class GameVisualizer(BaseVisualizer):
                 if len(available_transports) > 1:
                     selected_transport = select_transport(
                         self.root, source_pos, node, available_transports, 
-                        f"Detective {self.current_cop_index + 1}"
+                        f"Detective {self.current_detective_index + 1}"
                     )
                     if selected_transport is None:
                         return  # User cancelled
@@ -523,20 +523,20 @@ class GameVisualizer(BaseVisualizer):
                     # Only one transport option
                     transport = available_transports[0]
                 
-                self.cop_selections.append((node, transport))
+                self.detective_selections.append((node, transport))
             else:
-                self.cop_selections.append(node)
+                self.detective_selections.append(node)
             
             self.selected_nodes.append(node)
-            self.current_cop_index += 1
+            self.current_detective_index += 1
     
-            if len(self.cop_selections) == self.game.num_cops:
+            if len(self.detective_selections) == self.game.num_detectives:
                 self.game_controls.move_button.config(state=tk.NORMAL)
         
-        else:  # Robber's turn
+        else:  # MrX's turn
             if is_scotland_yard:
                 # Get available moves for Mr. X (already filtered by tickets)
-                valid_moves = self.game.get_valid_moves(Player.ROBBER, source_pos)
+                valid_moves = self.game.get_valid_moves(Player.MRX, source_pos)
                 
                 # Filter for only the clicked destination - these are already ticket-filtered
                 available_transports = []
@@ -603,7 +603,7 @@ class GameVisualizer(BaseVisualizer):
             # Show Mr. X controls only when it's Mr. X's turn in Scotland Yard
             is_scotland_yard = isinstance(self.game, ScotlandYardGame)
             is_mrx_turn = (self.game.game_state and 
-                          self.game.game_state.turn == Player.ROBBER)
+                          self.game.game_state.turn == Player.MRX)
             
             if is_scotland_yard and is_mrx_turn and self.is_current_player_human():
                 self.mrx_section.pack(fill=tk.X, pady=(0, 10))
@@ -688,7 +688,7 @@ class GameVisualizer(BaseVisualizer):
         for node in self.game.graph.nodes():
             if self.setup_mode:
                 if node in self.selected_positions:
-                    if len(self.selected_positions) <= self.game.num_cops:
+                    if len(self.selected_positions) <= self.game.num_detectives:
                         node_colors.append('blue')
                     else:
                         node_colors.append('red')
@@ -699,18 +699,18 @@ class GameVisualizer(BaseVisualizer):
             else:
                 if self.game.game_state:
                     if node in self.active_player_positions:
-                        if node in self.game.game_state.cop_positions:
+                        if node in self.game.game_state.detective_positions:
                             node_colors.append('cyan')
                         else:
                             node_colors.append('orange')
                         node_sizes.append(NODE_SIZE)
-                    elif node in self.cop_selections:
+                    elif node in self.detective_selections:
                         node_colors.append('purple')
                         node_sizes.append(NODE_SIZE)
-                    elif node in self.game.game_state.cop_positions:
+                    elif node in self.game.game_state.detective_positions:
                         node_colors.append('blue')
                         node_sizes.append(NODE_SIZE)
-                    elif node == self.game.game_state.robber_position:
+                    elif node == self.game.game_state.MrX_position:
                         is_scotland_yard = isinstance(self.game, ScotlandYardGame)
                         if not is_scotland_yard or self.game.game_state.mr_x_visible:
                             node_colors.append('red')
@@ -738,7 +738,7 @@ class GameVisualizer(BaseVisualizer):
             return
             
         # Only show during detective turns (when Mr. X is hidden)
-        if (self.game.game_state.turn != Player.COPS or 
+        if (self.game.game_state.turn != Player.DETECTIVES or 
             self.game.game_state.mr_x_visible):
             return
             
@@ -796,14 +796,14 @@ class GameVisualizer(BaseVisualizer):
         elif self.game_mode == "ai_det_vs_human_mrx":
             # AI plays as detectives, Human plays as Mr. X
             if isinstance(self.game, ScotlandYardGame):
-                self.detective_agent = registry.create_multi_detective_agent(self.detective_agent_type, self.game.num_cops)
+                self.detective_agent = registry.create_multi_detective_agent(self.detective_agent_type, self.game.num_detectives)
             else:
                 self.detective_agent = None
             self.mr_x_agent = None
         elif self.game_mode == "ai_vs_ai":
             # AI plays both sides
             if isinstance(self.game, ScotlandYardGame):
-                self.detective_agent = registry.create_multi_detective_agent(self.detective_agent_type, self.game.num_cops)
+                self.detective_agent = registry.create_multi_detective_agent(self.detective_agent_type, self.game.num_detectives)
                 self.mr_x_agent = registry.create_mr_x_agent(self.mr_x_agent_type)
             else:
                 self.detective_agent = None
@@ -816,9 +816,9 @@ class GameVisualizer(BaseVisualizer):
         
         current_player = self.game.game_state.turn
         
-        if current_player == Player.COPS:
+        if current_player == Player.DETECTIVES:
             return self.detective_agent is not None
-        else:  # Player.ROBBER
+        else:  # Player.MRX
             return self.mr_x_agent is not None
 
     def is_current_player_human(self):
@@ -833,7 +833,7 @@ class GameVisualizer(BaseVisualizer):
         current_player = self.game.game_state.turn
         
         try:
-            if current_player == Player.COPS and self.detective_agent:
+            if current_player == Player.DETECTIVES and self.detective_agent:
                 # AI detectives move
                 detective_moves = self.detective_agent.choose_all_moves(self.game)
                 if detective_moves:
@@ -842,7 +842,7 @@ class GameVisualizer(BaseVisualizer):
                 else:
                     return False
             
-            elif current_player == Player.ROBBER and self.mr_x_agent:
+            elif current_player == Player.MRX and self.mr_x_agent:
                 # AI Mr. X moves
                 move_result = self.mr_x_agent.choose_move(self.game)
                 if move_result and len(move_result) == 3:
@@ -866,17 +866,17 @@ class GameVisualizer(BaseVisualizer):
         current_player = self.game.game_state.turn
         
         try:
-            if current_player == Player.COPS and self.detective_agent:
+            if current_player == Player.DETECTIVES and self.detective_agent:
                 # Get AI detective moves for display
                 detective_moves = self.detective_agent.choose_all_moves(self.game)
                 if detective_moves:
                     # Set up the selections for display
-                    self.cop_selections = detective_moves
+                    self.detective_selections = detective_moves
                     self.selected_nodes = [move[0] for move in detective_moves]
-                    self.current_cop_index = len(detective_moves)  # All detectives selected
+                    self.current_detective_index = len(detective_moves)  # All detectives selected
                     self.game_controls.move_button.config(state=tk.NORMAL)
                     
-            elif current_player == Player.ROBBER and self.mr_x_agent:
+            elif current_player == Player.MRX and self.mr_x_agent:
                 # Get AI Mr. X move for display
                 move_result = self.mr_x_agent.choose_move(self.game)
                 if move_result and len(move_result) == 3:
@@ -913,23 +913,23 @@ class GameVisualizer(BaseVisualizer):
 
     def set_auto_positions(self, positions: list):
         """Set positions programmatically and optionally start the game"""
-        if len(positions) != self.game.num_cops + 1:
-            raise ValueError(f"Expected {self.game.num_cops + 1} positions, got {len(positions)}")
+        if len(positions) != self.game.num_detectives + 1:
+            raise ValueError(f"Expected {self.game.num_detectives + 1} positions, got {len(positions)}")
         
         self.selected_positions = positions
         
         # Enable start button
-        cop_positions = self.selected_positions[:self.game.num_cops]
-        robber_position = self.selected_positions[self.game.num_cops]
+        detective_positions = self.selected_positions[:self.game.num_detectives]
+        MrX_position = self.selected_positions[self.game.num_detectives]
         
-        if robber_position not in cop_positions:
+        if MrX_position not in detective_positions:
             self.setup_controls.start_button.config(state=tk.NORMAL)
         
         self.draw_graph()
 
     def auto_start_game(self):
         """Automatically start the game with current selected positions"""
-        if len(self.selected_positions) == self.game.num_cops + 1:
+        if len(self.selected_positions) == self.game.num_detectives + 1:
             self.setup_controls.start_game()
         else:
             raise ValueError("Not enough positions selected for auto-start")

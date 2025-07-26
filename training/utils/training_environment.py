@@ -10,14 +10,14 @@ from typing import Dict, List, Any, Tuple
 
 from attr import dataclass
 
-from cops_and_robbers.core.game import ScotlandYardGame, Player
+from ScotlandYard.core.game import ScotlandYardGame, Player
 from simple_play.game_utils import create_and_initialize_game, execute_single_turn
 from simple_play.game_logic import GameController
 from simple_play.display_utils import GameDisplay, VerbosityLevel
 from agents import AgentType
 
-from cops_and_robbers.storage.game_loader import GameLoader
-from cops_and_robbers.services.game_service import GameService
+from ScotlandYard.storage.game_loader import GameLoader
+from ScotlandYard.services.game_service import GameService
 
 @dataclass
 class GameResult:
@@ -105,11 +105,11 @@ class TrainingEnvironment:
                 pre_state = {
                     'turn': turn_count,
                     'current_player': game.game_state.turn,
-                    'mr_x_position': game.game_state.robber_position,
-                    'detective_positions': game.game_state.cop_positions.copy(),
+                    'mr_x_position': game.game_state.MrX_position,
+                    'detective_positions': game.game_state.detective_positions.copy(),
                     'mr_x_visible': game.game_state.mr_x_visible,
                     'mr_x_tickets': game.get_mr_x_tickets(),
-                    'game_state_copy': game.get_state_copy() if hasattr(game, 'get_state_copy') else None
+                    'game_state_detective': game.get_state_copy() if hasattr(game, 'get_state_detective') else None
                 }
             
             # Execute turn
@@ -120,8 +120,8 @@ class TrainingEnvironment:
             # Collect post-move data if requested
             if collect_experience:
                 post_state = {
-                    'mr_x_position': game.game_state.robber_position,
-                    'detective_positions': game.game_state.cop_positions.copy(),
+                    'mr_x_position': game.game_state.MrX_position,
+                    'detective_positions': game.game_state.detective_positions.copy(),
                     'mr_x_visible': game.game_state.mr_x_visible
                 }
                 
@@ -144,9 +144,9 @@ class TrainingEnvironment:
         
         if game.is_game_over():
             winner = game.get_winner()
-            if winner == Player.ROBBER:
+            if winner == Player.MRX:
                 winner_str = "mr_x"
-            elif winner == Player.COPS:
+            elif winner == Player.DETECTIVES:
                 winner_str = "detectives"
             else:
                 winner_str = "unknown"
@@ -158,8 +158,8 @@ class TrainingEnvironment:
             winner=winner_str,
             total_turns=turn_count,
             game_length=game_length,
-            mr_x_final_position=game.game_state.robber_position,
-            detective_final_positions=game.game_state.cop_positions.copy(),
+            mr_x_final_position=game.game_state.MrX_position,
+            detective_final_positions=game.game_state.detective_positions.copy(),
             moves_history=moves_history
         )
             

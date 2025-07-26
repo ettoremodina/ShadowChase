@@ -60,7 +60,7 @@ class GameService:
             'game_complete': 'game_completed', 
             'final_turn_count': 'total_turns',
             'session_turns': 'total_turns',
-            'num_detectives': 'num_cops',
+            'num_detectives': 'num_detectives',
             'game_mode_description': None  # Remove entirely - can be derived
         }
         
@@ -129,7 +129,7 @@ class GameService:
         additional_metadata = {
             'source': 'terminal_game',
             'map_size': map_size,
-            'num_cops': num_detectives  # Use standard field name
+            'num_detectives': num_detectives  # Use standard field name
         }
         
         # Add AI agent type information if provided

@@ -7,7 +7,7 @@ specifically distance calculations between Mr. X and detectives.
 
 import networkx as nx
 from typing import List, Dict, Optional, Set
-from cops_and_robbers.core.game import ScotlandYardGame, GameState, Player
+from ScotlandYard.core.game import ScotlandYardGame, GameState, Player
 
 
 class GameHeuristics:
@@ -78,8 +78,8 @@ class GameHeuristics:
         if not self.game_state:
             return []
             
-        mr_x_position = self.game_state.robber_position
-        detective_positions = self.game_state.cop_positions
+        mr_x_position = self.game_state.MrX_position
+        detective_positions = self.game_state.detective_positions
         
         distances = []
         for detective_pos in detective_positions:
@@ -120,7 +120,7 @@ class GameHeuristics:
         
         # If Mr. X is currently visible, use current position
         if self.game_state.mr_x_visible:
-            last_known_position = self.game_state.robber_position
+            last_known_position = self.game_state.MrX_position
         # Otherwise, try to get last visible position from game
         elif hasattr(self.game, 'last_visible_position') and self.game.last_visible_position is not None:
             last_known_position = self.game.last_visible_position
@@ -128,7 +128,7 @@ class GameHeuristics:
         if last_known_position is None:
             return []
             
-        detective_positions = self.game_state.cop_positions
+        detective_positions = self.game_state.detective_positions
         
         distances = []
         for detective_pos in detective_positions:
@@ -218,8 +218,8 @@ class GameHeuristics:
             
             possible_positions = self._expand_possibilities(possible_positions, transport_used)
 
-        # exclude cop positions from possible positions
-        detective_positions = set(self.game_state.cop_positions)
+        # exclude detective positions from possible positions
+        detective_positions = set(self.game_state.detective_positions)
         possible_positions_filtered = possible_positions - detective_positions
         return possible_positions_filtered
     
@@ -228,7 +228,7 @@ class GameHeuristics:
         Check if a given turn number was a reveal turn.
         
         Args:
-            turn_number: The robber turn number to check
+            turn_number: The MrX turn number to check
             
         Returns:
             True if this was a reveal turn, False otherwise
@@ -245,23 +245,23 @@ class GameHeuristics:
         ticket_history = getattr(self.game, 'ticket_history', [])
         moves_since_reveal = []
         
-        # Track robber turn count and find the last reveal turn
-        last_reveal_robber_turn = -1
-        robber_turn_count = 0
+        # Track MrX turn count and find the last reveal turn
+        last_reveal_MrX_turn = -1
+        MrX_turn_count = 0
         
         for turn_data in ticket_history:
             if turn_data.get('player') == 'mr_x':
-                robber_turn_count += 1
-                if self._was_reveal_turn(robber_turn_count):
-                    last_reveal_robber_turn = robber_turn_count
+                MrX_turn_count += 1
+                if self._was_reveal_turn(MrX_turn_count):
+                    last_reveal_MrX_turn = MrX_turn_count
         
         # Now collect all Mr. X moves after the last reveal turn
-        current_robber_turn = 0
+        current_MrX_turn = 0
         for turn_data in ticket_history:
             if turn_data.get('player') == 'mr_x':
-                current_robber_turn += 1
+                current_MrX_turn += 1
                 # Only include moves after the last reveal turn
-                if current_robber_turn > last_reveal_robber_turn:
+                if current_MrX_turn > last_reveal_MrX_turn:
                     mr_x_moves = turn_data.get('mr_x_moves', [])
                     moves_since_reveal.extend(mr_x_moves)
         
@@ -344,7 +344,7 @@ class GameHeuristics:
             return {}
         
         detective_distances = {}
-        detective_positions = self.game_state.cop_positions
+        detective_positions = self.game_state.detective_positions
         
         for detective_idx, detective_pos in enumerate(detective_positions):
             distances = []

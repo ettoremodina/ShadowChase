@@ -7,7 +7,7 @@ It allows easy selection and instantiation of agents for both terminal and UI in
 
 from typing import Dict, Tuple, List, Type, Callable
 from enum import Enum
-from cops_and_robbers.core.game import Player
+from ScotlandYard.core.game import Player
 from .base_agent import MrXAgent, MultiDetectiveAgent, DetectiveAgent
 from .random_agent import RandomMrXAgent, RandomMultiDetectiveAgent
 from .heuristic_agent import HeuristicMrXAgent, HeuristicMultiDetectiveAgent
@@ -47,7 +47,7 @@ class AgentRegistry:
     
     def get_agent_description(self, agent_type: AgentType, player: Player) -> str:
         """Get description of an agent type for a specific player"""
-        if player == Player.ROBBER:
+        if player == Player.MRX:
             return self._mr_x_agents[agent_type][1]
         else:
             return self._multi_detective_agents[agent_type][1]
@@ -111,8 +111,8 @@ class AgentSelector:
         
         for i, agent_type in enumerate(agent_types, 1):
             display_name = registry.get_agent_display_name(agent_type)
-            mr_x_desc = registry.get_agent_description(agent_type, Player.ROBBER)
-            detective_desc = registry.get_agent_description(agent_type, Player.COPS)
+            mr_x_desc = registry.get_agent_description(agent_type, Player.MRX)
+            detective_desc = registry.get_agent_description(agent_type, Player.DETECTIVES)
             
             print(f"{i}. {display_name}")
             print(f"   Mr. X: {mr_x_desc}")

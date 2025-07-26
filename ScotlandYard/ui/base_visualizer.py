@@ -245,7 +245,7 @@ class BaseVisualizer:
         tickets_text += "──────┼──┼──┼──┼──┼──\n"
         
         # Detective rows
-        for i in range(self.game.num_cops):
+        for i in range(self.game.num_detectives):
             player_name = f"Det {i+1}"
             
             # Get tickets for this detective

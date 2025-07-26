@@ -10,34 +10,34 @@ current_dir = os.path.dirname(os.path.abspath(__file__))
 if current_dir not in sys.path:
     sys.path.insert(0, current_dir)
 
-from cops_and_robbers.ui.game_visualizer import GameVisualizer
-from cops_and_robbers.core.game import Game, Player, ScotlandYardGame, TicketType, TransportType
-from cops_and_robbers.examples.example_games import *
+from ScotlandYard.ui.game_visualizer import GameVisualizer
+from ScotlandYard.core.game import Game, Player, ScotlandYardGame, TicketType, TransportType
+from ScotlandYard.examples.example_games import *
 
 def print_game_state(game):
     """Print current game state"""
     state = game.get_state_representation()
     print(f"\n=== Turn {state['turn_count']} - {state['turn'].upper()}'S TURN ===")
-    print(f"Cops at: {state['cop_positions']}")
-    print(f"Robber at: {state['robber_position']}")
+    print(f"detectives at: {state['detective_positions']}")
+    print(f"MrX at: {state['MrX_position']}")
     print(f"Game over: {state['game_over']}")
     if state['winner']:
         print(f"Winner: {state['winner'].upper()}")
 
 def show_valid_moves(game, player, position=None):
     """Show valid moves for a player"""
-    if player == Player.COPS and position is not None:
-        moves = game.get_valid_moves(Player.COPS, position)
+    if player == Player.DETECTIVES and position is not None:
+        moves = game.get_valid_moves(Player.DETECTIVES, position)
         if isinstance(game, ScotlandYardGame):
-            print(f"Cop at {position} can move to: {[(dest, transport.name) for dest, transport in moves]}")
+            print(f"detective at {position} can move to: {[(dest, transport.name) for dest, transport in moves]}")
         else:
-            print(f"Cop at {position} can move to: {sorted(moves)}")
-    elif player == Player.ROBBER:
-        moves = game.get_valid_moves(Player.ROBBER)
+            print(f"detective at {position} can move to: {sorted(moves)}")
+    elif player == Player.MRX:
+        moves = game.get_valid_moves(Player.MRX)
         if isinstance(game, ScotlandYardGame):
-            print(f"Robber can move to: {[(dest, transport.name) for dest, transport in moves]}")
+            print(f"MrX can move to: {[(dest, transport.name) for dest, transport in moves]}")
         else:
-            print(f"Robber can move to: {sorted(moves)}")
+            print(f"MrX can move to: {sorted(moves)}")
     return moves
 
 def test_basic_game():
@@ -54,46 +54,46 @@ def test_basic_game():
     print(f"Graph nodes: {sorted(graph.nodes())}")
     print(f"Graph edges: {list(graph.edges())}")
     
-    # Initialize game: 2 cops at positions 0,1 and robber at position 7
+    # Initialize game: 2 detectives at positions 0,1 and MrX at position 7
     # Make sure positions don't conflict
     game = Game(graph, 2)
-    cop_positions = [0, 1]
-    robber_position = 7
+    detective_positions = [0, 1]
+    MrX_position = 7
     
     # Ensure no position conflicts
-    if robber_position not in cop_positions:
-        game.initialize_game(cop_positions, robber_position)
+    if MrX_position not in detective_positions:
+        game.initialize_game(detective_positions, MrX_position)
     else:
         # Use different positions if there's a conflict
         game.initialize_game([0, 2], 7)
     
     print_game_state(game)
     
-    # Show valid moves for each cop
-    for i, cop_pos in enumerate(game.game_state.cop_positions):
-        print(f"\nCop {i+1}:")
-        show_valid_moves(game, Player.COPS, cop_pos)
+    # Show valid moves for each detective
+    for i, detective_pos in enumerate(game.game_state.detective_positions):
+        print(f"\ndetective {i+1}:")
+        show_valid_moves(game, Player.DETECTIVES, detective_pos)
     
-    # Make cops move
-    print("\n--- COPS MOVE ---")
-    cop1_moves = show_valid_moves(game, Player.COPS, 0)
-    cop2_moves = show_valid_moves(game, Player.COPS, 1)
+    # Make detectives move
+    print("\n--- detectives MOVE ---")
+    detective1_moves = show_valid_moves(game, Player.DETECTIVES, 0)
+    detective2_moves = show_valid_moves(game, Player.DETECTIVES, 1)
     
-    # Move cops to new positions
-    new_cop_positions = [3, 4]  # Example moves
-    success = game.make_move(new_positions=new_cop_positions)
-    print(f"Cops move to {new_cop_positions}: {'Success' if success else 'Failed'}")
+    # Move detectives to new positions
+    new_detective_positions = [3, 4]  # Example moves
+    success = game.make_move(new_positions=new_detective_positions)
+    print(f"detectives move to {new_detective_positions}: {'Success' if success else 'Failed'}")
     
     print_game_state(game)
     
-    # Show robber's valid moves
-    print("\n--- ROBBER'S TURN ---")
-    robber_moves = show_valid_moves(game, Player.ROBBER)
+    # Show MrX's valid moves
+    print("\n--- MrX'S TURN ---")
+    MrX_moves = show_valid_moves(game, Player.MRX)
     
-    # Move robber
-    new_robber_pos = 8  # Example move
-    success = game.make_move(new_robber_pos=new_robber_pos)
-    print(f"Robber moves to {new_robber_pos}: {'Success' if success else 'Failed'}")
+    # Move MrX
+    new_MrX_pos = 8  # Example move
+    success = game.make_move(new_MrX_pos=new_MrX_pos)
+    print(f"MrX moves to {new_MrX_pos}: {'Success' if success else 'Failed'}")
     
     print_game_state(game)
 
@@ -104,7 +104,7 @@ def test_game_until_end():
     # Simple path graph for quick game
     graph = nx.path_graph(5)  # Nodes 0-4 in a line
     game = Game(graph, 1)
-    game.initialize_game([0], 4)  # Cop at 0, robber at 4
+    game.initialize_game([0], 4)  # detective at 0, MrX at 4
     
     turn = 0
     max_turns = 10
@@ -112,36 +112,36 @@ def test_game_until_end():
     while not game.is_game_over() and turn < max_turns:
         print_game_state(game)
         
-        if game.game_state.turn == Player.COPS:
-            # Simple strategy: cop moves toward robber
-            cop_pos = game.game_state.cop_positions[0]
-            robber_pos = game.game_state.robber_position
+        if game.game_state.turn == Player.DETECTIVES:
+            # Simple strategy: detective moves toward MrX
+            detective_pos = game.game_state.detective_positions[0]
+            MrX_pos = game.game_state.MrX_position
             
-            moves = show_valid_moves(game, Player.COPS, cop_pos)
+            moves = show_valid_moves(game, Player.DETECTIVES, detective_pos)
             
-            # Choose move that gets closer to robber
-            best_move = cop_pos
+            # Choose move that gets closer to MrX
+            best_move = detective_pos
             for move in moves:
-                if abs(move - robber_pos) < abs(best_move - robber_pos):
+                if abs(move - MrX_pos) < abs(best_move - MrX_pos):
                     best_move = move
             
-            print(f"Cop chooses to move to: {best_move}")
+            print(f"detective chooses to move to: {best_move}")
             game.make_move(new_positions=[best_move])
             
-        else:  # Robber's turn
-            moves = show_valid_moves(game, Player.ROBBER)
+        else:  # MrX's turn
+            moves = show_valid_moves(game, Player.MRX)
             
-            # Simple strategy: move away from cops
-            robber_pos = game.game_state.robber_position
-            cop_pos = game.game_state.cop_positions[0]
+            # Simple strategy: move away from detectives
+            MrX_pos = game.game_state.MrX_position
+            detective_pos = game.game_state.detective_positions[0]
             
-            best_move = robber_pos
+            best_move = MrX_pos
             for move in moves:
-                if abs(move - cop_pos) > abs(best_move - cop_pos):
+                if abs(move - detective_pos) > abs(best_move - detective_pos):
                     best_move = move
             
-            print(f"Robber chooses to move to: {best_move}")
-            game.make_move(new_robber_pos=best_move)
+            print(f"MrX chooses to move to: {best_move}")
+            game.make_move(new_MrX_pos=best_move)
         
         turn += 1
     
@@ -186,7 +186,7 @@ def demo_path_game():
     solver = None
     result = solver.solve([0], 4)
     
-    print(f"Cops can win: {result.cops_can_win}")
+    print(f"detectives can win: {result.detectives_can_win}")
     if result.game_length:
         print(f"Game length: {result.game_length}")
     
@@ -236,7 +236,7 @@ def demo_scotland_yard_game():
 def demo_simple_scotland_yard():
     """Demonstrate simplified Scotland Yard game"""
     print("Simple Scotland Yard Game Demo")
-    game = create_simple_scotland_yard_game(num_cops=2, show_robber=True, use_tickets=False)
+    game = create_simple_scotland_yard_game(num_detectives=2, show_MrX=True, use_tickets=False)
     
     # Use basic initialization
     game.initialize_game([1, 3], 100)
@@ -255,7 +255,7 @@ def demo_scotland_yard_visualizer():
 def demo_test_scotland_yard():
     """Demonstrate test Scotland Yard game with small graph"""
     print("Test Scotland Yard Game Demo (10 nodes)")
-    from cops_and_robbers.examples.example_games import create_test_scotland_yard_game
+    from ScotlandYard.examples.example_games import create_test_scotland_yard_game
     
     game = create_test_scotland_yard_game(2)
     
@@ -282,9 +282,9 @@ def demo_test_scotland_yard():
 def demo_simple_test_scotland_yard():
     """Demonstrate simple test Scotland Yard game"""
     print("Simple Test Scotland Yard Game Demo")
-    from cops_and_robbers.examples.example_games import create_simple_test_scotland_yard_game
+    from ScotlandYard.examples.example_games import create_simple_test_scotland_yard_game
     
-    game = create_simple_test_scotland_yard_game(num_cops=2, show_robber=True, use_tickets=False)
+    game = create_simple_test_scotland_yard_game(num_detectives=2, show_MrX=True, use_tickets=False)
     
     # Use basic initialization
     game.initialize_game([1, 3], 8)

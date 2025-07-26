@@ -7,7 +7,7 @@ These can be used for testing and as baseline implementations.
 
 import random
 from typing import List, Tuple, Optional, Set
-from cops_and_robbers.core.game import ScotlandYardGame, Player, TransportType, TicketType
+from ScotlandYard.core.game import ScotlandYardGame, Player, TransportType, TicketType
 from .base_agent import DetectiveAgent, MrXAgent, MultiDetectiveAgent
 
 class RandomMrXAgent(MrXAgent):
@@ -15,7 +15,7 @@ class RandomMrXAgent(MrXAgent):
     
     def choose_move(self, game: ScotlandYardGame) -> Optional[Tuple[int, TransportType, bool]]:
         """Make a random valid move for Mr. X"""
-        valid_moves = list(game.get_valid_moves(Player.ROBBER))
+        valid_moves = list(game.get_valid_moves(Player.MRX))
         
         if not valid_moves:
             return None
@@ -57,10 +57,10 @@ class RandomMultiDetectiveAgent(MultiDetectiveAgent):
         pending_moves = []
         
         for i in range(self.num_detectives):
-            current_pos = game.game_state.cop_positions[i]
+            current_pos = game.game_state.detective_positions[i]
             
             # Get valid moves considering previous detectives' moves
-            valid_moves = list(game.get_valid_moves(Player.COPS, current_pos, pending_moves=pending_moves))
+            valid_moves = list(game.get_valid_moves(Player.DETECTIVES, current_pos, pending_moves=pending_moves))
             
             if not valid_moves:
                 # Stay in place if no valid moves

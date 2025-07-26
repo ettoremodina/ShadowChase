@@ -1,5 +1,5 @@
 """
-UI Package for Cops and Robbers Game
+UI Package for detectives and MrXs Game
 
 Provides a modern, clean GUI for Scotland Yard game with proper separation of concerns.
 """

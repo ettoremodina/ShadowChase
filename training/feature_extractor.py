@@ -9,7 +9,7 @@ import numpy as np
 from typing import Dict, List, Optional, Tuple
 from dataclasses import dataclass
 
-from cops_and_robbers.core.game import ScotlandYardGame, Player, TransportType, TicketType
+from ScotlandYard.core.game import ScotlandYardGame, Player, TransportType, TicketType
 from agents.heuristics import GameHeuristics
 
 
@@ -96,7 +96,7 @@ class GameFeatureExtractor:
         
         Args:
             game: Scotland Yard game instance
-            player: Player perspective (ROBBER for Mr. X, COPS for detectives)
+            player: Player perspective (MrX for Mr. X, detectives for detectives)
             
         Returns:
             Numpy array representing the game state features
@@ -165,13 +165,13 @@ class GameFeatureExtractor:
         features = [0.0] * self.config.max_nodes
         
         # Mr. X position (if visible or if we're Mr. X)
-        if game.game_state.mr_x_visible or player == Player.ROBBER:
-            mr_x_pos = game.game_state.robber_position
+        if game.game_state.mr_x_visible or player == Player.MRX:
+            mr_x_pos = game.game_state.MrX_position
             if mr_x_pos < self.config.max_nodes:
                 features[mr_x_pos] = 1.0
         
         # Detective positions (negative values to distinguish from Mr. X)
-        for i, detective_pos in enumerate(game.game_state.cop_positions):
+        for i, detective_pos in enumerate(game.game_state.detective_positions):
             if detective_pos < self.config.max_nodes:
                 features[detective_pos] = -1.0 - (i * 0.1)  # Different values for different detectives
         
@@ -225,7 +225,7 @@ class GameFeatureExtractor:
         features.append(mr_x_tickets.get(TicketType.DOUBLE_MOVE, 0) / 2)  # Double move availability
 
         # Detective tickets (for each detective, up to 5)
-        for i in range(len(game.game_state.cop_positions)):
+        for i in range(len(game.game_state.detective_positions)):
             detective_tickets = game.get_detective_tickets(i)
             features.append(detective_tickets.get(TicketType.TAXI, 0) / max_tickets)
             features.append(detective_tickets.get(TicketType.BUS, 0) / max_tickets)
@@ -238,11 +238,11 @@ class GameFeatureExtractor:
         features = []
         
         # Current position of the player
-        if player == Player.ROBBER:
-            current_pos = game.game_state.robber_position
+        if player == Player.MRX:
+            current_pos = game.game_state.MrX_position
         else:
             # For detectives, use average connectivity of all detectives
-            detective_positions = game.game_state.cop_positions
+            detective_positions = game.game_state.detective_positions
             current_pos = detective_positions[0] if detective_positions else 1
         
         # Count available moves by transport type
@@ -258,10 +258,10 @@ class GameFeatureExtractor:
                 distances = []
                 for dest, _ in transport_moves:
                     # Calculate distance to closest detective/Mr. X
-                    if player == Player.ROBBER:
+                    if player == Player.MRX:
                         # For Mr. X, distance to closest detective
                         min_dist = float('inf')
-                        for detective_pos in game.game_state.cop_positions:
+                        for detective_pos in game.game_state.detective_positions:
                             dist = self.heuristics.calculate_shortest_distance(dest, detective_pos)
                             if dist >= 0 and dist < min_dist:
                                 min_dist = dist
@@ -270,7 +270,7 @@ class GameFeatureExtractor:
                     else:
                         # For detectives, distance to Mr. X (if known)
                         if game.game_state.mr_x_visible:
-                            dist = self.heuristics.calculate_shortest_distance(dest, game.game_state.robber_position)
+                            dist = self.heuristics.calculate_shortest_distance(dest, game.game_state.MrX_position)
                             if dist >= 0:
                                 distances.append(dist)
                 
@@ -294,7 +294,7 @@ class GameFeatureExtractor:
         """Extract features related to Mr. X's possible positions (when hidden)."""
         features = []
         
-        if player == Player.COPS and not game.game_state.mr_x_visible:
+        if player == Player.DETECTIVES and not game.game_state.mr_x_visible:
             # For detectives when Mr. X is hidden
             possible_positions = self.heuristics.get_possible_mr_x_positions()
             

@@ -4,7 +4,7 @@ Handles move validation, AI moves, and game flow.
 """
 import random
 from typing import List, Tuple, Optional
-from cops_and_robbers.core.game import ScotlandYardGame, Player, TicketType, TransportType
+from ScotlandYard.core.game import ScotlandYardGame, Player, TicketType, TransportType
 from .display_utils import GameDisplay, format_transport_input
 from agents import AgentType, AgentSelector, get_agent_registry
 
@@ -22,27 +22,27 @@ class GameController:
         
         # Initialize agents using the registry
         registry = get_agent_registry()
-        num_detectives = len(game.game_state.cop_positions)
+        num_detectives = len(game.game_state.detective_positions)
         self.agent_mrx = registry.create_mr_x_agent(mr_x_agent_type)
         self.agent_detectives = registry.create_multi_detective_agent(detective_agent_type, num_detectives)
     
     def make_all_detective_moves(self) -> bool:
         """Handle all detective moves simultaneously"""
-        if self.game.game_state.turn != Player.COPS:
+        if self.game.game_state.turn != Player.DETECTIVES:
             self.display.print_error("Not detectives' turn")
             return False
         
         detective_moves = []
         
         # Collect moves from all detectives
-        for i, detective_pos in enumerate(self.game.game_state.cop_positions):
+        for i, detective_pos in enumerate(self.game.game_state.detective_positions):
             print(f"\n--- Detective {i+1} (Position {detective_pos}) ---")
             
             # Check if detective can move with pending moves consideration
             if isinstance(self.game, ScotlandYardGame):
-                available_moves = self.game.get_valid_moves(Player.COPS, detective_pos, pending_moves=detective_moves)
+                available_moves = self.game.get_valid_moves(Player.DETECTIVES, detective_pos, pending_moves=detective_moves)
             else:
-                available_moves = self.game.get_valid_moves(Player.COPS, detective_pos)
+                available_moves = self.game.get_valid_moves(Player.DETECTIVES, detective_pos)
             
             if not available_moves:
                 self.display.print_info(f"Detective {i+1} has no valid moves (staying in place)")
@@ -149,9 +149,9 @@ class GameController:
             
             return (dest, transport)
     
-    def make_mr_x_move(self, player: Player = Player.ROBBER) -> bool:
+    def make_mr_x_move(self, player: Player = Player.MRX) -> bool:
         """Handle Mr. X move"""
-        available_moves = self.display.print_available_moves(self.game, Player.ROBBER)
+        available_moves = self.display.print_available_moves(self.game, Player.MRX)
         if not available_moves:
             return False
         
@@ -245,7 +245,7 @@ class GameController:
                         self.display.print_move_result(True, move_desc)
                         # Continue for second move
                         self.double_move_first = False
-                        available_moves = self.display.print_available_moves(self.game, Player.ROBBER)
+                        available_moves = self.display.print_available_moves(self.game, Player.MRX)
                         continue
                     else:
                         move_desc += " (second move of double move)"
@@ -259,7 +259,7 @@ class GameController:
     
     def make_ai_move(self, player: Player) -> bool:
         """Make an AI move using the agent system"""
-        if player == Player.COPS:
+        if player == Player.DETECTIVES:
             detective_moves = self.agent_detectives.choose_all_moves(self.game)
             if detective_moves:
                 success = self.game.make_move(detective_moves=detective_moves)
@@ -272,7 +272,7 @@ class GameController:
             else:
                 self.display.print_error("AI Detectives could not find valid moves")
                 return False
-        else:  # Player.ROBBER
+        else:  # Player.MRX
             dest, transport, use_double  = self.agent_mrx.choose_move(self.game)
             if dest is not None and transport is not None:
                 success = self.game.make_move(mr_x_moves=[(dest, transport)], use_double_move=use_double)
@@ -298,7 +298,7 @@ class GameSetup:
     @staticmethod
     def create_test_game(num_detectives: int = 2) -> ScotlandYardGame:
         """Create a test Scotland Yard game (small map)"""
-        from cops_and_robbers.examples.example_games import create_test_scotland_yard_game
+        from ScotlandYard.examples.example_games import create_test_scotland_yard_game
         return create_test_scotland_yard_game(num_detectives)
     
     @staticmethod
@@ -306,17 +306,17 @@ class GameSetup:
         """Create a full Scotland Yard game (full map)"""
         # Try to use extracted board first, fall back to CSV
         try:
-            from cops_and_robbers.examples.example_games import create_extracted_board_game
+            from ScotlandYard.examples.example_games import create_extracted_board_game
             return create_extracted_board_game(num_detectives)
         except:
             # Fall back to original CSV-based game
-            from cops_and_robbers.examples.example_games import create_scotlandYard_game
+            from ScotlandYard.examples.example_games import create_scotlandYard_game
             return create_scotlandYard_game(num_detectives)
     
     @staticmethod
     def create_extracted_board_game(num_detectives: int = 3) -> ScotlandYardGame:
         """Create a Scotland Yard game using extracted board data"""
-        from cops_and_robbers.examples.example_games import create_extracted_board_game
+        from ScotlandYard.examples.example_games import create_extracted_board_game
         return create_extracted_board_game(num_detectives)
     
     @staticmethod

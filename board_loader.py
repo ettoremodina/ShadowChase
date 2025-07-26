@@ -8,7 +8,7 @@ import json
 import csv
 import networkx as nx
 from typing import Dict, Tuple
-from cops_and_robbers.core.game import ScotlandYardGame, TransportType
+from ScotlandYard.core.game import ScotlandYardGame, TransportType
 
 def load_board_graph_from_csv(nodes_file: str = "data/nodes.csv", 
                              edges_file: str = "data/edges.csv") -> Tuple[nx.MultiGraph, Dict[int, Tuple[float, float]]]:
@@ -254,7 +254,7 @@ if __name__ == "__main__":
         
         # Test game creation
         game = create_extracted_board_game(3)
-        print(f"✓ Created Scotland Yard game with {game.num_cops} detectives")
+        print(f"✓ Created Scotland Yard game with {game.num_detectives} detectives")
         
         # Load metadata
         metadata = load_board_metadata()

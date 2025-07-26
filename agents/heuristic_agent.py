@@ -8,7 +8,7 @@ maximize distance from the closest detective.
 
 import random
 from typing import List, Tuple, Optional
-from cops_and_robbers.core.game import ScotlandYardGame, Player, TransportType, TicketType
+from ScotlandYard.core.game import ScotlandYardGame, Player, TransportType, TicketType
 from .base_agent import DetectiveAgent, MrXAgent, MultiDetectiveAgent
 from .heuristics import GameHeuristics
 
@@ -27,7 +27,7 @@ class HeuristicMrXAgent(MrXAgent):
         else:
             self.heuristics.update_game_state(game)
         
-        valid_moves = list(game.get_valid_moves(Player.ROBBER))
+        valid_moves = list(game.get_valid_moves(Player.MRX))
         if not valid_moves:
             return None
         
@@ -35,8 +35,8 @@ class HeuristicMrXAgent(MrXAgent):
         best_moves = []
         best_score = -1
         
-        current_position = game.game_state.robber_position
-        detective_positions = game.game_state.cop_positions
+        current_position = game.game_state.MrX_position
+        detective_positions = game.game_state.detective_positions
         
         for destination, transport in valid_moves:
             # Calculate minimum distance from this destination to any detective
@@ -122,15 +122,15 @@ class HeuristicMultiDetectiveAgent(MultiDetectiveAgent):
         # Get Mr. X's last known position or possible positions
         target_position = None
         if game.game_state.mr_x_visible:
-            target_position = game.game_state.robber_position
+            target_position = game.game_state.MrX_position
         elif hasattr(game, 'last_visible_position') and game.last_visible_position is not None:
             target_position = game.last_visible_position
         
         for i in range(self.num_detectives):
-            current_pos = game.game_state.cop_positions[i]
+            current_pos = game.game_state.detective_positions[i]
             
             # Get valid moves considering previous detectives' moves
-            valid_moves = list(game.get_valid_moves(Player.COPS, current_pos, pending_moves=pending_moves))
+            valid_moves = list(game.get_valid_moves(Player.DETECTIVES, current_pos, pending_moves=pending_moves))
             
             if not valid_moves:
                 # Stay in place if no valid moves
@@ -195,7 +195,7 @@ class HeuristicDetectiveAgent(DetectiveAgent):
         # Get target position
         target_position = None
         if game.game_state.mr_x_visible:
-            target_position = game.game_state.robber_position
+            target_position = game.game_state.MrX_position
         elif hasattr(game, 'last_visible_position') and game.last_visible_position is not None:
             target_position = game.last_visible_position
         

@@ -13,7 +13,7 @@ import json
 import os
 from pathlib import Path
 
-from cops_and_robbers.core.game import ScotlandYardGame, Player
+from ScotlandYard.core.game import ScotlandYardGame, Player
 from .utils.evaluation import AgentEvaluator, EvaluationConfig
 from agents.base_agent import Agent
 import pickle
@@ -147,7 +147,7 @@ class BaseTrainer(ABC):
         Get a trained agent for the specified player.
         
         Args:
-            player: Player type (ROBBER for Mr. X, COPS for detectives)
+            player: Player type (MrX for Mr. X, detectives for detectives)
             
         Returns:
             Trained agent instance
@@ -183,8 +183,8 @@ class BaseTrainer(ABC):
         
         
         # Determine which player the trained agent plays
-        trained_agent_mr_x = self.get_trained_agent(Player.ROBBER)
-        trained_agent_det = self.get_trained_agent(Player.COPS)
+        trained_agent_mr_x = self.get_trained_agent(Player.MRX)
+        trained_agent_det = self.get_trained_agent(Player.DETECTIVES)
         
         if trained_agent_mr_x is not None:
             player_role = "mr_x"

@@ -156,14 +156,14 @@ class SetupControls:
             return
             
         selected_count = len(self.visualizer.selected_positions)
-        needed_total = self.visualizer.game.num_cops + 1
+        needed_total = self.visualizer.game.num_detectives + 1
         
         status_text = f"Selected: {selected_count}/{needed_total}\n"
-        status_text += f"Need: {self.visualizer.game.num_cops} detectives + 1 Mr. X\n"
+        status_text += f"Need: {self.visualizer.game.num_detectives} detectives + 1 Mr. X\n"
         
-        if selected_count < self.visualizer.game.num_cops:
+        if selected_count < self.visualizer.game.num_detectives:
             status_text += f"Select detective {selected_count + 1} position"
-        elif selected_count == self.visualizer.game.num_cops:
+        elif selected_count == self.visualizer.game.num_detectives:
             status_text += "Select Mr. X starting position"
         else:
             status_text += "Ready to start!"
@@ -183,14 +183,14 @@ class SetupControls:
     
     def start_game(self):
         """Start the game with selected positions"""
-        if len(self.visualizer.selected_positions) != self.visualizer.game.num_cops + 1:
-            messagebox.showerror("Error", f"Select {self.visualizer.game.num_cops} positions and 1 robber position")
+        if len(self.visualizer.selected_positions) != self.visualizer.game.num_detectives + 1:
+            messagebox.showerror("Error", f"Select {self.visualizer.game.num_detectives} positions and 1 MrX position")
             return
         
-        cop_positions = self.visualizer.selected_positions[:self.visualizer.game.num_cops]
-        robber_position = self.visualizer.selected_positions[self.visualizer.game.num_cops]
+        detective_positions = self.visualizer.selected_positions[:self.visualizer.game.num_detectives]
+        MrX_position = self.visualizer.selected_positions[self.visualizer.game.num_detectives]
         
-        if robber_position in cop_positions:
+        if MrX_position in detective_positions:
             messagebox.showerror("Error", "Mr. X and detectives cannot start in the same position")
             return
         
@@ -201,9 +201,9 @@ class SetupControls:
         try:
             # Use appropriate initialization method
             if isinstance(self.visualizer.game, ScotlandYardGame):
-                self.visualizer.game.initialize_scotland_yard_game(cop_positions, robber_position)
+                self.visualizer.game.initialize_scotland_yard_game(detective_positions, MrX_position)
             else:
-                self.visualizer.game.initialize_game(cop_positions, robber_position)
+                self.visualizer.game.initialize_game(detective_positions, MrX_position)
         except ValueError as e:
             messagebox.showerror("Error", str(e))
             return
@@ -236,8 +236,8 @@ class SetupControls:
         
         self.visualizer.setup_mode = False
         self.visualizer.selected_positions = []
-        self.visualizer.current_cop_index = 0
-        self.visualizer.cop_selections = []
+        self.visualizer.current_detective_index = 0
+        self.visualizer.detective_selections = []
         self.visualizer.selected_nodes = []
         
         # Update UI visibility and redraw
@@ -262,8 +262,8 @@ class SetupControls:
         self.visualizer.current_player_moves = {}
         self.visualizer.highlighted_edges = []
         self.visualizer.active_player_positions = []
-        self.visualizer.current_cop_index = 0
-        self.visualizer.cop_selections = []
+        self.visualizer.current_detective_index = 0
+        self.visualizer.detective_selections = []
         self.visualizer.selected_nodes = []
         
         # Clear game state

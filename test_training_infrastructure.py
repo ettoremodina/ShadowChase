@@ -15,7 +15,7 @@ from training import BaseTrainer, TrainingResult, GameFeatureExtractor, FeatureC
 from training.utils import TrainingEnvironment
 from simple_play.game_utils import create_and_initialize_game
 from agents import AgentType, get_agent_registry
-from cops_and_robbers.core.game import Player
+from ScotlandYard.core.game import Player
 
 
 class MockTrainer(BaseTrainer):
@@ -102,7 +102,7 @@ class MockTrainer(BaseTrainer):
             raise RuntimeError("Agent must be trained first")
         
         registry = get_agent_registry()
-        if player == Player.ROBBER:
+        if player == Player.MRX:
             return registry.create_mr_x_agent(AgentType.RANDOM)
         else:
             return registry.create_multi_detective_agent(AgentType.RANDOM, 2)
@@ -125,8 +125,8 @@ def test_feature_extraction():
     extractor = GameFeatureExtractor(config)
     
     # Extract features for both players
-    mr_x_features = extractor.extract_features(game, Player.ROBBER)
-    detective_features = extractor.extract_features(game, Player.COPS)
+    mr_x_features = extractor.extract_features(game, Player.MRX)
+    detective_features = extractor.extract_features(game, Player.DETECTIVES)
     
     print(f"Feature vector size: {len(mr_x_features)}")
     print(f"Expected size: {extractor.get_feature_size(game)}")

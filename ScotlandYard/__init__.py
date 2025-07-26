@@ -1,7 +1,7 @@
 """
-Cops and Robbers Game Package
+detectives and MrXs Game Package
 
-A comprehensive implementation of the Cops and Robbers pursuit-evasion game
+A comprehensive implementation of the detectives and MrXs pursuit-evasion game
 with flexible rules, solvers, and interactive visualization.
 """
 
@@ -28,7 +28,7 @@ from .examples.example_games import (
 from .storage.game_loader import GameLoader, GameRecord
 
 __version__ = "1.0.0"
-__author__ = "Cops and Robbers Game"
+__author__ = "detectives and MrXs Game"
 
 __all__ = [
     # Core classes

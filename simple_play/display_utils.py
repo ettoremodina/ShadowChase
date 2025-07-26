@@ -3,7 +3,7 @@ Display utilities for simple terminal-based Scotland Yard gameplay.
 Provides clean, customizable output formatting without graph visualization.
 """
 from typing import Dict, List, Tuple, Optional, Set
-from cops_and_robbers.core.game import ScotlandYardGame, Player, TicketType, TransportType
+from ScotlandYard.core.game import ScotlandYardGame, Player, TicketType, TransportType
 
 
 # Import heuristics for advanced analysis
@@ -108,13 +108,13 @@ class GameDisplay:
         
         # Detective positions
         print(f"\n{self.symbols['detective']} DETECTIVES:")
-        for i, pos in enumerate(state.cop_positions):
+        for i, pos in enumerate(state.detective_positions):
             print(f"  Detective {i+1}: Position {pos}")
         
         # Mr. X position
         print(f"\n{self.symbols['mr_x']} MR. X:")
         if state.mr_x_visible:
-            print(f"  Position: {state.robber_position} {self.symbols['visible']}")
+            print(f"  Position: {state.MrX_position} {self.symbols['visible']}")
         else:
             print(f"  Position: Hidden {self.symbols['hidden']}")
     
@@ -123,7 +123,7 @@ class GameDisplay:
         print(f"\n🎫 TICKETS:")
         
         # Detective tickets
-        for i in range(game.num_cops):
+        for i in range(game.num_detectives):
             tickets = game.get_detective_tickets(i)
             print(f"\n  Detective {i+1}:")
             for ticket_type, count in tickets.items():
@@ -155,11 +155,11 @@ class GameDisplay:
     
     def print_available_moves(self, game: ScotlandYardGame, player: Player, position: Optional[int] = None):
         """Print available moves for a player"""
-        if player == Player.COPS and position is not None:
+        if player == Player.DETECTIVES and position is not None:
             if isinstance(game, ScotlandYardGame):
-                moves = game.get_valid_moves(Player.COPS, position)
+                moves = game.get_valid_moves(Player.DETECTIVES, position)
             else:
-                moves = game.get_valid_moves(Player.COPS, position)
+                moves = game.get_valid_moves(Player.DETECTIVES, position)
             print(f"\n🎯 AVAILABLE MOVES for Detective at position {position}:")
             
             if not moves:
@@ -188,11 +188,11 @@ class GameDisplay:
                 for dest in sorted(moves):
                     print(f"  → Position {dest}")
         
-        elif player == Player.ROBBER:
+        elif player == Player.MRX:
             if isinstance(game, ScotlandYardGame):
-                moves = game.get_valid_moves(Player.ROBBER)
+                moves = game.get_valid_moves(Player.MRX)
             else:
-                moves = game.get_valid_moves(Player.ROBBER)
+                moves = game.get_valid_moves(Player.MRX)
             print(f"\n🎯 AVAILABLE MOVES for Mr. X:")
             
             if not moves:
@@ -266,8 +266,8 @@ class GameDisplay:
         state = game.game_state
         print(f"  Double move active: {state.double_move_active}")
         print(f"  Reveal turns: {game.reveal_turns}")
-        print(f"  Next reveal: {min([t for t in game.reveal_turns if t > state.robber_turn_count], default='None')}")
-        print(f"  Game history length (MrX turns): {state.robber_turn_count}")
+        print(f"  Next reveal: {min([t for t in game.reveal_turns if t > state.MrX_turn_count], default='None')}")
+        print(f"  Game history length (MrX turns): {state.MrX_turn_count}")
 
     def _print_heuristic_analysis(self, game: ScotlandYardGame):
         """Print heuristic analysis (verbosity level 5)"""
@@ -428,7 +428,7 @@ def display_game_over(game: ScotlandYardGame, display: GameDisplay, turn_count: 
     
     if game.is_game_over():
         winner = game.get_winner()
-        if winner == Player.COPS:
+        if winner == Player.DETECTIVES:
             print(f"\n🏆 {display.symbols['detective']} DETECTIVES WIN!")
             print("The detectives have successfully captured Mr. X!")
         else:

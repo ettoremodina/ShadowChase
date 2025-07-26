@@ -56,9 +56,9 @@ class GameControls:
         if success:
             # Reset UI state after AI move
             self.visualizer.selected_positions = []
-            self.visualizer.cop_selections = []
+            self.visualizer.detective_selections = []
             self.mr_x_selections = []
-            self.visualizer.current_cop_index = 0
+            self.visualizer.current_detective_index = 0
             self.visualizer.selected_nodes = []
             
             # Update heuristics if they're enabled and available
@@ -116,9 +116,9 @@ class GameControls:
         
         current_player = self.visualizer.game.game_state.turn
         
-        if current_player == Player.COPS:
+        if current_player == Player.DETECTIVES:
             # Enable move button when all detectives have made selections
-            if len(self.visualizer.cop_selections) == self.visualizer.game.num_cops:
+            if len(self.visualizer.detective_selections) == self.visualizer.game.num_detectives:
                 self.move_button.config(state=tk.NORMAL)
             else:
                 self.move_button.config(state=tk.DISABLED)
@@ -190,14 +190,14 @@ class GameControls:
         
         turn_text = ""
         
-        if current_player == Player.COPS:
+        if current_player == Player.DETECTIVES:
             player_type = "🤖 AI" if is_ai_turn else "👤 Human"
             if is_scotland_yard:
-                if not is_ai_turn and self.visualizer.current_cop_index < self.visualizer.game.num_cops:
-                    det_pos = self.visualizer.game.game_state.cop_positions[self.visualizer.current_cop_index]
-                    turn_text = f"🕵️ DETECTIVE {self.visualizer.current_cop_index + 1}'S TURN ({player_type})\n"
+                if not is_ai_turn and self.visualizer.current_detective_index < self.visualizer.game.num_detectives:
+                    det_pos = self.visualizer.game.game_state.detective_positions[self.visualizer.current_detective_index]
+                    turn_text = f"🕵️ DETECTIVE {self.visualizer.current_detective_index + 1}'S TURN ({player_type})\n"
                     turn_text += f"📍 Moving from position {det_pos}\n"
-                    turn_text += f"📊 Progress: {len(self.visualizer.cop_selections)}/{self.visualizer.game.num_cops}"
+                    turn_text += f"📊 Progress: {len(self.visualizer.detective_selections)}/{self.visualizer.game.num_detectives}"
                 else:
                     turn_text = f"🕵️ DETECTIVES' TURN ({player_type})\n"
                     if is_ai_turn:
@@ -205,17 +205,17 @@ class GameControls:
                     else:
                         turn_text += "✅ All detectives selected - make move"
             else:
-                if not is_ai_turn and self.visualizer.current_cop_index < self.visualizer.game.num_cops:
-                    cop_pos = self.visualizer.game.game_state.cop_positions[self.visualizer.current_cop_index]
-                    turn_text = f"👮 COP {self.visualizer.current_cop_index + 1}'S TURN ({player_type})\n"
-                    turn_text += f"📍 Moving from position {cop_pos}\n"
-                    turn_text += f"📊 Progress: {len(self.visualizer.cop_selections)}/{self.visualizer.game.num_cops}"
+                if not is_ai_turn and self.visualizer.current_detective_index < self.visualizer.game.num_detectives:
+                    detective_pos = self.visualizer.game.game_state.detective_positions[self.visualizer.current_detective_index]
+                    turn_text = f"👮 detective {self.visualizer.current_detective_index + 1}'S TURN ({player_type})\n"
+                    turn_text += f"📍 Moving from position {detective_pos}\n"
+                    turn_text += f"📊 Progress: {len(self.visualizer.detective_selections)}/{self.visualizer.game.num_detectives}"
                 else:
-                    turn_text = f"👮 COPS' TURN ({player_type})\n"
+                    turn_text = f"👮 detectives' TURN ({player_type})\n"
                     if is_ai_turn:
                         turn_text += "🤖 Click 'Continue' to let AI make moves"
                     else:
-                        turn_text += "✅ All cops selected - make move"
+                        turn_text += "✅ All detectives selected - make move"
         else:
             player_type = "🤖 AI" if is_ai_turn else "👤 Human"
             if is_scotland_yard:
@@ -232,7 +232,7 @@ class GameControls:
                 else:
                     turn_text += "📍 Select new position"
             else:
-                turn_text = f"🏃 ROBBER'S TURN ({player_type})\n"
+                turn_text = f"🏃 MrX'S TURN ({player_type})\n"
                 if is_ai_turn:
                     turn_text += "🤖 Click 'Continue' to let AI make move"
                 else:
@@ -256,21 +256,21 @@ class GameControls:
         
         moves_text = ""
         
-        # Show current cop's moves or robber/Mr. X moves
-        if (self.visualizer.game.game_state.turn == Player.COPS and 
-            self.visualizer.current_cop_index < self.visualizer.game.num_cops):
+        # Show current detective's moves or MrX/Mr. X moves
+        if (self.visualizer.game.game_state.turn == Player.DETECTIVES and 
+            self.visualizer.current_detective_index < self.visualizer.game.num_detectives):
             
-            cop_pos = self.visualizer.game.game_state.cop_positions[self.visualizer.current_cop_index]
-            if cop_pos in self.visualizer.current_player_moves:
-                moves = self.visualizer.current_player_moves[cop_pos]
+            detective_pos = self.visualizer.game.game_state.detective_positions[self.visualizer.current_detective_index]
+            if detective_pos in self.visualizer.current_player_moves:
+                moves = self.visualizer.current_player_moves[detective_pos]
                 if not moves:
                     moves_text = "⚠️ No available moves. Click 'Skip Turn'."
                     self.skip_button.config(state=tk.NORMAL)
                 else:
                     self.skip_button.config(state=tk.DISABLED)
 
-                player_name = f"Detective {self.visualizer.current_cop_index + 1}" if is_scotland_yard else f"Cop {self.visualizer.current_cop_index + 1}"
-                moves_text += f"🎯 {player_name} from position {cop_pos}:\n"
+                player_name = f"Detective {self.visualizer.current_detective_index + 1}" if is_scotland_yard else f"detective {self.visualizer.current_detective_index + 1}"
+                moves_text += f"🎯 {player_name} from position {detective_pos}:\n"
                 for target_pos, transports in moves.items():
                     if is_scotland_yard:
                         transport_names = []
@@ -285,9 +285,9 @@ class GameControls:
         else:
             self.skip_button.config(state=tk.DISABLED)
             self.update_mrx_controls()
-            # Robber/Mr. X moves
+            # MrX/Mr. X moves
             for source_pos, moves in self.visualizer.current_player_moves.items():
-                player_name = "🕵️‍♂️ Mr. X" if is_scotland_yard else "🏃 Robber"
+                player_name = "🕵️‍♂️ Mr. X" if is_scotland_yard else "🏃 MrX"
                 moves_text += f"🎯 {player_name} from position {source_pos}:\n"
                 for target_pos, transports in moves.items():
                     if is_scotland_yard:
@@ -315,7 +315,7 @@ class GameControls:
     def update_mrx_controls(self):
         """Updates the state of Mr. X's special move controls."""
         if (self.visualizer.game.game_state and 
-            self.visualizer.game.game_state.turn == Player.ROBBER):
+            self.visualizer.game.game_state.turn == Player.MRX):
             mr_x_tickets = self.visualizer.game.get_mr_x_tickets()
             
             # Don't allow double move activation if already in progress
@@ -354,14 +354,14 @@ class GameControls:
         
         turn_text = ""
         
-        if current_player == Player.COPS:
+        if current_player == Player.DETECTIVES:
             player_type = "🤖 AI" if is_ai_turn else "👤 Human"
             if is_scotland_yard:
-                if not is_ai_turn and self.visualizer.current_cop_index < self.visualizer.game.num_cops:
-                    det_pos = self.visualizer.game.game_state.cop_positions[self.visualizer.current_cop_index]
-                    turn_text = f"🕵️ DETECTIVE {self.visualizer.current_cop_index + 1}'S TURN ({player_type})\n"
+                if not is_ai_turn and self.visualizer.current_detective_index < self.visualizer.game.num_detectives:
+                    det_pos = self.visualizer.game.game_state.detective_positions[self.visualizer.current_detective_index]
+                    turn_text = f"🕵️ DETECTIVE {self.visualizer.current_detective_index + 1}'S TURN ({player_type})\n"
                     turn_text += f"📍 Moving from position {det_pos}\n"
-                    turn_text += f"📊 Progress: {len(self.visualizer.cop_selections)}/{self.visualizer.game.num_cops}"
+                    turn_text += f"📊 Progress: {len(self.visualizer.detective_selections)}/{self.visualizer.game.num_detectives}"
                 else:
                     turn_text = f"🕵️ DETECTIVES' TURN ({player_type})\n"
                     if is_ai_turn:
@@ -369,17 +369,17 @@ class GameControls:
                     else:
                         turn_text += "✅ All detectives selected - make move"
             else:
-                if not is_ai_turn and self.visualizer.current_cop_index < self.visualizer.game.num_cops:
-                    cop_pos = self.visualizer.game.game_state.cop_positions[self.visualizer.current_cop_index]
-                    turn_text = f"👮 COP {self.visualizer.current_cop_index + 1}'S TURN ({player_type})\n"
-                    turn_text += f"📍 Moving from position {cop_pos}\n"
-                    turn_text += f"📊 Progress: {len(self.visualizer.cop_selections)}/{self.visualizer.game.num_cops}"
+                if not is_ai_turn and self.visualizer.current_detective_index < self.visualizer.game.num_detectives:
+                    detective_pos = self.visualizer.game.game_state.detective_positions[self.visualizer.current_detective_index]
+                    turn_text = f"👮 detective {self.visualizer.current_detective_index + 1}'S TURN ({player_type})\n"
+                    turn_text += f"📍 Moving from position {detective_pos}\n"
+                    turn_text += f"📊 Progress: {len(self.visualizer.detective_selections)}/{self.visualizer.game.num_detectives}"
                 else:
-                    turn_text = f"👮 COPS' TURN ({player_type})\n"
+                    turn_text = f"👮 detectives' TURN ({player_type})\n"
                     if is_ai_turn:
                         turn_text += "🤖 Click 'Continue' to let AI make moves"
                     else:
-                        turn_text += "✅ All cops selected - make move"
+                        turn_text += "✅ All detectives selected - make move"
         else:
             player_type = "🤖 AI" if is_ai_turn else "👤 Human"
             if is_scotland_yard:
@@ -396,7 +396,7 @@ class GameControls:
                 else:
                     turn_text += "📍 Select new position"
             else:
-                turn_text = f"🏃 ROBBER'S TURN ({player_type})\n"
+                turn_text = f"🏃 MrX'S TURN ({player_type})\n"
                 if is_ai_turn:
                     turn_text += "🤖 Click 'Continue' to let AI make move"
                 else:
@@ -420,21 +420,21 @@ class GameControls:
         
         moves_text = ""
         
-        # Show current cop's moves or robber/Mr. X moves
-        if (self.visualizer.game.game_state.turn == Player.COPS and 
-            self.visualizer.current_cop_index < self.visualizer.game.num_cops):
+        # Show current detective's moves or MrX/Mr. X moves
+        if (self.visualizer.game.game_state.turn == Player.DETECTIVES and 
+            self.visualizer.current_detective_index < self.visualizer.game.num_detectives):
             
-            cop_pos = self.visualizer.game.game_state.cop_positions[self.visualizer.current_cop_index]
-            if cop_pos in self.visualizer.current_player_moves:
-                moves = self.visualizer.current_player_moves[cop_pos]
+            detective_pos = self.visualizer.game.game_state.detective_positions[self.visualizer.current_detective_index]
+            if detective_pos in self.visualizer.current_player_moves:
+                moves = self.visualizer.current_player_moves[detective_pos]
                 if not moves:
                     moves_text = "⚠️ No available moves. Click 'Skip Turn'."
                     self.skip_button.config(state=tk.NORMAL)
                 else:
                     self.skip_button.config(state=tk.DISABLED)
 
-                player_name = f"Detective {self.visualizer.current_cop_index + 1}" if is_scotland_yard else f"Cop {self.visualizer.current_cop_index + 1}"
-                moves_text += f"🎯 {player_name} from position {cop_pos}:\n"
+                player_name = f"Detective {self.visualizer.current_detective_index + 1}" if is_scotland_yard else f"detective {self.visualizer.current_detective_index + 1}"
+                moves_text += f"🎯 {player_name} from position {detective_pos}:\n"
                 for target_pos, transports in moves.items():
                     if is_scotland_yard:
                         transport_names = []
@@ -449,9 +449,9 @@ class GameControls:
         else:
             self.skip_button.config(state=tk.DISABLED)
             self.update_mrx_controls()
-            # Robber/Mr. X moves
+            # MrX/Mr. X moves
             for source_pos, moves in self.visualizer.current_player_moves.items():
-                player_name = "🕵️‍♂️ Mr. X" if is_scotland_yard else "🏃 Robber"
+                player_name = "🕵️‍♂️ Mr. X" if is_scotland_yard else "🏃 MrX"
                 moves_text += f"🎯 {player_name} from position {source_pos}:\n"
                 for target_pos, transports in moves.items():
                     if is_scotland_yard:
@@ -479,7 +479,7 @@ class GameControls:
     def update_mrx_controls(self):
         """Updates the state of Mr. X's special move controls."""
         if (self.visualizer.game.game_state and 
-            self.visualizer.game.game_state.turn == Player.ROBBER):
+            self.visualizer.game.game_state.turn == Player.MRX):
             mr_x_tickets = self.visualizer.game.get_mr_x_tickets()
             
             # Don't allow double move activation if already in progress
@@ -499,9 +499,9 @@ class GameControls:
     
     def make_manual_move(self):
         """Make a manual move by sending selected moves to the game object."""
-        if ((self.visualizer.game.game_state.turn == Player.COPS and 
-             len(self.visualizer.cop_selections) != self.visualizer.game.num_cops) or 
-            (self.visualizer.game.game_state.turn == Player.ROBBER and 
+        if ((self.visualizer.game.game_state.turn == Player.DETECTIVES and 
+             len(self.visualizer.detective_selections) != self.visualizer.game.num_detectives) or 
+            (self.visualizer.game.game_state.turn == Player.MRX and 
              not self.mr_x_selections and not self.visualizer.selected_positions)):
             messagebox.showwarning("Invalid Selection", "A move must be selected for all players.")
             return
@@ -510,12 +510,12 @@ class GameControls:
             is_scotland_yard = isinstance(self.visualizer.game, ScotlandYardGame)
             success = False
     
-            if self.visualizer.game.game_state.turn == Player.COPS:
+            if self.visualizer.game.game_state.turn == Player.DETECTIVES:
                 if is_scotland_yard:
-                    success = self.visualizer.game.make_move(detective_moves=self.visualizer.cop_selections)
+                    success = self.visualizer.game.make_move(detective_moves=self.visualizer.detective_selections)
                 else:
-                    success = self.visualizer.game.make_move(new_positions=self.visualizer.cop_selections)
-            else:  # Robber's turn
+                    success = self.visualizer.game.make_move(new_positions=self.visualizer.detective_selections)
+            else:  # MrX's turn
                 if is_scotland_yard:
                     # For Scotland Yard, check if this is a double move scenario
                     if self.double_move_requested and not self.visualizer.game.game_state.double_move_active:
@@ -540,16 +540,16 @@ class GameControls:
                             self.double_move_requested = False
                             self.double_move_button.configure(text="⚡ Use Double Move")
                 else:
-                    success = self.visualizer.game.make_move(new_robber_pos=self.visualizer.selected_positions[0])
+                    success = self.visualizer.game.make_move(new_MrX_pos=self.visualizer.selected_positions[0])
     
             if not success:
                 messagebox.showerror("Invalid Move", "The move was rejected by the game engine.")
     
             # Reset UI state after move attempt
             self.visualizer.selected_positions = []
-            self.visualizer.cop_selections = []
+            self.visualizer.detective_selections = []
             self.mr_x_selections = []
-            self.visualizer.current_cop_index = 0
+            self.visualizer.current_detective_index = 0
             self.visualizer.selected_nodes = []
             self.move_button.config(state=tk.DISABLED)
             
@@ -583,9 +583,9 @@ class GameControls:
             messagebox.showerror("Move Error", f"An error occurred while making the move: {str(e)}")
             # Reset UI state on error
             self.visualizer.selected_positions = []
-            self.visualizer.cop_selections = []
+            self.visualizer.detective_selections = []
             self.mr_x_selections = []
-            self.visualizer.current_cop_index = 0
+            self.visualizer.current_detective_index = 0
             self.visualizer.selected_nodes = []
             self.move_button.config(state=tk.DISABLED)
             self.double_move_requested = False
@@ -595,17 +595,17 @@ class GameControls:
 
     def skip_turn(self):
         """Handles a detective skipping their turn when they have no moves."""
-        if (self.visualizer.game.game_state.turn == Player.COPS and 
-            self.visualizer.current_cop_index < self.visualizer.game.num_cops):
-            cop_pos = self.visualizer.game.game_state.cop_positions[self.visualizer.current_cop_index]
+        if (self.visualizer.game.game_state.turn == Player.DETECTIVES and 
+            self.visualizer.current_detective_index < self.visualizer.game.num_detectives):
+            detective_pos = self.visualizer.game.game_state.detective_positions[self.visualizer.current_detective_index]
             
             # Verify there are no moves
-            if (cop_pos in self.visualizer.current_player_moves and 
-                not self.visualizer.current_player_moves[cop_pos]):
-                self.visualizer.cop_selections.append((cop_pos, None)) # Append a "stay" move
-                self.visualizer.current_cop_index += 1
+            if (detective_pos in self.visualizer.current_player_moves and 
+                not self.visualizer.current_player_moves[detective_pos]):
+                self.visualizer.detective_selections.append((detective_pos, None)) # Append a "stay" move
+                self.visualizer.current_detective_index += 1
                 
-                if len(self.visualizer.cop_selections) == self.visualizer.game.num_cops:
+                if len(self.visualizer.detective_selections) == self.visualizer.game.num_detectives:
                     self.move_button.config(state=tk.NORMAL)
                 
                 self.visualizer.draw_graph()

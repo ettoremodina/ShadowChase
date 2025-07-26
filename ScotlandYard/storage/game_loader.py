@@ -1,4 +1,4 @@
-# cops_and_robbers/storage/game_loader.py
+# ScotlandYard/storage/game_loader.py
 import os
 import json
 import pickle
@@ -60,7 +60,7 @@ class GameLoader:
             'graph_type': self._determine_graph_type(game.graph),
             'num_nodes': game.graph.number_of_nodes(),
             'num_edges': game.graph.number_of_edges(),
-            'num_cops': game.num_cops,
+            'num_detectives': game.num_detectives,
             'total_turns': game.game_state.turn_count if game.game_state else 0,
             'winner': game.get_winner().value if game.get_winner() else None,
             'game_completed': game.is_game_over(),
@@ -74,10 +74,10 @@ class GameLoader:
         # Prepare game configuration
         game_config = {
             'graph_data': nx.node_link_data(game.graph, edges="links"),
-            'num_cops': game.num_cops,
+            'num_detectives': game.num_detectives,
             'movement_rules': {
-                'cop_movement': self._serialize_movement_rule(game.cop_movement),
-                'robber_movement': self._serialize_movement_rule(game.robber_movement)
+                'detective_movement': self._serialize_movement_rule(game.detective_movement),
+                'MrX_movement': self._serialize_movement_rule(game.MrX_movement)
             },
             'win_condition': self._serialize_win_condition(game.win_condition),
         }
@@ -283,8 +283,8 @@ class GameLoader:
     def _serialize_game_state(self, state: GameState) -> Dict:
         """Serialize game state for export"""
         serialized = {
-            'cop_positions': state.cop_positions,
-            'robber_position': state.robber_position,
+            'detective_positions': state.detective_positions,
+            'MrX_position': state.MrX_position,
             'turn': state.turn.value,
             'turn_count': state.turn_count,
             'mr_x_visible': getattr(state, 'mr_x_visible', True),
@@ -332,14 +332,14 @@ class GameLoader:
         
         with open(filename, 'w', newline='') as csvfile:
             writer = csv.writer(csvfile)
-            writer.writerow(['Turn', 'Player', 'Cop_Positions', 'Robber_Position'])
+            writer.writerow(['Turn', 'Player', 'detective_Positions', 'MrX_Position'])
             
             for i, state in enumerate(record.game_history):
                 writer.writerow([
                     i,
                     state.turn.value,
-                    ','.join(map(str, state.cop_positions)),
-                    state.robber_position
+                    ','.join(map(str, state.detective_positions)),
+                    state.MrX_position
                 ])
     
     def _reconstruct_game_from_record(self, record: GameRecord) -> Game:
@@ -348,12 +348,12 @@ class GameLoader:
         graph = nx.node_link_graph(record.game_config['graph_data'], edges='links')
         
         # Create game with basic configuration
-        game = ScotlandYardGame(graph, record.game_config['num_cops'])
+        game = ScotlandYardGame(graph, record.game_config['num_detectives'])
         
         # Restore game history
         if record.game_history:
             initial_state = record.game_history[0]
-            game.initialize_game(initial_state.cop_positions, initial_state.robber_position)
+            game.initialize_game(initial_state.detective_positions, initial_state.MrX_position)
             game.game_history = record.game_history.copy()
             game.game_state = record.game_history[-1].copy()
             game.ticket_history = record.ticket_history.copy()

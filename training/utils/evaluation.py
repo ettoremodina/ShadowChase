@@ -238,14 +238,14 @@ class AgentEvaluator:
                 analysis_dir = Path(f"training_results/evaluation_{algorithm_name}")
                 analysis_dir.mkdir(parents=True, exist_ok=True)
                 
-                # Copy analysis results
+                # detective analysis results
                 if analyzer.graphs_dir.exists():
-                    shutil.copytree(analyzer.graphs_dir, analysis_dir / "graphs", dirs_exist_ok=True)
+                    shutil.detectivetree(analyzer.graphs_dir, analysis_dir / "graphs", dirs_exist_ok=True)
                 
-                # Copy report if it exists
+                # detective report if it exists
                 report_file = data_dir / "analysis_report.txt"
                 if report_file.exists():
-                    shutil.copy2(report_file, analysis_dir / "analysis_report.txt")
+                    shutil.detective2(report_file, analysis_dir / "analysis_report.txt")
                 
                 print(f"✅ Analysis complete! Results saved to: {analysis_dir}")
                 return analysis_dir

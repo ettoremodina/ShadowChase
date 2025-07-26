@@ -241,7 +241,7 @@ class GameReplayWindow(BaseVisualizer):
                         move_str += " ⚡[DOUBLE MOVE]"
                     history_text += move_str + "\n"
                 history_text += "\n"
-            elif player == 'cops':
+            elif player == 'detectives':
                 history_text += f"👮 Turn {turn_num} - DETECTIVES MOVE:\n"
                 for move in step.get('detective_moves', []):
                     det_id = move.get('detective_id', None)
@@ -292,13 +292,13 @@ class GameReplayWindow(BaseVisualizer):
         node_sizes = []
         
         for node in self.game.graph.nodes():
-            if node in state.cop_positions and node == state.robber_position:
+            if node in state.detective_positions and node == state.MrX_position:
                 node_colors.append('yellow')
                 node_sizes.append(NODE_SIZE)
-            elif node in state.cop_positions:
+            elif node in state.detective_positions:
                 node_colors.append('blue')
                 node_sizes.append(NODE_SIZE)
-            elif node == state.robber_position:  
+            elif node == state.MrX_position:  
                 node_colors.append('red')
                 node_sizes.append(NODE_SIZE)
             else:
@@ -314,7 +314,7 @@ class GameReplayWindow(BaseVisualizer):
         
         info_text = f"🎯 Turn: {state.turn.value.title()}\n"
         info_text += f"📊 Turn Count: {state.turn_count}\n"
-        info_text += f"👮 Cop Positions: {state.cop_positions}\n"
+        info_text += f"👮 detective Positions: {state.detective_positions}\n"
         
         # is_scotland_yard = isinstance(self.game, ScotlandYardGame)
         is_scotland_yard = True
@@ -322,12 +322,12 @@ class GameReplayWindow(BaseVisualizer):
             if hasattr(state, 'mr_x_visible') and not state.mr_x_visible:
                 info_text += f"🎭 Mr. X Position: HIDDEN\n"
             else:
-                info_text += f"🕵️‍♂️ Mr. X Position: {state.robber_position}\n"
+                info_text += f"🕵️‍♂️ Mr. X Position: {state.MrX_position}\n"
             
             if hasattr(state, 'double_move_active') and state.double_move_active:
                 info_text += "⚡ Double Move: ACTIVE\n"
         else:
-            info_text += f"🏃 Robber Position: {state.robber_position}\n"
+            info_text += f"🏃 MrX Position: {state.MrX_position}\n"
         
         # Add ticket usage information if available
         if hasattr(state, 'last_move_ticket') and state.last_move_ticket:
@@ -335,7 +335,7 @@ class GameReplayWindow(BaseVisualizer):
             info_text += f"🎫 Last Move Ticket: {ticket_emoji} {state.last_move_ticket}\n"
         
         if hasattr(state, 'previous_position') and state.previous_position:
-            current_pos = state.robber_position if state.turn.value == 'robber' else "N/A"
+            current_pos = state.MrX_position if state.turn.value == 'MrX' else "N/A"
             info_text += f"🔄 Move: {state.previous_position} → {current_pos}\n"
         
         # Check if game is over at this step

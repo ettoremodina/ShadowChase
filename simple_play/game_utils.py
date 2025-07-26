@@ -6,8 +6,8 @@ import time
 from datetime import datetime
 import argparse
 from typing import Tuple, Optional
-from cops_and_robbers.core.game import Player, ScotlandYardGame
-from cops_and_robbers.services.game_service import GameService
+from ScotlandYard.core.game import Player, ScotlandYardGame
+from ScotlandYard.services.game_service import GameService
 from simple_play.display_utils import GameDisplay, VerbosityLevel, display_game_start_info, display_game_over
 from simple_play.game_logic import GameController, GameSetup
 from agents import AgentType
@@ -63,7 +63,7 @@ def save_game_session(game: ScotlandYardGame, play_mode: str, map_size: str,
                      mr_x_agent_type=None, detective_agent_type=None, save_dir: str = "fritto_misto", execution_time: float = None) -> Optional[str]:
     """Save a completed game session with metadata"""
     try:
-        from cops_and_robbers.storage.game_loader import GameLoader
+        from ScotlandYard.storage.game_loader import GameLoader
         game_loader = GameLoader(save_dir)
         game_service = GameService(game_loader)
         
@@ -133,7 +133,7 @@ def execute_single_turn(controller: GameController, game: ScotlandYardGame,
     current_player = game.game_state.turn
     
     # Handle turn based on game mode
-    if current_player == Player.COPS:
+    if current_player == Player.DETECTIVES:
         # Detective turn
         if play_mode in ["human_vs_human", "human_det_vs_ai_mrx"]:
             # Human detectives
@@ -145,7 +145,7 @@ def execute_single_turn(controller: GameController, game: ScotlandYardGame,
             # AI detectives
             if display.verbosity >= VerbosityLevel.BASIC:
                 print(f"\n{display.symbols['detective']} AI DETECTIVES' TURN")
-            success = controller.make_ai_move(Player.COPS)
+            success = controller.make_ai_move(Player.DETECTIVES)
             if not success:
                 display.print_error("AI detectives failed to move")
             
@@ -157,14 +157,14 @@ def execute_single_turn(controller: GameController, game: ScotlandYardGame,
         if play_mode in ["human_vs_human", "ai_det_vs_human_mrx"]:
             # Human Mr. X
             print(f"\n{display.symbols['mr_x']} MR. X'S TURN")
-            success = controller.make_mr_x_move(Player.ROBBER)
+            success = controller.make_mr_x_move(Player.MRX)
             if not success:
                 return False  # User quit
         else:
             # AI Mr. X
             if display.verbosity >= VerbosityLevel.BASIC:
                 print(f"\n{display.symbols['mr_x']} AI MR. X'S TURN")
-            success = controller.make_ai_move(Player.ROBBER)
+            success = controller.make_ai_move(Player.MRX)
             if not success:
                 display.print_error("AI Mr. X failed to move")
             
@@ -226,7 +226,7 @@ def play_single_game(map_size: str = "test", play_mode: str = "ai_vs_ai",
     
     # Main game loop
     turn_count = 0
-    robber_turn_count = 0
+    MrX_turn_count = 0
     game_completed = False
     
     while not game.is_game_over():

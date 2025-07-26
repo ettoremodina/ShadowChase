@@ -7,7 +7,7 @@ All agents must inherit from these base classes and implement the required metho
 
 from abc import ABC, abstractmethod
 from typing import List, Tuple, Optional, Set
-from cops_and_robbers.core.game import ScotlandYardGame, Player, TransportType
+from ScotlandYard.core.game import ScotlandYardGame, Player, TransportType
 
 
 class Agent(ABC):
@@ -31,19 +31,19 @@ class Agent(ABC):
     
     def get_valid_moves(self, game: ScotlandYardGame, position: int = None) -> Set[Tuple[int, TransportType]]:
         """Get valid moves for this agent's player type"""
-        if self.player == Player.COPS:
+        if self.player == Player.DETECTIVES:
             if position is None:
                 raise ValueError("Must specify position for detective moves")
-            return game.get_valid_moves(Player.COPS, position)
+            return game.get_valid_moves(Player.DETECTIVES, position)
         else:
-            return game.get_valid_moves(Player.ROBBER)
+            return game.get_valid_moves(Player.MRX)
 
 
 class DetectiveAgent(Agent):
     """Base class for detective agents"""
     
     def __init__(self, detective_id: int):
-        super().__init__(Player.COPS)
+        super().__init__(Player.DETECTIVES)
         self.detective_id = detective_id
     
     @abstractmethod
@@ -61,7 +61,7 @@ class DetectiveAgent(Agent):
     
     def get_current_position(self, game: ScotlandYardGame) -> int:
         """Get current position of this detective"""
-        return game.game_state.cop_positions[self.detective_id]
+        return game.game_state.detective_positions[self.detective_id]
     
     def get_available_tickets(self, game: ScotlandYardGame) -> dict:
         """Get available tickets for this detective"""
@@ -72,7 +72,7 @@ class MrXAgent(Agent):
     """Base class for Mr. X agents"""
     
     def __init__(self):
-        super().__init__(Player.ROBBER)
+        super().__init__(Player.MRX)
     
     @abstractmethod
     def choose_move(self, game: ScotlandYardGame) -> Optional[Tuple[int, TransportType]]:
@@ -102,7 +102,7 @@ class MrXAgent(Agent):
     
     def get_current_position(self, game: ScotlandYardGame) -> int:
         """Get current position of Mr. X"""
-        return game.game_state.robber_position
+        return game.game_state.MrX_position
     
     def get_available_tickets(self, game: ScotlandYardGame) -> dict:
         """Get available tickets for Mr. X"""
@@ -117,7 +117,7 @@ class MultiDetectiveAgent(Agent):
     """Base class for agents controlling multiple detectives simultaneously"""
     
     def __init__(self, num_detectives: int):
-        super().__init__(Player.COPS)
+        super().__init__(Player.DETECTIVES)
         self.num_detectives = num_detectives
 
     # @abstractmethod

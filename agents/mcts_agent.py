@@ -13,7 +13,7 @@ import random
 from pathlib import Path
 from typing import List, Optional, Dict, Any, Tuple
 
-from cops_and_robbers.core.game import ScotlandYardGame, Player, TransportType
+from ScotlandYard.core.game import ScotlandYardGame, Player, TransportType
 from .base_agent import MrXAgent, MultiDetectiveAgent, DetectiveAgent
 
 
@@ -66,16 +66,16 @@ class MCTSNode:
             self.untried_moves = []
         else:
             current_player = self.game_state.game_state.turn
-            if current_player == Player.ROBBER:
+            if current_player == Player.MRX:
                 # For Mr. X, get moves from current position
-                moves = list(self.game_state.get_valid_moves(Player.ROBBER))
+                moves = list(self.game_state.get_valid_moves(Player.MRX))
                 # Convert to Mr. X format (destination, transport, use_double)
                 self.untried_moves = [(dest, transport, False) for dest, transport in moves]
             else:
                 # For detectives, we need to get moves for each detective
                 detective_moves = []
-                for i, pos in enumerate(self.game_state.game_state.cop_positions):
-                    moves = self.game_state.get_valid_moves(Player.COPS, pos)
+                for i, pos in enumerate(self.game_state.game_state.detective_positions):
+                    moves = self.game_state.get_valid_moves(Player.DETECTIVES, pos)
                     detective_moves.extend(list(moves))
                 self.untried_moves = detective_moves
     
@@ -136,19 +136,19 @@ class MCTSNode:
         
         # Make the move based on current player
         current_player = new_state.game_state.turn
-        if current_player == Player.ROBBER:
+        if current_player == Player.MRX:
             # Mr. X move
             dest, transport, use_double = move
             new_state.make_move(mr_x_moves=[(dest, transport)], use_double_move=use_double)
         else:
             # Detective move - need to construct full move list
             detective_moves = []
-            for i in range(new_state.num_cops):
+            for i in range(new_state.num_detectives):
                 if i == 0:  # Simplified: just move first detective
                     detective_moves.append(move)
                 else:
                     # Keep other detectives in place
-                    pos = new_state.game_state.cop_positions[i]
+                    pos = new_state.game_state.detective_positions[i]
                     detective_moves.append((pos, TransportType.TAXI))
             new_state.make_move(detective_moves=detective_moves)
         
@@ -173,8 +173,8 @@ class MCTSNode:
             
             # Get valid moves for current player
             current_player = simulation_state.game_state.turn
-            if current_player == Player.ROBBER:
-                valid_moves = list(simulation_state.get_valid_moves(Player.ROBBER))
+            if current_player == Player.MRX:
+                valid_moves = list(simulation_state.get_valid_moves(Player.MRX))
                 if not valid_moves:
                     break
                 dest, transport = random.choice(valid_moves)
@@ -182,9 +182,9 @@ class MCTSNode:
             else:
                 # Detective moves - simplified random moves
                 detective_moves = []
-                for i in range(simulation_state.num_cops):
-                    pos = simulation_state.game_state.cop_positions[i]
-                    moves = list(simulation_state.get_valid_moves(Player.COPS, pos))
+                for i in range(simulation_state.num_detectives):
+                    pos = simulation_state.game_state.detective_positions[i]
+                    moves = list(simulation_state.get_valid_moves(Player.DETECTIVES, pos))
                     if moves:
                         detective_moves.append(random.choice(moves))
                     else:
@@ -198,7 +198,7 @@ class MCTSNode:
         # Determine winner
         if simulation_state.is_game_over():
             winner = simulation_state.get_winner()
-            return "mr_x" if winner == Player.ROBBER else "detectives"
+            return "mr_x" if winner == Player.MRX else "detectives"
         else:
             return "timeout"
     
@@ -213,9 +213,9 @@ class MCTSNode:
         self.visits += 1
         
         # Update wins based on perspective
-        if perspective == Player.ROBBER and result == "mr_x":
+        if perspective == Player.MRX and result == "mr_x":
             self.wins += 1
-        elif perspective == Player.COPS and result == "detectives":
+        elif perspective == Player.DETECTIVES and result == "detectives":
             self.wins += 1
         elif result == "timeout":
             self.wins += 0.5  # Neutral result
@@ -269,7 +269,7 @@ class MCTSAgent:
         
         Args:
             game_state: Current game state
-            perspective: Player perspective (ROBBER or COPS)
+            perspective: Player perspective (MrX or detectives)
             
         Returns:
             Best move found by MCTS
@@ -315,8 +315,8 @@ class MCTSAgent:
         # Select best move
         if not root.children:
             # Fallback to random move if no children
-            if perspective == Player.ROBBER:
-                moves = list(game_state.get_valid_moves(Player.ROBBER))
+            if perspective == Player.MRX:
+                moves = list(game_state.get_valid_moves(Player.MRX))
                 if moves:
                     dest, transport = random.choice(moves)
                     return (dest, transport, False)
@@ -375,7 +375,7 @@ class MCTSMrXAgent(MrXAgent, MCTSAgent):
     
     def choose_move(self, game: ScotlandYardGame) -> Optional[Tuple[int, TransportType, bool]]:
         """Choose move using MCTS."""
-        return self.mcts_search(game, Player.ROBBER)
+        return self.mcts_search(game, Player.MRX)
 
 
 class MCTSDetectiveAgent(DetectiveAgent, MCTSAgent):
@@ -393,7 +393,7 @@ class MCTSDetectiveAgent(DetectiveAgent, MCTSAgent):
     
     def choose_move(self, game: ScotlandYardGame) -> Optional[Tuple[int, TransportType]]:
         """Choose move using MCTS."""
-        result = self.mcts_search(game, Player.COPS)
+        result = self.mcts_search(game, Player.DETECTIVES)
         if result and len(result) >= 2:
             return (result[0], result[1])  # Return only destination and transport
         return result
@@ -434,10 +434,10 @@ class MCTSMultiDetectiveAgent(MultiDetectiveAgent):
         pending_moves = []
         
         for i in range(self.num_detectives):
-            current_pos = game.game_state.cop_positions[i]
+            current_pos = game.game_state.detective_positions[i]
             
             # Get valid moves considering previous detectives' moves
-            valid_moves = list(game.get_valid_moves(Player.COPS, current_pos, pending_moves=pending_moves))
+            valid_moves = list(game.get_valid_moves(Player.DETECTIVES, current_pos, pending_moves=pending_moves))
             
             if not valid_moves:
                 # Stay in place if no valid moves

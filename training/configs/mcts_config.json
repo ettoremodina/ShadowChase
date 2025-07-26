@@ -9,8 +9,8 @@
   "training_parameters": {
     "num_episodes": 1000,
     "evaluation_interval": 100,
-    "map_size": "test",
-    "num_detectives": 2,
+    "map_size": "extended",
+    "num_detectives": 5,
     "max_turns_per_game": 24
   },
   "feature_extraction": {

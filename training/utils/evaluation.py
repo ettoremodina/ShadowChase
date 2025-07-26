@@ -6,7 +6,7 @@ baseline opponents. It leverages the existing analyze_games.py infrastructure
 for comprehensive analysis and reporting.
 """
 
-from typing import Dict, List, Tuple, Optional
+from typing import Dict, List, Tuple, Optional, Any
 import time
 from dataclasses import dataclass
 from pathlib import Path
@@ -15,8 +15,17 @@ import shutil
 
 from agents import AgentType, get_agent_registry
 from .training_environment import TrainingEnvironment
-from .training_utils import GameResult
 
+
+@dataclass
+class GameResult:
+    """Result of a single game episode."""
+    winner: str  # "mr_x", "detectives", or "timeout"
+    total_turns: int
+    game_length: float  # seconds
+    mr_x_final_position: int
+    detective_final_positions: List[int]
+    moves_history: List[Dict[str, Any]]
 
 @dataclass
 class EvaluationConfig:

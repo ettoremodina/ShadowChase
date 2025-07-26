@@ -28,9 +28,9 @@ def parse_arguments():
                        help='Verbosity level (0=silent, 1=basic, 2=moves, 3=detailed, 4=debug, 5=heuristics)')
     parser.add_argument('--save-dir', type=str, default='fritto_misto',
                        help='Directory for saving games (default: fritto_misto)')
-    parser.add_argument('--mr-x-agent', type=str, choices=['random', 'heuristic'], default='random',
+    parser.add_argument('--mr-x-agent', type=str, choices=['random', 'heuristic', 'mcts'], default='random',
                        help='Mr. X agent type (default: random)')
-    parser.add_argument('--detective-agent', type=str, choices=['random', 'heuristic'], default='random',
+    parser.add_argument('--detective-agent', type=str, choices=['random', 'heuristic', 'mcts'], default='random',
                        help='Detective agent type (default: random)')
     return parser.parse_args()
 

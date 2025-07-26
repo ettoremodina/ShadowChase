@@ -135,8 +135,8 @@ class GameReplayWindow(BaseVisualizer):
             # If the game doesn't have node_positions but we can detect it's an extracted board,
             # try to load them from the board_progress.json file
             try:
-                from board_loader import load_board_graph_from_json
-                _, node_positions = load_board_graph_from_json()
+                from board_loader import load_board_graph_from_csv
+                _, node_positions = load_board_graph_from_csv()
                 
                 # Check if this game uses the same nodes as the extracted board
                 game_nodes = set(self.game.graph.nodes())

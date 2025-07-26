@@ -12,7 +12,7 @@ def main():
     from agents import AgentSelector, AgentType
     
     # Configuration
-    test_name = "test0" 
+    test_name = "test_all" 
     games_per_combo = 30
     num_detectives = 5
     map_size = "extracted"
@@ -20,6 +20,7 @@ def main():
     
     # Get agent types dynamically
     agent_types = [agent_name[0] for agent_name in AgentSelector.get_agent_choices_for_ui()]
+    # agent_types = ["mcts",  "heuristic"]
     print(f"Testing agents: {agent_types}")
     print(f"Games per combination: {games_per_combo}")
     print(f"Test directory: {test_name}")

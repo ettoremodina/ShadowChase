@@ -8,12 +8,26 @@ game episode execution during training.
 import time
 from typing import Dict, List, Any, Tuple
 
+from attr import dataclass
+
 from cops_and_robbers.core.game import ScotlandYardGame, Player
 from simple_play.game_utils import create_and_initialize_game, execute_single_turn
 from simple_play.game_logic import GameController
 from simple_play.display_utils import GameDisplay, VerbosityLevel
 from agents import AgentType
-from .training_utils import GameResult
+
+from cops_and_robbers.storage.game_loader import GameLoader
+from cops_and_robbers.services.game_service import GameService
+
+@dataclass
+class GameResult:
+    """Result of a single game episode."""
+    winner: str  # "mr_x", "detectives", or "timeout"
+    total_turns: int
+    game_length: float  # seconds
+    mr_x_final_position: int
+    detective_final_positions: List[int]
+    moves_history: List[Dict[str, Any]]
 
 
 class TrainingEnvironment:
@@ -42,6 +56,9 @@ class TrainingEnvironment:
         self.num_detectives = num_detectives
         self.max_turns = max_turns
         self.verbosity = verbosity
+        self.save_dir = "game_saves"
+        self.game_loader = GameLoader(self.save_dir)
+        self.game_service = GameService(self.game_loader)
         
     def run_episode(self, 
                    mr_x_agent, 
@@ -145,7 +162,20 @@ class TrainingEnvironment:
             detective_final_positions=game.game_state.cop_positions.copy(),
             moves_history=moves_history
         )
+            
         
+        # Define missing variables for game saving
+        mr_x_agent_type = type(mr_x_agent).__name__
+        detective_agent_type = type(detective_agent).__name__
+
+        # Convert agent types to strings if they are AgentType enums
+        mr_x_agent_str = mr_x_agent_type.value if hasattr(mr_x_agent_type, 'value') else mr_x_agent_type
+        detective_agent_str = detective_agent_type.value if hasattr(detective_agent_type, 'value') else detective_agent_type
+        
+        game_id = self.game_service.save_terminal_game(
+            game, "ai_vs_ai", self.map_size, self.num_detectives, turn_count,
+            mr_x_agent_str, detective_agent_str, game_length
+        )
         return result, experience_data
     
     def run_evaluation_batch(self,

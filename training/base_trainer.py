@@ -14,8 +14,9 @@ import os
 from pathlib import Path
 
 from cops_and_robbers.core.game import ScotlandYardGame, Player
+from .utils.evaluation import AgentEvaluator, EvaluationConfig
 from agents.base_agent import Agent
-
+import pickle
 
 @dataclass
 class TrainingResult:
@@ -179,7 +180,7 @@ class BaseTrainer(ABC):
             raise RuntimeError("Agent must be trained before evaluation")
         
         # Import here to avoid circular dependencies
-        from .utils.evaluation import AgentEvaluator, EvaluationConfig
+        
         
         # Determine which player the trained agent plays
         trained_agent_mr_x = self.get_trained_agent(Player.ROBBER)
@@ -239,7 +240,7 @@ class BaseTrainer(ABC):
         
         # Subclasses should override this method to save their specific model data
         # This is a placeholder implementation
-        import pickle
+
         model_data = {
             'algorithm': self.algorithm_name,
             'config': self.config,

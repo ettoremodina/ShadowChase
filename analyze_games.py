@@ -509,7 +509,7 @@ class GameAnalyzer:
                 detective_agents.add(detective)
         
         mr_x_agents = sorted(list(mr_x_agents))
-        detective_agents = sorted(list(detective_agents))
+        detective_agents = sorted(list(detective_agents),reverse=True)
         
         if not mr_x_agents or not detective_agents:
             return

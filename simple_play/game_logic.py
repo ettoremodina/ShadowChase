@@ -366,8 +366,8 @@ def get_game_mode() -> Tuple[str, str, int, AgentType, AgentType]:
             map_size = "extracted"
             # Check if extracted board is available
             try:
-                from board_loader import load_board_graph_from_json
-                graph, positions = load_board_graph_from_json()
+                from board_loader import load_board_graph_from_csv
+                graph, positions = load_board_graph_from_csv()
                 print(f"✓ Found extracted board with {len(graph.nodes())} nodes")
                 num_detectives = 5
                 break

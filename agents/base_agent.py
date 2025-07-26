@@ -87,7 +87,7 @@ class MrXAgent(Agent):
         """
         pass
     
-    @abstractmethod
+    # @abstractmethod
     def should_use_double_move(self, game: ScotlandYardGame) -> bool:
         """
         Decide whether to use a double move.
@@ -133,7 +133,7 @@ class MultiDetectiveAgent(Agent):
         """
         pass
     
-    @abstractmethod
+    # @abstractmethod
     def choose_all_moves(self, game: ScotlandYardGame) -> List[Tuple[int, TransportType]]:
         """
         Make moves for all detectives.

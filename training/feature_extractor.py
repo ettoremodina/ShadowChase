@@ -61,7 +61,7 @@ class GameFeatureExtractor:
             
             # Basic game state features
             if self.config.include_game_phase:
-                size += 5  # turn, total_turns, mr_x_visible, reveal_turn, game_phase
+                size += 4  # turn, total_turns, mr_x_visible, reveal_turn, game_phase
             
             # Position features
             if self.config.include_board_state:
@@ -149,11 +149,6 @@ class GameFeatureExtractor:
         # Mr. X visibility
         features.append(1.0 if game.game_state.mr_x_visible else 0.0)
         
-        # Is this a reveal turn?
-        robber_turns = sum(1 for turn in game.game_history if turn.turn == Player.ROBBER)
-        is_reveal_turn = robber_turns in game.reveal_turns if hasattr(game, 'reveal_turns') else False
-        features.append(1.0 if is_reveal_turn else 0.0)
-        
         # Game phase (early/mid/late game)
         if current_turn / max_turns < 0.3:
             game_phase = 0.0  # Early game
@@ -221,23 +216,20 @@ class GameFeatureExtractor:
         
         # Mr. X tickets
         mr_x_tickets = game.get_mr_x_tickets()
-        max_tickets = 10  # Normalize by this value
+        max_tickets = 50  # Normalize by this value
         
         features.append(mr_x_tickets.get(TicketType.TAXI, 0) / max_tickets)
         features.append(mr_x_tickets.get(TicketType.BUS, 0) / max_tickets)
         features.append(mr_x_tickets.get(TicketType.UNDERGROUND, 0) / max_tickets)
         features.append(mr_x_tickets.get(TicketType.BLACK, 0) / 5)  # Black tickets are rarer
-        features.append(1.0 if game.can_use_double_move() else 0.0)  # Double move availability
-        
+        features.append(mr_x_tickets.get(TicketType.DOUBLE_MOVE, 0) / 2)  # Double move availability
+
         # Detective tickets (for each detective, up to 5)
-        for i in range(5):
-            if i < len(game.game_state.cop_positions):
-                detective_tickets = game.get_detective_tickets(i)
-                features.append(detective_tickets.get(TicketType.TAXI, 0) / max_tickets)
-                features.append(detective_tickets.get(TicketType.BUS, 0) / max_tickets)
-                features.append(detective_tickets.get(TicketType.UNDERGROUND, 0) / max_tickets)
-            else:
-                features.extend([0.0, 0.0, 0.0])  # No detective at this index
+        for i in range(len(game.game_state.cop_positions)):
+            detective_tickets = game.get_detective_tickets(i)
+            features.append(detective_tickets.get(TicketType.TAXI, 0) / max_tickets)
+            features.append(detective_tickets.get(TicketType.BUS, 0) / max_tickets)
+            features.append(detective_tickets.get(TicketType.UNDERGROUND, 0) / max_tickets)
         
         return features
     

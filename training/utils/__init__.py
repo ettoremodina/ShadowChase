@@ -8,12 +8,6 @@ Module responsibilities:
 - training_environment: Game episode execution and experience collection  
 - evaluation: Agent evaluation, comparison, and performance reporting
 """
-
-from .training_utils import (
-    GameResult,
-    calculate_win_rate,
-    calculate_average_game_length
-)
 from .training_environment import TrainingEnvironment
 from .evaluation import (
     AgentEvaluator, 

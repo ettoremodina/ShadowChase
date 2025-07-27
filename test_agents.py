@@ -43,8 +43,8 @@ def main():
     from agents import AgentSelector, AgentType
     
     # Configuration
-    test_name = "test_optimization_all_agents" 
-    games_per_combo = 5
+    test_name = "test_epsilon_greedy_mcts" 
+    games_per_combo = 10
     num_detectives = 5
     map_size = "extracted"
     enable_cache()
@@ -56,13 +56,13 @@ def main():
 
     
     # Get agent types dynamically
-    agent_types = [agent_name[0] for agent_name in AgentSelector.get_agent_choices_for_ui()]
-    # agent_types = ["mcts",  "random"]
+    # agent_types = [agent_name[0] for agent_name in AgentSelector.get_agent_choices_for_ui()]
+    agent_types = ["epsilon_greedy_mcts", "optimized_mcts"]
     print(f"Testing agents: {agent_types}")
     print(f"Games per combination: {games_per_combo}")
     print(f"Test directory: {test_name}")
-    # play_combination(test_name, "mcts", "mcts", games_per_combo, map_size, num_detectives, 24)
-    # play_combination(test_name, "optimized_mcts", "optimized_mcts", games_per_combo, map_size, num_detectives, 24)
+
+    # play_combination(test_name, "epsilon_greedy_mcts", "epsilon_greedy_mcts", games_per_combo, map_size, num_detectives, 24)
 
     # RUN ALL COMBINATIONS
     for mr_x in agent_types:

@@ -15,10 +15,72 @@ from typing import Dict, List, Optional, Tuple, Any
 from pathlib import Path
 from collections import defaultdict, Counter
 import glob
+from scipy import stats
 
 # Set style for better-looking plots
 plt.style.use('seaborn-v0_8' if 'seaborn-v0_8' in plt.style.available else 'default')
 sns.set_palette("husl")
+
+
+def calculate_proportion_confidence_interval(successes: int, total: int, confidence: float = 0.95) -> Tuple[float, float]:
+    """
+    Calculate confidence interval for a proportion using Wilson score interval.
+    
+    Args:
+        successes: Number of successes
+        total: Total number of trials
+        confidence: Confidence level (default 0.95 for 95% CI)
+    
+    Returns:
+        Tuple of (lower_bound, upper_bound) as percentages
+    """
+    if total == 0:
+        return 0.0, 0.0
+    
+    p = successes / total
+    z = stats.norm.ppf((1 + confidence) / 2)
+    
+    # Wilson score interval (better for small samples and edge cases)
+    denominator = 1 + z**2 / total
+    centre = (p + z**2 / (2 * total)) / denominator
+    margin = z * np.sqrt(p * (1 - p) / total + z**2 / (4 * total**2)) / denominator
+    
+    lower = max(0, centre - margin) * 100
+    upper = min(100, centre + margin) * 100
+    
+    return lower, upper
+
+
+def calculate_mean_confidence_interval(values: List[float], confidence: float = 0.95) -> Tuple[float, float, float]:
+    """
+    Calculate confidence interval for a mean.
+    
+    Args:
+        values: List of values
+        confidence: Confidence level (default 0.95 for 95% CI)
+    
+    Returns:
+        Tuple of (mean, lower_bound, upper_bound)
+    """
+    if not values:
+        return 0.0, 0.0, 0.0
+    
+    values = np.array(values)
+    n = len(values)
+    mean = np.mean(values)
+    
+    if n == 1:
+        return mean, mean, mean
+    
+    # Use t-distribution for small samples
+    if n < 30:
+        t_critical = stats.t.ppf((1 + confidence) / 2, df=n-1)
+        margin = t_critical * stats.sem(values)
+    else:
+        z_critical = stats.norm.ppf((1 + confidence) / 2)
+        margin = z_critical * stats.sem(values)
+    
+    return mean, mean - margin, mean + margin
 
 
 class GameStatistics:
@@ -38,7 +100,7 @@ class GameStatistics:
         self.games.append(game_data)
     
     def get_summary(self) -> Dict:
-        """Get summary statistics"""
+        """Get summary statistics with confidence intervals"""
         if not self.games:
             return {}
         
@@ -47,21 +109,43 @@ class GameStatistics:
         mr_x_wins = sum(1 for g in self.games if g.get('winner') == 'mr_x')
         incomplete_games = total_games - detective_wins - mr_x_wins
         
-        avg_length = np.mean([g.get('total_turns', 0) for g in self.games if g.get('game_completed', False)])
+        # Calculate confidence intervals for win rates
+        detective_ci_lower, detective_ci_upper = calculate_proportion_confidence_interval(
+            detective_wins, total_games)
+        mr_x_ci_lower, mr_x_ci_upper = calculate_proportion_confidence_interval(
+            mr_x_wins, total_games)
         
-        # Calculate average execution time for games that have this data
+        # Game length statistics with confidence intervals
+        game_lengths = [g.get('total_turns', 0) for g in self.games if g.get('game_completed', False)]
+        if game_lengths:
+            avg_length, length_ci_lower, length_ci_upper = calculate_mean_confidence_interval(game_lengths)
+        else:
+            avg_length, length_ci_lower, length_ci_upper = 0, 0, 0
+        
+        # Execution time statistics with confidence intervals
         execution_times = [g.get('execution_time_seconds', 0) for g in self.games if g.get('execution_time_seconds') is not None]
-        avg_execution_time = np.mean(execution_times) if execution_times else 0
+        if execution_times:
+            avg_execution_time, exec_ci_lower, exec_ci_upper = calculate_mean_confidence_interval(execution_times)
+        else:
+            avg_execution_time, exec_ci_lower, exec_ci_upper = 0, 0, 0
         
-        # Calculate average time per turn
-        total_time = 0
-        total_turns = 0
+        # Calculate average time per turn with confidence interval
+        time_per_turn_values = []
         for game in self.games:
-            if game.get('execution_time_seconds') is not None and game.get('total_turns', 0) > 0:
-                total_time += game.get('execution_time_seconds')
-                total_turns += game.get('total_turns')
+            exec_time = game.get('execution_time_seconds')
+            turns = game.get('total_turns', 0)
+            if exec_time is not None and turns > 0:
+                time_per_turn_values.append(exec_time / turns)
         
-        avg_time_per_turn = total_time / total_turns if total_turns > 0 else 0
+        if time_per_turn_values:
+            avg_time_per_turn, time_per_turn_ci_lower, time_per_turn_ci_upper = calculate_mean_confidence_interval(time_per_turn_values)
+        else:
+            avg_time_per_turn, time_per_turn_ci_lower, time_per_turn_ci_upper = 0, 0, 0
+        
+        # Completion rate confidence interval
+        completed_games = total_games - incomplete_games
+        completion_ci_lower, completion_ci_upper = calculate_proportion_confidence_interval(
+            completed_games, total_games)
         
         return {
             'total_games': total_games,
@@ -69,12 +153,18 @@ class GameStatistics:
             'mr_x_wins': mr_x_wins,
             'incomplete_games': incomplete_games,
             'detective_win_rate': detective_wins / total_games * 100 if total_games > 0 else 0,
+            'detective_win_rate_ci': (detective_ci_lower, detective_ci_upper),
             'mr_x_win_rate': mr_x_wins / total_games * 100 if total_games > 0 else 0,
+            'mr_x_win_rate_ci': (mr_x_ci_lower, mr_x_ci_upper),
             'average_game_length': avg_length,
+            'average_game_length_ci': (length_ci_lower, length_ci_upper),
             'average_execution_time': avg_execution_time,
+            'average_execution_time_ci': (exec_ci_lower, exec_ci_upper),
             'average_time_per_turn': avg_time_per_turn,
+            'average_time_per_turn_ci': (time_per_turn_ci_lower, time_per_turn_ci_upper),
             'games_with_timing': len(execution_times),
-            'completion_rate': (total_games - incomplete_games) / total_games * 100 if total_games > 0 else 0
+            'completion_rate': completed_games / total_games * 100 if total_games > 0 else 0,
+            'completion_rate_ci': (completion_ci_lower, completion_ci_upper)
         }
 
 
@@ -170,9 +260,9 @@ class GameAnalyzer:
         print(f"✅ Analysis complete! Graphs saved to: {self.graphs_dir}")
     
     def _analyze_agent_performance(self):
-        """Analyze performance by agent combination"""
+        """Analyze performance by agent combination with confidence intervals"""
         combinations = defaultdict(lambda: {'games': 0, 'detective_wins': 0, 'mr_x_wins': 0, 
-                                          'total_turns': 0, 'completed_games': 0})
+                                          'total_turns': 0, 'completed_games': 0, 'game_lengths': []})
         
         for game in self.statistics.games:
             combo = game.get('agent_combination', 'unknown')
@@ -180,21 +270,42 @@ class GameAnalyzer:
             
             if game.get('game_completed', False):
                 combinations[combo]['completed_games'] += 1
-                combinations[combo]['total_turns'] += game.get('total_turns', 0)
+                turn_count = game.get('total_turns', 0)
+                combinations[combo]['total_turns'] += turn_count
+                combinations[combo]['game_lengths'].append(turn_count)
                 
                 if game.get('winner') == 'detectives':
                     combinations[combo]['detective_wins'] += 1
                 elif game.get('winner') == 'mr_x':
                     combinations[combo]['mr_x_wins'] += 1
         
-        # Calculate performance metrics
+        # Calculate performance metrics with confidence intervals
         for combo, stats in combinations.items():
             if stats['games'] > 0:
+                # Win rate confidence intervals
+                detective_ci_lower, detective_ci_upper = calculate_proportion_confidence_interval(
+                    stats['detective_wins'], stats['games'])
+                mr_x_ci_lower, mr_x_ci_upper = calculate_proportion_confidence_interval(
+                    stats['mr_x_wins'], stats['games'])
+                completion_ci_lower, completion_ci_upper = calculate_proportion_confidence_interval(
+                    stats['completed_games'], stats['games'])
+                
                 stats['detective_win_rate'] = stats['detective_wins'] / stats['games'] * 100
+                stats['detective_win_rate_ci'] = (detective_ci_lower, detective_ci_upper)
                 stats['mr_x_win_rate'] = stats['mr_x_wins'] / stats['games'] * 100
+                stats['mr_x_win_rate_ci'] = (mr_x_ci_lower, mr_x_ci_upper)
                 stats['completion_rate'] = stats['completed_games'] / stats['games'] * 100
-                stats['avg_game_length'] = (stats['total_turns'] / stats['completed_games'] 
-                                          if stats['completed_games'] > 0 else 0)
+                stats['completion_rate_ci'] = (completion_ci_lower, completion_ci_upper)
+                
+                # Game length confidence interval
+                if stats['game_lengths']:
+                    avg_length, length_ci_lower, length_ci_upper = calculate_mean_confidence_interval(
+                        stats['game_lengths'])
+                    stats['avg_game_length'] = avg_length
+                    stats['avg_game_length_ci'] = (length_ci_lower, length_ci_upper)
+                else:
+                    stats['avg_game_length'] = 0
+                    stats['avg_game_length_ci'] = (0, 0)
         
         self.statistics.agent_combinations = dict(combinations)
     
@@ -221,7 +332,7 @@ class GameAnalyzer:
         self.statistics.execution_times = dict(execution_data)
     
     def _analyze_win_rates(self):
-        """Analyze win rates by agent type"""
+        """Analyze win rates by agent type with confidence intervals"""
         mr_x_performance = defaultdict(lambda: {'games': 0, 'wins': 0})
         detective_performance = defaultdict(lambda: {'games': 0, 'wins': 0})
         
@@ -237,14 +348,20 @@ class GameAnalyzer:
             elif game.get('winner') == 'detectives':
                 detective_performance[detective_agent]['wins'] += 1
         
-        # Calculate win rates
+        # Calculate win rates with confidence intervals
         for agent, stats in mr_x_performance.items():
             if stats['games'] > 0:
                 stats['win_rate'] = stats['wins'] / stats['games'] * 100
+                ci_lower, ci_upper = calculate_proportion_confidence_interval(
+                    stats['wins'], stats['games'])
+                stats['win_rate_ci'] = (ci_lower, ci_upper)
         
         for agent, stats in detective_performance.items():
             if stats['games'] > 0:
                 stats['win_rate'] = stats['wins'] / stats['games'] * 100
+                ci_lower, ci_upper = calculate_proportion_confidence_interval(
+                    stats['wins'], stats['games'])
+                stats['win_rate_ci'] = (ci_lower, ci_upper)
         
         self.statistics.win_rates = {
             'mr_x': dict(mr_x_performance),
@@ -268,7 +385,7 @@ class GameAnalyzer:
         self.statistics.temporal_data = dict(temporal_data)
     
     def _create_win_rate_comparison(self):
-        """Create win rate comparison chart"""
+        """Create win rate comparison chart with confidence intervals"""
         fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 8))
         
         # Mr. X win rates
@@ -278,17 +395,23 @@ class GameAnalyzer:
             win_rates = [data['win_rate'] for data in mr_x_data.values()]
             games = [data['games'] for data in mr_x_data.values()]
             
-            bars1 = ax1.bar(agents, win_rates, color=sns.color_palette("Set2", len(agents)))
-            ax1.set_title('Mr. X Win Rates by Agent Type', fontsize=14, pad=20)
+            # Calculate error bars for confidence intervals
+            ci_data = [data.get('win_rate_ci', (0, 0)) for data in mr_x_data.values()]
+            lower_errors = [max(0, rate - ci[0]) for rate, ci in zip(win_rates, ci_data)]
+            upper_errors = [min(100 - rate, ci[1] - rate) for rate, ci in zip(win_rates, ci_data)]
+            
+            bars1 = ax1.bar(agents, win_rates, color=sns.color_palette("Set2", len(agents)),
+                           yerr=[lower_errors, upper_errors], capsize=5, ecolor='black')
+            ax1.set_title('Mr. X Win Rates by Agent Type (95% CI)', fontsize=14, pad=20)
             ax1.set_ylabel('Win Rate (%)')
             ax1.set_ylim(0, 100)
             
-            # Add value labels and game counts
-            for i, (bar, rate, game_count) in enumerate(zip(bars1, win_rates, games)):
+            # Add value labels with confidence intervals
+            for i, (bar, rate, game_count, ci) in enumerate(zip(bars1, win_rates, games, ci_data)):
                 height = bar.get_height()
-                ax1.text(bar.get_x() + bar.get_width()/2., height + 1,
-                        f'{rate:.1f}%\\n({game_count} games)',
-                        ha='center', va='bottom', fontsize=10)
+                ax1.text(bar.get_x() + bar.get_width()/2., height + upper_errors[i] + 2,
+                        f'{rate:.1f}%\\n[{ci[0]:.1f}%, {ci[1]:.1f}%]\\n({game_count} games)',
+                        ha='center', va='bottom', fontsize=9)
         
         # Detective win rates
         if self.statistics.win_rates.get('detective'):
@@ -297,17 +420,23 @@ class GameAnalyzer:
             win_rates = [data['win_rate'] for data in detective_data.values()]
             games = [data['games'] for data in detective_data.values()]
             
-            bars2 = ax2.bar(agents, win_rates, color=sns.color_palette("Set1", len(agents)))
-            ax2.set_title('Detective Win Rates by Agent Type', fontsize=14, pad=20)
+            # Calculate error bars for confidence intervals
+            ci_data = [data.get('win_rate_ci', (0, 0)) for data in detective_data.values()]
+            lower_errors = [max(0, rate - ci[0]) for rate, ci in zip(win_rates, ci_data)]
+            upper_errors = [min(100 - rate, ci[1] - rate) for rate, ci in zip(win_rates, ci_data)]
+            
+            bars2 = ax2.bar(agents, win_rates, color=sns.color_palette("Set1", len(agents)),
+                           yerr=[lower_errors, upper_errors], capsize=5, ecolor='black')
+            ax2.set_title('Detective Win Rates by Agent Type (95% CI)', fontsize=14, pad=20)
             ax2.set_ylabel('Win Rate (%)')
             ax2.set_ylim(0, 100)
             
-            # Add value labels and game counts
-            for i, (bar, rate, game_count) in enumerate(zip(bars2, win_rates, games)):
+            # Add value labels with confidence intervals
+            for i, (bar, rate, game_count, ci) in enumerate(zip(bars2, win_rates, games, ci_data)):
                 height = bar.get_height()
-                ax2.text(bar.get_x() + bar.get_width()/2., height + 1,
-                        f'{rate:.1f}%\\n({game_count} games)',
-                        ha='center', va='bottom', fontsize=10)
+                ax2.text(bar.get_x() + bar.get_width()/2., height + upper_errors[i] + 2,
+                        f'{rate:.1f}%\n[{ci[0]:.1f}%, {ci[1]:.1f}%]\n({game_count} games)',
+                        ha='center', va='bottom', fontsize=9)
         
         plt.tight_layout()
         plt.savefig(self.graphs_dir / "win_rates_by_agent.jpg", dpi=300, bbox_inches='tight')
@@ -606,37 +735,48 @@ class GameAnalyzer:
         if not summary:
             return
         
-        fig = plt.figure(figsize=(20, 12))
+        fig = plt.figure(figsize=(24, 15))
         
-        # Create a grid layout
-        gs = fig.add_gridspec(3, 4, hspace=0.3, wspace=0.3)
+        # Create a grid layout with more space for the new chart
+        gs = fig.add_gridspec(3, 6, hspace=0.3, wspace=0.3)
         
         # Overall statistics (top left)
         ax1 = fig.add_subplot(gs[0, :2])
+        
+        # Get confidence intervals
+        detective_ci = summary.get('detective_win_rate_ci', (0, 0))
+        mr_x_ci = summary.get('mr_x_win_rate_ci', (0, 0))
+        completion_ci = summary.get('completion_rate_ci', (0, 0))
+        length_ci = summary.get('average_game_length_ci', (0, 0))
+        
         stats_text = f"""
 OVERALL STATISTICS
 ==================
 Total Games: {summary['total_games']:,}
 Completed Games: {summary['total_games'] - summary['incomplete_games']:,}
 Completion Rate: {summary['completion_rate']:.1f}%
+  [95% CI: {completion_ci[0]:.1f}%-{completion_ci[1]:.1f}%]
 
-WINNER BREAKDOWN
-================
+WINNER BREAKDOWN (with 95% CI)
+===============================
 Detective Wins: {summary['detective_wins']:,} ({summary['detective_win_rate']:.1f}%)
+  [95% CI: {detective_ci[0]:.1f}%-{detective_ci[1]:.1f}%]
 Mr. X Wins: {summary['mr_x_wins']:,} ({summary['mr_x_win_rate']:.1f}%)
+  [95% CI: {mr_x_ci[0]:.1f}%-{mr_x_ci[1]:.1f}%]
 Incomplete: {summary['incomplete_games']:,}
 
 GAME METRICS
 ============
 Average Game Length: {summary['average_game_length']:.1f} turns
+  [95% CI: {length_ci[0]:.1f}-{length_ci[1]:.1f}]
         """
-        ax1.text(0.05, 0.95, stats_text, transform=ax1.transAxes, fontsize=12,
+        ax1.text(0.05, 0.95, stats_text, transform=ax1.transAxes, fontsize=11,
                 verticalalignment='top', fontfamily='monospace',
                 bbox=dict(boxstyle='round', facecolor='lightblue', alpha=0.8))
         ax1.axis('off')
         
-        # Win distribution pie chart (top right)
-        ax2 = fig.add_subplot(gs[0, 2:])
+        # Win distribution pie chart (top middle)
+        ax2 = fig.add_subplot(gs[0, 2:4])
         if summary['detective_wins'] > 0 or summary['mr_x_wins'] > 0:
             sizes = [summary['detective_wins'], summary['mr_x_wins']]
             labels = ['Detective Wins', 'Mr. X Wins']
@@ -649,6 +789,29 @@ Average Game Length: {summary['average_game_length']:.1f} turns
             
             ax2.pie(sizes, labels=labels, colors=colors, autopct='%1.1f%%', startangle=90)
             ax2.set_title('Game Outcomes Distribution', pad=20)
+        
+        # Agent Strength Distribution (top right) - NEW PIE CHART
+        ax6 = fig.add_subplot(gs[0, 4:])
+        agent_strength = self._calculate_agent_strength()
+        if agent_strength:
+            agents = list(agent_strength.keys())
+            total_wins = [agent_strength[agent]['total_wins'] for agent in agents]
+            
+            # Only show agents with at least 1 win
+            filtered_data = [(agent, wins) for agent, wins in zip(agents, total_wins) if wins > 0]
+            if filtered_data:
+                agents, total_wins = zip(*filtered_data)
+                colors_strength = sns.color_palette("Set3", len(agents))
+                
+                wedges, texts, autotexts = ax6.pie(total_wins, labels=agents, colors=colors_strength, 
+                                                  autopct='%1.1f%%', startangle=90)
+                ax6.set_title('Agent Strength Distribution\n(Total Wins Across All Roles)', pad=20)
+                
+                # Improve text readability
+                for autotext in autotexts:
+                    autotext.set_color('black')
+                    autotext.set_fontweight('bold')
+                    autotext.set_fontsize(9)
         
         # Agent combination performance (middle)
         if self.statistics.agent_combinations:
@@ -677,7 +840,7 @@ Average Game Length: {summary['average_game_length']:.1f} turns
         
         # Game length distribution (bottom left)
         if self.statistics.game_lengths:
-            ax4 = fig.add_subplot(gs[2, :2])
+            ax4 = fig.add_subplot(gs[2, :3])
             all_lengths = [length for lengths in self.statistics.game_lengths.values() 
                           for length in lengths]
             if all_lengths:
@@ -690,7 +853,7 @@ Average Game Length: {summary['average_game_length']:.1f} turns
                 ax4.legend()
         
         # Agent performance summary (bottom right)
-        ax5 = fig.add_subplot(gs[2, 2:])
+        ax5 = fig.add_subplot(gs[2, 3:])
         if self.statistics.win_rates.get('mr_x') and self.statistics.win_rates.get('detective'):
             mr_x_agents = list(self.statistics.win_rates['mr_x'].keys())
             mr_x_rates = [self.statistics.win_rates['mr_x'][agent]['win_rate'] for agent in mr_x_agents]
@@ -717,6 +880,28 @@ Average Game Length: {summary['average_game_length']:.1f} turns
         plt.close()
         print("   📊 Generated: comprehensive_dashboard.jpg")
     
+    def _calculate_agent_strength(self) -> Dict[str, Dict[str, int]]:
+        """Calculate agent strength independent of role (Mr. X vs Detective)"""
+        agent_strength = defaultdict(lambda: {'total_wins': 0, 'total_games': 0, 'win_rate': 0.0})
+        
+        # Aggregate wins from both Mr. X and Detective roles
+        if self.statistics.win_rates.get('mr_x'):
+            for agent, stats in self.statistics.win_rates['mr_x'].items():
+                agent_strength[agent]['total_wins'] += stats['wins']
+                agent_strength[agent]['total_games'] += stats['games']
+        
+        if self.statistics.win_rates.get('detective'):
+            for agent, stats in self.statistics.win_rates['detective'].items():
+                agent_strength[agent]['total_wins'] += stats['wins']
+                agent_strength[agent]['total_games'] += stats['games']
+        
+        # Calculate overall win rates
+        for agent, stats in agent_strength.items():
+            if stats['total_games'] > 0:
+                stats['win_rate'] = (stats['total_wins'] / stats['total_games']) * 100
+        
+        return dict(agent_strength)
+    
     def _generate_summary_report(self):
         """Generate a detailed summary report"""
         report_file = self.graphs_dir.parent / "analysis_report.txt"
@@ -734,14 +919,34 @@ Average Game Length: {summary['average_game_length']:.1f} turns
             f.write("OVERALL STATISTICS\n")
             f.write("-" * 20 + "\n")
             f.write(f"Total Games: {summary.get('total_games', 0):,}\n")
-            f.write(f"Detective Wins: {summary.get('detective_wins', 0):,} ({summary.get('detective_win_rate', 0):.1f}%)\n")
-            f.write(f"Mr. X Wins: {summary.get('mr_x_wins', 0):,} ({summary.get('mr_x_win_rate', 0):.1f}%)\n")
+            
+            detective_win_rate = summary.get('detective_win_rate', 0)
+            detective_ci = summary.get('detective_win_rate_ci', (0, 0))
+            f.write(f"Detective Wins: {summary.get('detective_wins', 0):,} ({detective_win_rate:.1f}% [95% CI: {detective_ci[0]:.1f}%-{detective_ci[1]:.1f}%])\n")
+            
+            mr_x_win_rate = summary.get('mr_x_win_rate', 0)
+            mr_x_ci = summary.get('mr_x_win_rate_ci', (0, 0))
+            f.write(f"Mr. X Wins: {summary.get('mr_x_wins', 0):,} ({mr_x_win_rate:.1f}% [95% CI: {mr_x_ci[0]:.1f}%-{mr_x_ci[1]:.1f}%])\n")
+            
             f.write(f"Incomplete Games: {summary.get('incomplete_games', 0):,}\n")
-            f.write(f"Average Game Length: {summary.get('average_game_length', 0):.1f} turns\n")
-            f.write(f"Average Execution Time: {summary.get('average_execution_time', 0):.5f} seconds\n")
-            f.write(f"Average Time per Turn: {summary.get('average_time_per_turn', 0):.5f} seconds\n")
+            
+            avg_length = summary.get('average_game_length', 0)
+            length_ci = summary.get('average_game_length_ci', (0, 0))
+            f.write(f"Average Game Length: {avg_length:.1f} turns [95% CI: {length_ci[0]:.1f}-{length_ci[1]:.1f}]\n")
+            
+            avg_exec_time = summary.get('average_execution_time', 0)
+            exec_ci = summary.get('average_execution_time_ci', (0, 0))
+            f.write(f"Average Execution Time: {avg_exec_time:.5f} seconds [95% CI: {exec_ci[0]:.5f}-{exec_ci[1]:.5f}]\n")
+            
+            avg_time_per_turn = summary.get('average_time_per_turn', 0)
+            time_per_turn_ci = summary.get('average_time_per_turn_ci', (0, 0))
+            f.write(f"Average Time per Turn: {avg_time_per_turn:.5f} seconds [95% CI: {time_per_turn_ci[0]:.5f}-{time_per_turn_ci[1]:.5f}]\n")
+            
             f.write(f"Games with Timing Data: {summary.get('games_with_timing', 0):,}\n")
-            f.write(f"Completion Rate: {summary.get('completion_rate', 0):.1f}%\n\n")
+            
+            completion_rate = summary.get('completion_rate', 0)
+            completion_ci = summary.get('completion_rate_ci', (0, 0))
+            f.write(f"Completion Rate: {completion_rate:.1f}% [95% CI: {completion_ci[0]:.1f}%-{completion_ci[1]:.1f}%]\n\n")
             
             # Agent combination details
             if self.statistics.agent_combinations:
@@ -750,10 +955,22 @@ Average Game Length: {summary['average_game_length']:.1f} turns
                 for combo, stats in sorted(self.statistics.agent_combinations.items()):
                     f.write(f"{combo}:\n")
                     f.write(f"  Games: {stats['games']:,}\n")
-                    f.write(f"  Detective Win Rate: {stats['detective_win_rate']:.1f}%\n")
-                    f.write(f"  Mr. X Win Rate: {stats['mr_x_win_rate']:.1f}%\n")
-                    f.write(f"  Avg Game Length: {stats['avg_game_length']:.1f} turns\n")
-                    f.write(f"  Completion Rate: {stats['completion_rate']:.1f}%\n")
+                    
+                    detective_wr = stats['detective_win_rate']
+                    detective_ci = stats.get('detective_win_rate_ci', (0, 0))
+                    f.write(f"  Detective Win Rate: {detective_wr:.1f}% [95% CI: {detective_ci[0]:.1f}%-{detective_ci[1]:.1f}%]\n")
+                    
+                    mr_x_wr = stats['mr_x_win_rate']
+                    mr_x_ci = stats.get('mr_x_win_rate_ci', (0, 0))
+                    f.write(f"  Mr. X Win Rate: {mr_x_wr:.1f}% [95% CI: {mr_x_ci[0]:.1f}%-{mr_x_ci[1]:.1f}%]\n")
+                    
+                    avg_length = stats['avg_game_length']
+                    length_ci = stats.get('avg_game_length_ci', (0, 0))
+                    f.write(f"  Avg Game Length: {avg_length:.1f} turns [95% CI: {length_ci[0]:.1f}-{length_ci[1]:.1f}]\n")
+                    
+                    completion_rate = stats['completion_rate']
+                    completion_ci = stats.get('completion_rate_ci', (0, 0))
+                    f.write(f"  Completion Rate: {completion_rate:.1f}% [95% CI: {completion_ci[0]:.1f}%-{completion_ci[1]:.1f}%]\n")
                     
                     # Add execution time info if available
                     if combo in self.statistics.execution_times:
@@ -773,6 +990,21 @@ Average Game Length: {summary['average_game_length']:.1f} turns
                                         avg_time_per_turn = total_time / total_turns
                                         f.write(f"  Avg Time per Turn: {avg_time_per_turn:.5f} seconds\n")
                     
+                    f.write("\n")
+            
+            # Agent Strength Analysis (independent of role)
+            agent_strength = self._calculate_agent_strength()
+            if agent_strength:
+                f.write("AGENT STRENGTH ANALYSIS (Independent of Role)\n")
+                f.write("-" * 45 + "\n")
+                # Sort agents by total wins for better presentation
+                sorted_agents = sorted(agent_strength.items(), 
+                                     key=lambda x: x[1]['total_wins'], reverse=True)
+                for agent, stats in sorted_agents:
+                    f.write(f"{agent}:\n")
+                    f.write(f"  Total Wins: {stats['total_wins']:,}\n")
+                    f.write(f"  Total Games: {stats['total_games']:,}\n")
+                    f.write(f"  Overall Win Rate: {stats['win_rate']:.1f}%\n")
                     f.write("\n")
             
             # Generated files

@@ -15,6 +15,7 @@ from .setup_controls import SetupControls
 from .game_controls import GameControls
 from .transport_selection import select_transport
 from .game_replay import GameReplayWindow
+from .video_exporter import show_video_export_dialog
 from .base_visualizer import BaseVisualizer
 
 # Import heuristics for position analysis
@@ -177,6 +178,10 @@ class GameVisualizer(BaseVisualizer):
         self.load_button = StyledButton(button_frame, "📂 Load Game", 
                                       command=self.show_load_dialog)
         self.load_button.pack(fill=tk.X, pady=3)
+        
+        self.video_export_button = StyledButton(button_frame, "🎬 Export Video", 
+                                              command=self.show_video_export_dialog)
+        self.video_export_button.pack(fill=tk.X, pady=3)
         
         # self.history_button = StyledButton(button_frame, "📈 Game History", 
         #                                  command=self.show_game_history)
@@ -373,6 +378,13 @@ class GameVisualizer(BaseVisualizer):
             
         except Exception as e:
             messagebox.showerror("Error", f"Failed to open load dialog: {str(e)}")
+
+    def show_video_export_dialog(self):
+        """Show dialog to export game replay as video"""
+        try:
+            show_video_export_dialog(self.root, self.loader)
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to show video export dialog: {str(e)}")
 
     def open_game_replay(self, game_id: str, game: ScotlandYardGame):
         """Open the game replay window"""

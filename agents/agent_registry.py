@@ -13,13 +13,15 @@ from .random_agent import RandomMrXAgent, RandomMultiDetectiveAgent
 from .heuristic_agent import HeuristicMrXAgent, HeuristicMultiDetectiveAgent
 from .mcts_agent import MCTSMrXAgent, MCTSMultiDetectiveAgent
 from .optimized_mcts_agent import OptimizedMCTSMrXAgent, OptimizedMCTSMultiDetectiveAgent
+from .epsilon_greedy_mcts_agent import EpsilonGreedyMCTSMrXAgent, EpsilonGreedyMCTSMultiDetectiveAgent
 
 class AgentType(Enum):
     """Available agent types"""
     RANDOM = "random"
     HEURISTIC = "heuristic"
-    MCTS = "mcts"
+    # MCTS = "mcts"
     OPTIMIZED_MCTS = "optimized_mcts"
+    EPSILON_GREEDY_MCTS = "epsilon_greedy_mcts"
     # Future agent types can be added here
     # MINIMAX = "minimax"
     # DEEP_Q = "deep_q"
@@ -33,15 +35,17 @@ class AgentRegistry:
         self._mr_x_agents: Dict[AgentType, Tuple[Type[MrXAgent], str]] = {
             AgentType.RANDOM: (RandomMrXAgent, "Random Mr. X - Makes random valid moves"),
             AgentType.HEURISTIC: (HeuristicMrXAgent, "Heuristic Mr. X - Maximizes distance from closest detective"),
-            AgentType.MCTS: (MCTSMrXAgent, "MCTS Mr. X - Uses Monte Carlo Tree Search with random simulations"),
-            AgentType.OPTIMIZED_MCTS: (OptimizedMCTSMrXAgent, "Optimized MCTS Mr. X - Fast MCTS with caching and minimal deep copying")
+            # AgentType.MCTS: (MCTSMrXAgent, "MCTS Mr. X - Uses Monte Carlo Tree Search with random simulations"),
+            AgentType.OPTIMIZED_MCTS: (OptimizedMCTSMrXAgent, "Optimized MCTS Mr. X - Fast MCTS with caching and minimal deep copying"),
+            AgentType.EPSILON_GREEDY_MCTS: (EpsilonGreedyMCTSMrXAgent, "Epsilon-Greedy MCTS Mr. X - MCTS with heuristic-guided simulations")
         }
         
         self._multi_detective_agents: Dict[AgentType, Tuple[Type[MultiDetectiveAgent], str]] = {
             AgentType.RANDOM: (RandomMultiDetectiveAgent, "Random Detectives - Make random valid moves"),
             AgentType.HEURISTIC: (HeuristicMultiDetectiveAgent, "Heuristic Detectives - Minimize distance to Mr. X's last known position"),
-            AgentType.MCTS: (MCTSMultiDetectiveAgent, "MCTS Detectives - Use Monte Carlo Tree Search with random simulations"),
-            AgentType.OPTIMIZED_MCTS: (OptimizedMCTSMultiDetectiveAgent, "Optimized MCTS Detectives - Fast MCTS with caching and minimal deep copying")
+            # AgentType.MCTS: (MCTSMultiDetectiveAgent, "MCTS Detectives - Use Monte Carlo Tree Search with random simulations"),
+            AgentType.OPTIMIZED_MCTS: (OptimizedMCTSMultiDetectiveAgent, "Optimized MCTS Detectives - Fast MCTS with caching and minimal deep copying"),
+            AgentType.EPSILON_GREEDY_MCTS: (EpsilonGreedyMCTSMultiDetectiveAgent, "Epsilon-Greedy MCTS Detectives - MCTS with heuristic-guided simulations")
         }
     
     def get_available_agent_types(self) -> List[AgentType]:
@@ -60,7 +64,7 @@ class AgentRegistry:
         display_names = {
             AgentType.RANDOM: "Random AI",
             AgentType.HEURISTIC: "Heuristic AI",
-            AgentType.MCTS: "MCTS AI",
+            # AgentType.MCTS: "MCTS AI",
             AgentType.OPTIMIZED_MCTS: "Optimized MCTS AI"
         }
         return display_names.get(agent_type, str(agent_type.value).title())

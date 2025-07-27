@@ -6,9 +6,9 @@ specifically distance calculations between Mr. X and detectives.
 """
 
 import networkx as nx
-from typing import List, Dict, Optional, Set
+from typing import List, Dict, Optional, Set, Tuple
 from ScotlandYard.core.game import ScotlandYardGame, GameState, Player
-
+import random
 
 class GameHeuristics:
     """
@@ -375,6 +375,125 @@ class GameHeuristics:
                     min_distance = distance
         
         return min_distance if min_distance != float('inf') else -1
+
+    def get_best_mr_x_move_by_distance(self, valid_moves: List[Tuple]) -> Tuple[int, int]:
+        """
+        Get Mr. X's best move to maximize distance to closest detective.
+        
+        Args:
+            valid_moves: List of (destination, transport) tuples
+            
+        Returns:
+            Best (destination, transport) move, or None if no valid moves
+        """
+        if not valid_moves or not self.game_state:
+            return None
+        
+        if len(valid_moves) == 1:
+            return valid_moves[0]
+        
+        best_moves = []
+        max_min_distance = -1
+        
+        for dest, transport in valid_moves:
+            # Calculate minimum distance to any detective from this destination
+            min_distance_to_detective = float('inf')
+            for det_pos in self.game_state.detective_positions:
+                distance = self.calculate_shortest_distance(dest, det_pos)
+                if distance >= 0 and distance < min_distance_to_detective:
+                    min_distance_to_detective = distance
+            
+            # If no valid distance found, skip this move
+            if min_distance_to_detective == float('inf'):
+                continue
+            
+            if min_distance_to_detective > max_min_distance:
+                max_min_distance = min_distance_to_detective
+                best_moves = [(dest, transport)]
+            elif min_distance_to_detective == max_min_distance:
+                best_moves.append((dest, transport))
+        
+        if not best_moves:
+            return valid_moves[0]  # Fallback to first move
+        
+        # If multiple moves have same max distance, choose randomly
+        ### here I should choose the one that increases possible locations
+        best_moves_2 = self.get_mr_x_moves_that_increase_possible_locations(best_moves)
+        return random.choice(best_moves_2) if len(best_moves_2) > 1 else best_moves_2[0]
+    
+    def get_best_detective_move_by_distance_to_possible_positions(self, detective_pos: int, 
+                                                                valid_moves: List[Tuple], 
+                                                                possible_mr_x_locations: set) -> Tuple[int, int]:
+        """
+        Get detective's best move to minimize sum of distances to possible Mr. X positions.
+        
+        Args:
+            detective_pos: Current detective position
+            valid_moves: List of (destination, transport) tuples
+            possible_mr_x_locations: Set of possible Mr. X positions
+            
+        Returns:
+            Best (destination, transport) move, or None if no valid moves
+        """
+        if not valid_moves:
+            return None
+        
+        if len(valid_moves) == 1:
+            return valid_moves[0]
+        
+        if not possible_mr_x_locations:
+            # If no known possible positions, return first move
+            return valid_moves[0]
+        
+        best_move = None
+        min_total_distance = float('inf')
+        
+        for dest, transport in valid_moves:
+            total_distance = 0
+            valid_distances = 0
+            
+            for possible_pos in possible_mr_x_locations:
+                distance = self.calculate_shortest_distance(dest, possible_pos)
+                if distance >= 0:
+                    total_distance += distance
+                    valid_distances += 1
+            
+            # Average distance to avoid bias based on number of possible positions
+            if valid_distances > 0:
+                avg_distance = total_distance / valid_distances
+                if avg_distance < min_total_distance:
+                    min_total_distance = avg_distance
+                    best_move = (dest, transport)
+        
+        return best_move if best_move else valid_moves[0]
+    
+    def get_mr_x_moves_that_increase_possible_locations(self, valid_moves: List[Tuple]) -> List[Tuple]:
+        """
+        Filter Mr. X moves that potentially increase the number of possible locations.
+        This is a simplified heuristic - could be made more sophisticated.
+        
+        Args:
+            valid_moves: List of (destination, transport) tuples
+            
+        Returns:
+            List of moves that potentially increase possible locations
+        """
+        if not valid_moves:
+            return []
+        
+        # Simple heuristic: prefer moves that use different transport types
+        # This could be made more sophisticated by actually calculating the effect
+        # on possible locations after each move
+        
+        transport_types = set()
+        diverse_moves = []
+        
+        for dest, transport in valid_moves:
+            if transport not in transport_types:
+                transport_types.add(transport)
+                diverse_moves.append((dest, transport))
+        
+        return diverse_moves if diverse_moves else valid_moves
 
     def clear_cache(self):
         """

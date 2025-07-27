@@ -1,0 +1,68 @@
+RANDOM AGENT CACHE PERFORMANCE TEST REPORT
+======================================================================
+
+Test Date: 2025-07-27 20:27:27
+
+TEST CONFIGURATION:
+----------------------------------------
+Games per test:           100
+Map size:                 test
+Number of detectives:     2
+Maximum turns per game:   50
+Agent types:              Random vs Random
+
+PERFORMANCE SUMMARY:
+----------------------------------------
+Cache ENABLED avg time per game:    0.0128s
+Cache DISABLED avg time per game:   0.0067s
+Speedup factor:                     0.522x
+Throughput improvement:             -47.79%
+Turn processing improvement:        -47.57%
+Verdict:                            🔴 CACHE DEGRADES PERFORMANCE: 1.92x slowdown
+
+MEMORY ANALYSIS:
+----------------------------------------
+Initial memory usage:               104.6 MB
+Memory after cache enabled test:    196.0 MB
+Memory after cache disabled test:   119.3 MB
+Cache memory overhead:              +76.7 MB
+Memory verdict:                     Cache adds +76.7 MB memory overhead
+
+GAME CONSISTENCY ANALYSIS:
+----------------------------------------
+Cache enabled avg turns:            9.78
+Cache disabled avg turns:           9.74
+Game length difference:             +0.04 turns
+Consistency verdict:                Games consistent length
+
+CACHE EFFECTIVENESS:
+----------------------------------------
+Hit rate:                           49.63%
+Total cache requests:               3,963
+Cache hits:                         1,967
+Cache misses:                       1,996
+Cache entries created:              1,996
+Cache evictions:                    0
+Final cache size:                   95.4 MB
+Total cache entries:                97,705
+
+DETAILED TEST RESULTS:
+----------------------------------------
+Cache ENABLED test:
+  Completed games:      100/100
+  Total duration:       1.28s
+  Games per second:     77.97
+  Turns per second:     762.5
+  Memory delta:         +91.4 MB
+
+Cache DISABLED test:
+  Completed games:      100/100
+  Total duration:       0.67s
+  Games per second:     149.33
+  Turns per second:     1454.4
+  Memory delta:         +0.0 MB
+
+RECOMMENDATIONS:
+----------------------------------------
+❌ DISABLE CACHE - Causes performance degradation
+⚠️  HIGH MEMORY OVERHEAD - Monitor memory usage in production

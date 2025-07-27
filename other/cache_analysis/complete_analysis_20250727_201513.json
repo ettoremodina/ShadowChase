@@ -1,0 +1,1947 @@
+{
+  "timestamp": "2025-07-27T20:15:13.217088",
+  "parameters": {
+    "num_cache_games": 20,
+    "map_size": "test",
+    "max_turns": 50
+  },
+  "mcts_comparison": {
+    "baseline": {
+      "game_id": "game_20250727_201311_600f1af1924448fb",
+      "turn_count": 45,
+      "completed": true,
+      "execution_time": 129.07770681381226,
+      "cache_stats_before": {
+        "global_stats": {
+          "hit_rate": 0,
+          "total_entries": 0,
+          "cache_size_mb": 0.0,
+          "max_size_mb": 100.0,
+          "hits": 0,
+          "misses": 0,
+          "writes": 0,
+          "evictions": 0,
+          "expired_cleanups": 0,
+          "disk_saves": 0,
+          "disk_loads": 2,
+          "total_requests": 0
+        },
+        "namespace_stats": {
+          "game_methods": {
+            "total_entries": 0,
+            "expired_entries": 0,
+            "valid_entries": 0,
+            "avg_access_count": 0,
+            "age_range_seconds": 0,
+            "max_size": 50000000.0
+          },
+          "mcts_nodes": {
+            "total_entries": 0,
+            "expired_entries": 0,
+            "valid_entries": 0,
+            "avg_access_count": 0,
+            "age_range_seconds": 0,
+            "max_size": 50000000.0
+          },
+          "agent_decisions": {
+            "total_entries": 0,
+            "expired_entries": 0,
+            "valid_entries": 0,
+            "avg_access_count": 0,
+            "age_range_seconds": 0,
+            "max_size": 50000000.0
+          },
+          "training_data": {
+            "total_entries": 0,
+            "expired_entries": 0,
+            "valid_entries": 0,
+            "avg_access_count": 0,
+            "age_range_seconds": 0,
+            "max_size": 50000000.0
+          },
+          "evaluations": {
+            "total_entries": 0,
+            "expired_entries": 0,
+            "valid_entries": 0,
+            "avg_access_count": 0,
+            "age_range_seconds": 0,
+            "max_size": 50000000.0
+          }
+        }
+      },
+      "cache_stats_after": {
+        "global_stats": {
+          "hit_rate": 0.3923852914824233,
+          "total_entries": 100247,
+          "cache_size_mb": 97.8974609375,
+          "max_size_mb": 100.0,
+          "hits": 540858,
+          "misses": 837527,
+          "writes": 837527,
+          "evictions": 737280,
+          "expired_cleanups": 0,
+          "disk_saves": 3,
+          "disk_loads": 2,
+          "total_requests": 1378385
+        },
+        "namespace_stats": {
+          "game_methods": {
+            "total_entries": 100224,
+            "expired_entries": 0,
+            "valid_entries": 100224,
+            "avg_access_count": 3.000279374201788,
+            "age_range_seconds": 28.44613289833069,
+            "max_size": 50000000.0
+          },
+          "mcts_nodes": {
+            "total_entries": 23,
+            "expired_entries": 0,
+            "valid_entries": 23,
+            "avg_access_count": 1.0,
+            "age_range_seconds": 20.70044183731079,
+            "max_size": 50000000.0
+          },
+          "agent_decisions": {
+            "total_entries": 0,
+            "expired_entries": 0,
+            "valid_entries": 0,
+            "avg_access_count": 0,
+            "age_range_seconds": 0,
+            "max_size": 50000000.0
+          },
+          "training_data": {
+            "total_entries": 0,
+            "expired_entries": 0,
+            "valid_entries": 0,
+            "avg_access_count": 0,
+            "age_range_seconds": 0,
+            "max_size": 50000000.0
+          },
+          "evaluations": {
+            "total_entries": 0,
+            "expired_entries": 0,
+            "valid_entries": 0,
+            "avg_access_count": 0,
+            "age_range_seconds": 0,
+            "max_size": 50000000.0
+          }
+        }
+      },
+      "cache_hits_delta": {
+        "game_methods": 100224,
+        "mcts_nodes": 23,
+        "agent_decisions": 0,
+        "training_data": 0,
+        "evaluations": 0
+      },
+      "cache_misses_delta": {
+        "game_methods": 0,
+        "mcts_nodes": 0,
+        "agent_decisions": 0,
+        "training_data": 0,
+        "evaluations": 0
+      },
+      "total_cache_entries_before": 0,
+      "total_cache_entries_after": 100247,
+      "total_hits_delta": 540858,
+      "total_misses_delta": 837527,
+      "game_hit_rate": 39.23852914824233
+    },
+    "post_cache": {
+      "game_id": "game_20250727_201512_8d767d8653d14df1",
+      "turn_count": 39,
+      "completed": true,
+      "execution_time": 115.72821259498596,
+      "cache_stats_before": {
+        "global_stats": {
+          "hit_rate": 0.3920123397097186,
+          "total_entries": 92449,
+          "cache_size_mb": 90.2822265625,
+          "max_size_mb": 100.0,
+          "hits": 541587,
+          "misses": 839969,
+          "writes": 839969,
+          "evictions": 747520,
+          "expired_cleanups": 0,
+          "disk_saves": 3,
+          "disk_loads": 2,
+          "total_requests": 1381556
+        },
+        "namespace_stats": {
+          "game_methods": {
+            "total_entries": 92428,
+            "expired_entries": 0,
+            "valid_entries": 92428,
+            "avg_access_count": 3.0471285757562643,
+            "age_range_seconds": 32.7099666595459,
+            "max_size": 50000000.0
+          },
+          "mcts_nodes": {
+            "total_entries": 21,
+            "expired_entries": 0,
+            "valid_entries": 21,
+            "avg_access_count": 1.0,
+            "age_range_seconds": 18.697953701019287,
+            "max_size": 50000000.0
+          },
+          "agent_decisions": {
+            "total_entries": 0,
+            "expired_entries": 0,
+            "valid_entries": 0,
+            "avg_access_count": 0,
+            "age_range_seconds": 0,
+            "max_size": 50000000.0
+          },
+          "training_data": {
+            "total_entries": 0,
+            "expired_entries": 0,
+            "valid_entries": 0,
+            "avg_access_count": 0,
+            "age_range_seconds": 0,
+            "max_size": 50000000.0
+          },
+          "evaluations": {
+            "total_entries": 0,
+            "expired_entries": 0,
+            "valid_entries": 0,
+            "avg_access_count": 0,
+            "age_range_seconds": 0,
+            "max_size": 50000000.0
+          }
+        }
+      },
+      "cache_stats_after": {
+        "global_stats": {
+          "hit_rate": 0.36859335601380366,
+          "total_entries": 95709,
+          "cache_size_mb": 93.4658203125,
+          "max_size_mb": 100.0,
+          "hits": 1131868,
+          "misses": 1938909,
+          "writes": 1938909,
+          "evictions": 1843200,
+          "expired_cleanups": 0,
+          "disk_saves": 7,
+          "disk_loads": 2,
+          "total_requests": 3070777
+        },
+        "namespace_stats": {
+          "game_methods": {
+            "total_entries": 95697,
+            "expired_entries": 0,
+            "valid_entries": 95697,
+            "avg_access_count": 2.228565158782407,
+            "age_range_seconds": 17.630526304244995,
+            "max_size": 50000000.0
+          },
+          "mcts_nodes": {
+            "total_entries": 12,
+            "expired_entries": 0,
+            "valid_entries": 12,
+            "avg_access_count": 1.0,
+            "age_range_seconds": 13.677687644958496,
+            "max_size": 50000000.0
+          },
+          "agent_decisions": {
+            "total_entries": 0,
+            "expired_entries": 0,
+            "valid_entries": 0,
+            "avg_access_count": 0,
+            "age_range_seconds": 0,
+            "max_size": 50000000.0
+          },
+          "training_data": {
+            "total_entries": 0,
+            "expired_entries": 0,
+            "valid_entries": 0,
+            "avg_access_count": 0,
+            "age_range_seconds": 0,
+            "max_size": 50000000.0
+          },
+          "evaluations": {
+            "total_entries": 0,
+            "expired_entries": 0,
+            "valid_entries": 0,
+            "avg_access_count": 0,
+            "age_range_seconds": 0,
+            "max_size": 50000000.0
+          }
+        }
+      },
+      "cache_hits_delta": {
+        "game_methods": 3269,
+        "mcts_nodes": 0,
+        "agent_decisions": 0,
+        "training_data": 0,
+        "evaluations": 0
+      },
+      "cache_misses_delta": {
+        "game_methods": 0,
+        "mcts_nodes": 0,
+        "agent_decisions": 0,
+        "training_data": 0,
+        "evaluations": 0
+      },
+      "total_cache_entries_before": 92449,
+      "total_cache_entries_after": 95709,
+      "total_hits_delta": 590281,
+      "total_misses_delta": 1098940,
+      "game_hit_rate": 34.94397713502259
+    }
+  },
+  "cache_population": {
+    "total_games": 20,
+    "total_time": 5.133999586105347,
+    "checkpoints": [
+      {
+        "games_completed": 1,
+        "batch_execution_time": 0.1339409351348877,
+        "total_cache_entries": 100398,
+        "cache_stats": {
+          "global_stats": {
+            "hit_rate": 0.3923617055230745,
+            "total_entries": 100398,
+            "cache_size_mb": 98.044921875,
+            "max_size_mb": 100.0,
+            "hits": 540902,
+            "misses": 837678,
+            "writes": 837678,
+            "evictions": 737280,
+            "expired_cleanups": 0,
+            "disk_saves": 3,
+            "disk_loads": 2,
+            "total_requests": 1378580
+          },
+          "namespace_stats": {
+            "game_methods": {
+              "total_entries": 100375,
+              "expired_entries": 0,
+              "valid_entries": 100375,
+              "avg_access_count": 2.997708592777086,
+              "age_range_seconds": 29.039308786392212,
+              "max_size": 50000000.0
+            },
+            "mcts_nodes": {
+              "total_entries": 23,
+              "expired_entries": 0,
+              "valid_entries": 23,
+              "avg_access_count": 1.0,
+              "age_range_seconds": 20.70044183731079,
+              "max_size": 50000000.0
+            },
+            "agent_decisions": {
+              "total_entries": 0,
+              "expired_entries": 0,
+              "valid_entries": 0,
+              "avg_access_count": 0,
+              "age_range_seconds": 0,
+              "max_size": 50000000.0
+            },
+            "training_data": {
+              "total_entries": 0,
+              "expired_entries": 0,
+              "valid_entries": 0,
+              "avg_access_count": 0,
+              "age_range_seconds": 0,
+              "max_size": 50000000.0
+            },
+            "evaluations": {
+              "total_entries": 0,
+              "expired_entries": 0,
+              "valid_entries": 0,
+              "avg_access_count": 0,
+              "age_range_seconds": 0,
+              "max_size": 50000000.0
+            }
+          }
+        },
+        "batch_results": {
+          "total_games": 1,
+          "completed_games": 1,
+          "detective_wins": 0,
+          "mrx_wins": 0,
+          "timeout_games": 0,
+          "total_turns": 39,
+          "saved_games": [
+            "game_20250727_201311_3e0509fde8ad47cb"
+          ],
+          "incomplete_games": [],
+          "mr_x_agent": "AgentType.RANDOM",
+          "detective_agent": "AgentType.RANDOM",
+          "start_time": "2025-07-27 20:13:11.522193",
+          "end_time": "2025-07-27 20:13:11.555267"
+        }
+      },
+      {
+        "games_completed": 2,
+        "batch_execution_time": 0.11353349685668945,
+        "total_cache_entries": 100525,
+        "cache_stats": {
+          "global_stats": {
+            "hit_rate": 0.3923423113048461,
+            "total_entries": 100525,
+            "cache_size_mb": 98.1689453125,
+            "max_size_mb": 100.0,
+            "hits": 540940,
+            "misses": 837805,
+            "writes": 837805,
+            "evictions": 737280,
+            "expired_cleanups": 0,
+            "disk_saves": 3,
+            "disk_loads": 2,
+            "total_requests": 1378745
+          },
+          "namespace_stats": {
+            "game_methods": {
+              "total_entries": 100502,
+              "expired_entries": 0,
+              "valid_entries": 100502,
+              "avg_access_count": 2.9955622773676147,
+              "age_range_seconds": 29.24684429168701,
+              "max_size": 50000000.0
+            },
+            "mcts_nodes": {
+              "total_entries": 23,
+              "expired_entries": 0,
+              "valid_entries": 23,
+              "avg_access_count": 1.0,
+              "age_range_seconds": 20.70044183731079,
+              "max_size": 50000000.0
+            },
+            "agent_decisions": {
+              "total_entries": 0,
+              "expired_entries": 0,
+              "valid_entries": 0,
+              "avg_access_count": 0,
+              "age_range_seconds": 0,
+              "max_size": 50000000.0
+            },
+            "training_data": {
+              "total_entries": 0,
+              "expired_entries": 0,
+              "valid_entries": 0,
+              "avg_access_count": 0,
+              "age_range_seconds": 0,
+              "max_size": 50000000.0
+            },
+            "evaluations": {
+              "total_entries": 0,
+              "expired_entries": 0,
+              "valid_entries": 0,
+              "avg_access_count": 0,
+              "age_range_seconds": 0,
+              "max_size": 50000000.0
+            }
+          }
+        },
+        "batch_results": {
+          "total_games": 1,
+          "completed_games": 1,
+          "detective_wins": 0,
+          "mrx_wins": 0,
+          "timeout_games": 0,
+          "total_turns": 33,
+          "saved_games": [
+            "game_20250727_201311_68ca8a3bf42f4900"
+          ],
+          "incomplete_games": [],
+          "mr_x_agent": "AgentType.RANDOM",
+          "detective_agent": "AgentType.RANDOM",
+          "start_time": "2025-07-27 20:13:11.728534",
+          "end_time": "2025-07-27 20:13:11.761096"
+        }
+      },
+      {
+        "games_completed": 3,
+        "batch_execution_time": 0.09827613830566406,
+        "total_cache_entries": 100568,
+        "cache_stats": {
+          "global_stats": {
+            "hit_rate": 0.3923371269593068,
+            "total_entries": 100568,
+            "cache_size_mb": 98.2109375,
+            "max_size_mb": 100.0,
+            "hits": 540956,
+            "misses": 837848,
+            "writes": 837848,
+            "evictions": 737280,
+            "expired_cleanups": 0,
+            "disk_saves": 3,
+            "disk_loads": 2,
+            "total_requests": 1378804
+          },
+          "namespace_stats": {
+            "game_methods": {
+              "total_entries": 100545,
+              "expired_entries": 0,
+              "valid_entries": 100545,
+              "avg_access_count": 2.994867969565866,
+              "age_range_seconds": 29.451935529708862,
+              "max_size": 50000000.0
+            },
+            "mcts_nodes": {
+              "total_entries": 23,
+              "expired_entries": 0,
+              "valid_entries": 23,
+              "avg_access_count": 1.0,
+              "age_range_seconds": 20.70044183731079,
+              "max_size": 50000000.0
+            },
+            "agent_decisions": {
+              "total_entries": 0,
+              "expired_entries": 0,
+              "valid_entries": 0,
+              "avg_access_count": 0,
+              "age_range_seconds": 0,
+              "max_size": 50000000.0
+            },
+            "training_data": {
+              "total_entries": 0,
+              "expired_entries": 0,
+              "valid_entries": 0,
+              "avg_access_count": 0,
+              "age_range_seconds": 0,
+              "max_size": 50000000.0
+            },
+            "evaluations": {
+              "total_entries": 0,
+              "expired_entries": 0,
+              "valid_entries": 0,
+              "avg_access_count": 0,
+              "age_range_seconds": 0,
+              "max_size": 50000000.0
+            }
+          }
+        },
+        "batch_results": {
+          "total_games": 1,
+          "completed_games": 1,
+          "detective_wins": 0,
+          "mrx_wins": 0,
+          "timeout_games": 0,
+          "total_turns": 11,
+          "saved_games": [
+            "game_20250727_201311_b82b6488cc7a478b"
+          ],
+          "incomplete_games": [],
+          "mr_x_agent": "AgentType.RANDOM",
+          "detective_agent": "AgentType.RANDOM",
+          "start_time": "2025-07-27 20:13:11.949310",
+          "end_time": "2025-07-27 20:13:11.964224"
+        }
+      },
+      {
+        "games_completed": 4,
+        "batch_execution_time": 0.14243602752685547,
+        "total_cache_entries": 100671,
+        "cache_stats": {
+          "global_stats": {
+            "hit_rate": 0.3923219228696846,
+            "total_entries": 100671,
+            "cache_size_mb": 98.3115234375,
+            "max_size_mb": 100.0,
+            "hits": 540988,
+            "misses": 837951,
+            "writes": 837951,
+            "evictions": 737280,
+            "expired_cleanups": 0,
+            "disk_saves": 3,
+            "disk_loads": 2,
+            "total_requests": 1378939
+          },
+          "namespace_stats": {
+            "game_methods": {
+              "total_entries": 100648,
+              "expired_entries": 0,
+              "valid_entries": 100648,
+              "avg_access_count": 2.993144424131627,
+              "age_range_seconds": 29.714436531066895,
+              "max_size": 50000000.0
+            },
+            "mcts_nodes": {
+              "total_entries": 23,
+              "expired_entries": 0,
+              "valid_entries": 23,
+              "avg_access_count": 1.0,
+              "age_range_seconds": 20.70044183731079,
+              "max_size": 50000000.0
+            },
+            "agent_decisions": {
+              "total_entries": 0,
+              "expired_entries": 0,
+              "valid_entries": 0,
+              "avg_access_count": 0,
+              "age_range_seconds": 0,
+              "max_size": 50000000.0
+            },
+            "training_data": {
+              "total_entries": 0,
+              "expired_entries": 0,
+              "valid_entries": 0,
+              "avg_access_count": 0,
+              "age_range_seconds": 0,
+              "max_size": 50000000.0
+            },
+            "evaluations": {
+              "total_entries": 0,
+              "expired_entries": 0,
+              "valid_entries": 0,
+              "avg_access_count": 0,
+              "age_range_seconds": 0,
+              "max_size": 50000000.0
+            }
+          }
+        },
+        "batch_results": {
+          "total_games": 1,
+          "completed_games": 1,
+          "detective_wins": 0,
+          "mrx_wins": 0,
+          "timeout_games": 0,
+          "total_turns": 27,
+          "saved_games": [
+            "game_20250727_201312_bfe46d5b0fd6461c"
+          ],
+          "incomplete_games": [],
+          "mr_x_agent": "AgentType.RANDOM",
+          "detective_agent": "AgentType.RANDOM",
+          "start_time": "2025-07-27 20:13:12.203506",
+          "end_time": "2025-07-27 20:13:12.225125"
+        }
+      },
+      {
+        "games_completed": 5,
+        "batch_execution_time": 0.1255943775177002,
+        "total_cache_entries": 100846,
+        "cache_stats": {
+          "global_stats": {
+            "hit_rate": 0.3922941724116929,
+            "total_entries": 100846,
+            "cache_size_mb": 98.482421875,
+            "max_size_mb": 100.0,
+            "hits": 541038,
+            "misses": 838126,
+            "writes": 838126,
+            "evictions": 737280,
+            "expired_cleanups": 0,
+            "disk_saves": 3,
+            "disk_loads": 2,
+            "total_requests": 1379164
+          },
+          "namespace_stats": {
+            "game_methods": {
+              "total_entries": 100823,
+              "expired_entries": 0,
+              "valid_entries": 100823,
+              "avg_access_count": 2.9901808119179156,
+              "age_range_seconds": 29.92719531059265,
+              "max_size": 50000000.0
+            },
+            "mcts_nodes": {
+              "total_entries": 23,
+              "expired_entries": 0,
+              "valid_entries": 23,
+              "avg_access_count": 1.0,
+              "age_range_seconds": 20.70044183731079,
+              "max_size": 50000000.0
+            },
+            "agent_decisions": {
+              "total_entries": 0,
+              "expired_entries": 0,
+              "valid_entries": 0,
+              "avg_access_count": 0,
+              "age_range_seconds": 0,
+              "max_size": 50000000.0
+            },
+            "training_data": {
+              "total_entries": 0,
+              "expired_entries": 0,
+              "valid_entries": 0,
+              "avg_access_count": 0,
+              "age_range_seconds": 0,
+              "max_size": 50000000.0
+            },
+            "evaluations": {
+              "total_entries": 0,
+              "expired_entries": 0,
+              "valid_entries": 0,
+              "avg_access_count": 0,
+              "age_range_seconds": 0,
+              "max_size": 50000000.0
+            }
+          }
+        },
+        "batch_results": {
+          "total_games": 1,
+          "completed_games": 1,
+          "detective_wins": 0,
+          "mrx_wins": 0,
+          "timeout_games": 0,
+          "total_turns": 45,
+          "saved_games": [
+            "game_20250727_201312_bb7c8f8db1234cca"
+          ],
+          "incomplete_games": [],
+          "mr_x_agent": "AgentType.RANDOM",
+          "detective_agent": "AgentType.RANDOM",
+          "start_time": "2025-07-27 20:13:12.408105",
+          "end_time": "2025-07-27 20:13:12.440646"
+        }
+      },
+      {
+        "games_completed": 6,
+        "batch_execution_time": 0.11399173736572266,
+        "total_cache_entries": 100897,
+        "cache_stats": {
+          "global_stats": {
+            "hit_rate": 0.39228759752703135,
+            "total_entries": 100897,
+            "cache_size_mb": 98.5322265625,
+            "max_size_mb": 100.0,
+            "hits": 541056,
+            "misses": 838177,
+            "writes": 838177,
+            "evictions": 737280,
+            "expired_cleanups": 0,
+            "disk_saves": 3,
+            "disk_loads": 2,
+            "total_requests": 1379233
+          },
+          "namespace_stats": {
+            "game_methods": {
+              "total_entries": 100874,
+              "expired_entries": 0,
+              "valid_entries": 100874,
+              "avg_access_count": 2.9893530543053712,
+              "age_range_seconds": 30.167803049087524,
+              "max_size": 50000000.0
+            },
+            "mcts_nodes": {
+              "total_entries": 23,
+              "expired_entries": 0,
+              "valid_entries": 23,
+              "avg_access_count": 1.0,
+              "age_range_seconds": 20.70044183731079,
+              "max_size": 50000000.0
+            },
+            "agent_decisions": {
+              "total_entries": 0,
+              "expired_entries": 0,
+              "valid_entries": 0,
+              "avg_access_count": 0,
+              "age_range_seconds": 0,
+              "max_size": 50000000.0
+            },
+            "training_data": {
+              "total_entries": 0,
+              "expired_entries": 0,
+              "valid_entries": 0,
+              "avg_access_count": 0,
+              "age_range_seconds": 0,
+              "max_size": 50000000.0
+            },
+            "evaluations": {
+              "total_entries": 0,
+              "expired_entries": 0,
+              "valid_entries": 0,
+              "avg_access_count": 0,
+              "age_range_seconds": 0,
+              "max_size": 50000000.0
+            }
+          }
+        },
+        "batch_results": {
+          "total_games": 1,
+          "completed_games": 1,
+          "detective_wins": 0,
+          "mrx_wins": 0,
+          "timeout_games": 0,
+          "total_turns": 13,
+          "saved_games": [
+            "game_20250727_201312_e48cea2d0e4c432a"
+          ],
+          "incomplete_games": [],
+          "mr_x_agent": "AgentType.RANDOM",
+          "detective_agent": "AgentType.RANDOM",
+          "start_time": "2025-07-27 20:13:12.662433",
+          "end_time": "2025-07-27 20:13:12.680191"
+        }
+      },
+      {
+        "games_completed": 7,
+        "batch_execution_time": 0.16990303993225098,
+        "total_cache_entries": 101056,
+        "cache_stats": {
+          "global_stats": {
+            "hit_rate": 0.39226264609210415,
+            "total_entries": 101056,
+            "cache_size_mb": 98.6875,
+            "max_size_mb": 100.0,
+            "hits": 541102,
+            "misses": 838336,
+            "writes": 838336,
+            "evictions": 737280,
+            "expired_cleanups": 0,
+            "disk_saves": 3,
+            "disk_loads": 2,
+            "total_requests": 1379438
+          },
+          "namespace_stats": {
+            "game_methods": {
+              "total_entries": 101033,
+              "expired_entries": 0,
+              "valid_entries": 101033,
+              "avg_access_count": 2.9866776201835044,
+              "age_range_seconds": 30.46846842765808,
+              "max_size": 50000000.0
+            },
+            "mcts_nodes": {
+              "total_entries": 23,
+              "expired_entries": 0,
+              "valid_entries": 23,
+              "avg_access_count": 1.0,
+              "age_range_seconds": 20.70044183731079,
+              "max_size": 50000000.0
+            },
+            "agent_decisions": {
+              "total_entries": 0,
+              "expired_entries": 0,
+              "valid_entries": 0,
+              "avg_access_count": 0,
+              "age_range_seconds": 0,
+              "max_size": 50000000.0
+            },
+            "training_data": {
+              "total_entries": 0,
+              "expired_entries": 0,
+              "valid_entries": 0,
+              "avg_access_count": 0,
+              "age_range_seconds": 0,
+              "max_size": 50000000.0
+            },
+            "evaluations": {
+              "total_entries": 0,
+              "expired_entries": 0,
+              "valid_entries": 0,
+              "avg_access_count": 0,
+              "age_range_seconds": 0,
+              "max_size": 50000000.0
+            }
+          }
+        },
+        "batch_results": {
+          "total_games": 1,
+          "completed_games": 1,
+          "detective_wins": 0,
+          "mrx_wins": 0,
+          "timeout_games": 0,
+          "total_turns": 41,
+          "saved_games": [
+            "game_20250727_201312_5954734095c54818"
+          ],
+          "incomplete_games": [],
+          "mr_x_agent": "AgentType.RANDOM",
+          "detective_agent": "AgentType.RANDOM",
+          "start_time": "2025-07-27 20:13:12.956592",
+          "end_time": "2025-07-27 20:13:12.983331"
+        }
+      },
+      {
+        "games_completed": 8,
+        "batch_execution_time": 0.21655035018920898,
+        "total_cache_entries": 101189,
+        "cache_stats": {
+          "global_stats": {
+            "hit_rate": 0.39224201042323553,
+            "total_entries": 101189,
+            "cache_size_mb": 98.8173828125,
+            "max_size_mb": 100.0,
+            "hits": 541141,
+            "misses": 838469,
+            "writes": 838469,
+            "evictions": 737280,
+            "expired_cleanups": 0,
+            "disk_saves": 3,
+            "disk_loads": 2,
+            "total_requests": 1379610
+          },
+          "namespace_stats": {
+            "game_methods": {
+              "total_entries": 101166,
+              "expired_entries": 0,
+              "valid_entries": 101166,
+              "avg_access_count": 2.9844512978668725,
+              "age_range_seconds": 30.77487063407898,
+              "max_size": 50000000.0
+            },
+            "mcts_nodes": {
+              "total_entries": 23,
+              "expired_entries": 0,
+              "valid_entries": 23,
+              "avg_access_count": 1.0,
+              "age_range_seconds": 20.70044183731079,
+              "max_size": 50000000.0
+            },
+            "agent_decisions": {
+              "total_entries": 0,
+              "expired_entries": 0,
+              "valid_entries": 0,
+              "avg_access_count": 0,
+              "age_range_seconds": 0,
+              "max_size": 50000000.0
+            },
+            "training_data": {
+              "total_entries": 0,
+              "expired_entries": 0,
+              "valid_entries": 0,
+              "avg_access_count": 0,
+              "age_range_seconds": 0,
+              "max_size": 50000000.0
+            },
+            "evaluations": {
+              "total_entries": 0,
+              "expired_entries": 0,
+              "valid_entries": 0,
+              "avg_access_count": 0,
+              "age_range_seconds": 0,
+              "max_size": 50000000.0
+            }
+          }
+        },
+        "batch_results": {
+          "total_games": 1,
+          "completed_games": 1,
+          "detective_wins": 0,
+          "mrx_wins": 0,
+          "timeout_games": 0,
+          "total_turns": 34,
+          "saved_games": [
+            "game_20250727_201313_cb1be87b9a234209"
+          ],
+          "incomplete_games": [],
+          "mr_x_agent": "AgentType.RANDOM",
+          "detective_agent": "AgentType.RANDOM",
+          "start_time": "2025-07-27 20:13:13.252609",
+          "end_time": "2025-07-27 20:13:13.293446"
+        }
+      },
+      {
+        "games_completed": 9,
+        "batch_execution_time": 0.12823820114135742,
+        "total_cache_entries": 101292,
+        "cache_stats": {
+          "global_stats": {
+            "hit_rate": 0.39222682452192253,
+            "total_entries": 101292,
+            "cache_size_mb": 98.91796875,
+            "max_size_mb": 100.0,
+            "hits": 541173,
+            "misses": 838572,
+            "writes": 838572,
+            "evictions": 737280,
+            "expired_cleanups": 0,
+            "disk_saves": 3,
+            "disk_loads": 2,
+            "total_requests": 1379745
+          },
+          "namespace_stats": {
+            "game_methods": {
+              "total_entries": 101269,
+              "expired_entries": 0,
+              "valid_entries": 101269,
+              "avg_access_count": 2.9827489162527527,
+              "age_range_seconds": 31.0811665058136,
+              "max_size": 50000000.0
+            },
+            "mcts_nodes": {
+              "total_entries": 23,
+              "expired_entries": 0,
+              "valid_entries": 23,
+              "avg_access_count": 1.0,
+              "age_range_seconds": 20.70044183731079,
+              "max_size": 50000000.0
+            },
+            "agent_decisions": {
+              "total_entries": 0,
+              "expired_entries": 0,
+              "valid_entries": 0,
+              "avg_access_count": 0,
+              "age_range_seconds": 0,
+              "max_size": 50000000.0
+            },
+            "training_data": {
+              "total_entries": 0,
+              "expired_entries": 0,
+              "valid_entries": 0,
+              "avg_access_count": 0,
+              "age_range_seconds": 0,
+              "max_size": 50000000.0
+            },
+            "evaluations": {
+              "total_entries": 0,
+              "expired_entries": 0,
+              "valid_entries": 0,
+              "avg_access_count": 0,
+              "age_range_seconds": 0,
+              "max_size": 50000000.0
+            }
+          }
+        },
+        "batch_results": {
+          "total_games": 1,
+          "completed_games": 1,
+          "detective_wins": 0,
+          "mrx_wins": 0,
+          "timeout_games": 0,
+          "total_turns": 27,
+          "saved_games": [
+            "game_20250727_201313_2e025299bdb84df2"
+          ],
+          "incomplete_games": [],
+          "mr_x_agent": "AgentType.RANDOM",
+          "detective_agent": "AgentType.RANDOM",
+          "start_time": "2025-07-27 20:13:13.562440",
+          "end_time": "2025-07-27 20:13:13.593181"
+        }
+      },
+      {
+        "games_completed": 10,
+        "batch_execution_time": 0.157090425491333,
+        "total_cache_entries": 101467,
+        "cache_stats": {
+          "global_stats": {
+            "hit_rate": 0.3921991057776618,
+            "total_entries": 101467,
+            "cache_size_mb": 99.0888671875,
+            "max_size_mb": 100.0,
+            "hits": 541223,
+            "misses": 838747,
+            "writes": 838747,
+            "evictions": 737280,
+            "expired_cleanups": 0,
+            "disk_saves": 3,
+            "disk_loads": 2,
+            "total_requests": 1379970
+          },
+          "namespace_stats": {
+            "game_methods": {
+              "total_entries": 101444,
+              "expired_entries": 0,
+              "valid_entries": 101444,
+              "avg_access_count": 2.9798213792831514,
+              "age_range_seconds": 31.322336435317993,
+              "max_size": 50000000.0
+            },
+            "mcts_nodes": {
+              "total_entries": 23,
+              "expired_entries": 0,
+              "valid_entries": 23,
+              "avg_access_count": 1.0,
+              "age_range_seconds": 20.70044183731079,
+              "max_size": 50000000.0
+            },
+            "agent_decisions": {
+              "total_entries": 0,
+              "expired_entries": 0,
+              "valid_entries": 0,
+              "avg_access_count": 0,
+              "age_range_seconds": 0,
+              "max_size": 50000000.0
+            },
+            "training_data": {
+              "total_entries": 0,
+              "expired_entries": 0,
+              "valid_entries": 0,
+              "avg_access_count": 0,
+              "age_range_seconds": 0,
+              "max_size": 50000000.0
+            },
+            "evaluations": {
+              "total_entries": 0,
+              "expired_entries": 0,
+              "valid_entries": 0,
+              "avg_access_count": 0,
+              "age_range_seconds": 0,
+              "max_size": 50000000.0
+            }
+          }
+        },
+        "batch_results": {
+          "total_games": 1,
+          "completed_games": 1,
+          "detective_wins": 0,
+          "mrx_wins": 0,
+          "timeout_games": 0,
+          "total_turns": 45,
+          "saved_games": [
+            "game_20250727_201313_5942b31881ac4fc0"
+          ],
+          "incomplete_games": [],
+          "mr_x_agent": "AgentType.RANDOM",
+          "detective_agent": "AgentType.RANDOM",
+          "start_time": "2025-07-27 20:13:13.799544",
+          "end_time": "2025-07-27 20:13:13.839983"
+        }
+      },
+      {
+        "games_completed": 11,
+        "batch_execution_time": 0.1505718231201172,
+        "total_cache_entries": 101510,
+        "cache_stats": {
+          "global_stats": {
+            "hit_rate": 0.39219393215649817,
+            "total_entries": 101510,
+            "cache_size_mb": 99.130859375,
+            "max_size_mb": 100.0,
+            "hits": 541239,
+            "misses": 838790,
+            "writes": 838790,
+            "evictions": 737280,
+            "expired_cleanups": 0,
+            "disk_saves": 3,
+            "disk_loads": 2,
+            "total_requests": 1380029
+          },
+          "namespace_stats": {
+            "game_methods": {
+              "total_entries": 101487,
+              "expired_entries": 0,
+              "valid_entries": 101487,
+              "avg_access_count": 2.9791401854424704,
+              "age_range_seconds": 31.573771953582764,
+              "max_size": 50000000.0
+            },
+            "mcts_nodes": {
+              "total_entries": 23,
+              "expired_entries": 0,
+              "valid_entries": 23,
+              "avg_access_count": 1.0,
+              "age_range_seconds": 20.70044183731079,
+              "max_size": 50000000.0
+            },
+            "agent_decisions": {
+              "total_entries": 0,
+              "expired_entries": 0,
+              "valid_entries": 0,
+              "avg_access_count": 0,
+              "age_range_seconds": 0,
+              "max_size": 50000000.0
+            },
+            "training_data": {
+              "total_entries": 0,
+              "expired_entries": 0,
+              "valid_entries": 0,
+              "avg_access_count": 0,
+              "age_range_seconds": 0,
+              "max_size": 50000000.0
+            },
+            "evaluations": {
+              "total_entries": 0,
+              "expired_entries": 0,
+              "valid_entries": 0,
+              "avg_access_count": 0,
+              "age_range_seconds": 0,
+              "max_size": 50000000.0
+            }
+          }
+        },
+        "batch_results": {
+          "total_games": 1,
+          "completed_games": 1,
+          "detective_wins": 0,
+          "mrx_wins": 0,
+          "timeout_games": 0,
+          "total_turns": 11,
+          "saved_games": [
+            "game_20250727_201314_819b51c6418f47b8"
+          ],
+          "incomplete_games": [],
+          "mr_x_agent": "AgentType.RANDOM",
+          "detective_agent": "AgentType.RANDOM",
+          "start_time": "2025-07-27 20:13:14.069069",
+          "end_time": "2025-07-27 20:13:14.088324"
+        }
+      },
+      {
+        "games_completed": 12,
+        "batch_execution_time": 0.10708475112915039,
+        "total_cache_entries": 101577,
+        "cache_stats": {
+          "global_stats": {
+            "hit_rate": 0.392184581318409,
+            "total_entries": 101577,
+            "cache_size_mb": 99.1962890625,
+            "max_size_mb": 100.0,
+            "hits": 541261,
+            "misses": 838857,
+            "writes": 838857,
+            "evictions": 737280,
+            "expired_cleanups": 0,
+            "disk_saves": 3,
+            "disk_loads": 2,
+            "total_requests": 1380118
+          },
+          "namespace_stats": {
+            "game_methods": {
+              "total_entries": 101554,
+              "expired_entries": 0,
+              "valid_entries": 101554,
+              "avg_access_count": 2.978051086121669,
+              "age_range_seconds": 31.77739691734314,
+              "max_size": 50000000.0
+            },
+            "mcts_nodes": {
+              "total_entries": 23,
+              "expired_entries": 0,
+              "valid_entries": 23,
+              "avg_access_count": 1.0,
+              "age_range_seconds": 20.70044183731079,
+              "max_size": 50000000.0
+            },
+            "agent_decisions": {
+              "total_entries": 0,
+              "expired_entries": 0,
+              "valid_entries": 0,
+              "avg_access_count": 0,
+              "age_range_seconds": 0,
+              "max_size": 50000000.0
+            },
+            "training_data": {
+              "total_entries": 0,
+              "expired_entries": 0,
+              "valid_entries": 0,
+              "avg_access_count": 0,
+              "age_range_seconds": 0,
+              "max_size": 50000000.0
+            },
+            "evaluations": {
+              "total_entries": 0,
+              "expired_entries": 0,
+              "valid_entries": 0,
+              "avg_access_count": 0,
+              "age_range_seconds": 0,
+              "max_size": 50000000.0
+            }
+          }
+        },
+        "batch_results": {
+          "total_games": 1,
+          "completed_games": 1,
+          "detective_wins": 0,
+          "mrx_wins": 0,
+          "timeout_games": 0,
+          "total_turns": 17,
+          "saved_games": [
+            "game_20250727_201314_56c6e605994c4e11"
+          ],
+          "incomplete_games": [],
+          "mr_x_agent": "AgentType.RANDOM",
+          "detective_agent": "AgentType.RANDOM",
+          "start_time": "2025-07-27 20:13:14.271043",
+          "end_time": "2025-07-27 20:13:14.293100"
+        }
+      },
+      {
+        "games_completed": 13,
+        "batch_execution_time": 0.11225223541259766,
+        "total_cache_entries": 101736,
+        "cache_stats": {
+          "global_stats": {
+            "hit_rate": 0.39215966118075263,
+            "total_entries": 101736,
+            "cache_size_mb": 99.3515625,
+            "max_size_mb": 100.0,
+            "hits": 541307,
+            "misses": 839016,
+            "writes": 839016,
+            "evictions": 737280,
+            "expired_cleanups": 0,
+            "disk_saves": 3,
+            "disk_loads": 2,
+            "total_requests": 1380323
+          },
+          "namespace_stats": {
+            "game_methods": {
+              "total_entries": 101713,
+              "expired_entries": 0,
+              "valid_entries": 101713,
+              "avg_access_count": 2.975411206040526,
+              "age_range_seconds": 31.993176460266113,
+              "max_size": 50000000.0
+            },
+            "mcts_nodes": {
+              "total_entries": 23,
+              "expired_entries": 0,
+              "valid_entries": 23,
+              "avg_access_count": 1.0,
+              "age_range_seconds": 20.70044183731079,
+              "max_size": 50000000.0
+            },
+            "agent_decisions": {
+              "total_entries": 0,
+              "expired_entries": 0,
+              "valid_entries": 0,
+              "avg_access_count": 0,
+              "age_range_seconds": 0,
+              "max_size": 50000000.0
+            },
+            "training_data": {
+              "total_entries": 0,
+              "expired_entries": 0,
+              "valid_entries": 0,
+              "avg_access_count": 0,
+              "age_range_seconds": 0,
+              "max_size": 50000000.0
+            },
+            "evaluations": {
+              "total_entries": 0,
+              "expired_entries": 0,
+              "valid_entries": 0,
+              "avg_access_count": 0,
+              "age_range_seconds": 0,
+              "max_size": 50000000.0
+            }
+          }
+        },
+        "batch_results": {
+          "total_games": 1,
+          "completed_games": 1,
+          "detective_wins": 0,
+          "mrx_wins": 0,
+          "timeout_games": 0,
+          "total_turns": 41,
+          "saved_games": [
+            "game_20250727_201314_f058a06bef7349bf"
+          ],
+          "incomplete_games": [],
+          "mr_x_agent": "AgentType.RANDOM",
+          "detective_agent": "AgentType.RANDOM",
+          "start_time": "2025-07-27 20:13:14.477597",
+          "end_time": "2025-07-27 20:13:14.506412"
+        }
+      },
+      {
+        "games_completed": 14,
+        "batch_execution_time": 0.1700458526611328,
+        "total_cache_entries": 101895,
+        "cache_stats": {
+          "global_stats": {
+            "hit_rate": 0.3921347484440736,
+            "total_entries": 101895,
+            "cache_size_mb": 99.5068359375,
+            "max_size_mb": 100.0,
+            "hits": 541353,
+            "misses": 839175,
+            "writes": 839175,
+            "evictions": 737280,
+            "expired_cleanups": 0,
+            "disk_saves": 3,
+            "disk_loads": 2,
+            "total_requests": 1380528
+          },
+          "namespace_stats": {
+            "game_methods": {
+              "total_entries": 101872,
+              "expired_entries": 0,
+              "valid_entries": 101872,
+              "avg_access_count": 2.972779566514842,
+              "age_range_seconds": 32.260847330093384,
+              "max_size": 50000000.0
+            },
+            "mcts_nodes": {
+              "total_entries": 23,
+              "expired_entries": 0,
+              "valid_entries": 23,
+              "avg_access_count": 1.0,
+              "age_range_seconds": 20.70044183731079,
+              "max_size": 50000000.0
+            },
+            "agent_decisions": {
+              "total_entries": 0,
+              "expired_entries": 0,
+              "valid_entries": 0,
+              "avg_access_count": 0,
+              "age_range_seconds": 0,
+              "max_size": 50000000.0
+            },
+            "training_data": {
+              "total_entries": 0,
+              "expired_entries": 0,
+              "valid_entries": 0,
+              "avg_access_count": 0,
+              "age_range_seconds": 0,
+              "max_size": 50000000.0
+            },
+            "evaluations": {
+              "total_entries": 0,
+              "expired_entries": 0,
+              "valid_entries": 0,
+              "avg_access_count": 0,
+              "age_range_seconds": 0,
+              "max_size": 50000000.0
+            }
+          }
+        },
+        "batch_results": {
+          "total_games": 1,
+          "completed_games": 1,
+          "detective_wins": 0,
+          "mrx_wins": 0,
+          "timeout_games": 0,
+          "total_turns": 41,
+          "saved_games": [
+            "game_20250727_201314_573789b88f374d72"
+          ],
+          "incomplete_games": [],
+          "mr_x_agent": "AgentType.RANDOM",
+          "detective_agent": "AgentType.RANDOM",
+          "start_time": "2025-07-27 20:13:14.739072",
+          "end_time": "2025-07-27 20:13:14.774351"
+        }
+      },
+      {
+        "games_completed": 15,
+        "batch_execution_time": 0.1300501823425293,
+        "total_cache_entries": 102054,
+        "cache_stats": {
+          "global_stats": {
+            "hit_rate": 0.39210984310507535,
+            "total_entries": 102054,
+            "cache_size_mb": 99.662109375,
+            "max_size_mb": 100.0,
+            "hits": 541399,
+            "misses": 839334,
+            "writes": 839334,
+            "evictions": 737280,
+            "expired_cleanups": 0,
+            "disk_saves": 3,
+            "disk_loads": 2,
+            "total_requests": 1380733
+          },
+          "namespace_stats": {
+            "game_methods": {
+              "total_entries": 102031,
+              "expired_entries": 0,
+              "valid_entries": 102031,
+              "avg_access_count": 2.9701561290196117,
+              "age_range_seconds": 32.49616050720215,
+              "max_size": 50000000.0
+            },
+            "mcts_nodes": {
+              "total_entries": 23,
+              "expired_entries": 0,
+              "valid_entries": 23,
+              "avg_access_count": 1.0,
+              "age_range_seconds": 20.70044183731079,
+              "max_size": 50000000.0
+            },
+            "agent_decisions": {
+              "total_entries": 0,
+              "expired_entries": 0,
+              "valid_entries": 0,
+              "avg_access_count": 0,
+              "age_range_seconds": 0,
+              "max_size": 50000000.0
+            },
+            "training_data": {
+              "total_entries": 0,
+              "expired_entries": 0,
+              "valid_entries": 0,
+              "avg_access_count": 0,
+              "age_range_seconds": 0,
+              "max_size": 50000000.0
+            },
+            "evaluations": {
+              "total_entries": 0,
+              "expired_entries": 0,
+              "valid_entries": 0,
+              "avg_access_count": 0,
+              "age_range_seconds": 0,
+              "max_size": 50000000.0
+            }
+          }
+        },
+        "batch_results": {
+          "total_games": 1,
+          "completed_games": 1,
+          "detective_wins": 0,
+          "mrx_wins": 0,
+          "timeout_games": 0,
+          "total_turns": 41,
+          "saved_games": [
+            "game_20250727_201315_597f9be3e37147df"
+          ],
+          "incomplete_games": [],
+          "mr_x_agent": "AgentType.RANDOM",
+          "detective_agent": "AgentType.RANDOM",
+          "start_time": "2025-07-27 20:13:14.975063",
+          "end_time": "2025-07-27 20:13:15.010172"
+        }
+      },
+      {
+        "games_completed": 16,
+        "batch_execution_time": 0.12079477310180664,
+        "total_cache_entries": 102229,
+        "cache_stats": {
+          "global_stats": {
+            "hit_rate": 0.39208216325188744,
+            "total_entries": 102229,
+            "cache_size_mb": 99.8330078125,
+            "max_size_mb": 100.0,
+            "hits": 541449,
+            "misses": 839509,
+            "writes": 839509,
+            "evictions": 737280,
+            "expired_cleanups": 0,
+            "disk_saves": 3,
+            "disk_loads": 2,
+            "total_requests": 1380958
+          },
+          "namespace_stats": {
+            "game_methods": {
+              "total_entries": 102206,
+              "expired_entries": 0,
+              "valid_entries": 102206,
+              "avg_access_count": 2.967271980118584,
+              "age_range_seconds": 32.713077545166016,
+              "max_size": 50000000.0
+            },
+            "mcts_nodes": {
+              "total_entries": 23,
+              "expired_entries": 0,
+              "valid_entries": 23,
+              "avg_access_count": 1.0,
+              "age_range_seconds": 20.70044183731079,
+              "max_size": 50000000.0
+            },
+            "agent_decisions": {
+              "total_entries": 0,
+              "expired_entries": 0,
+              "valid_entries": 0,
+              "avg_access_count": 0,
+              "age_range_seconds": 0,
+              "max_size": 50000000.0
+            },
+            "training_data": {
+              "total_entries": 0,
+              "expired_entries": 0,
+              "valid_entries": 0,
+              "avg_access_count": 0,
+              "age_range_seconds": 0,
+              "max_size": 50000000.0
+            },
+            "evaluations": {
+              "total_entries": 0,
+              "expired_entries": 0,
+              "valid_entries": 0,
+              "avg_access_count": 0,
+              "age_range_seconds": 0,
+              "max_size": 50000000.0
+            }
+          }
+        },
+        "batch_results": {
+          "total_games": 1,
+          "completed_games": 1,
+          "detective_wins": 0,
+          "mrx_wins": 0,
+          "timeout_games": 0,
+          "total_turns": 45,
+          "saved_games": [
+            "game_20250727_201315_072b03ecd7144e11"
+          ],
+          "incomplete_games": [],
+          "mr_x_agent": "AgentType.RANDOM",
+          "detective_agent": "AgentType.RANDOM",
+          "start_time": "2025-07-27 20:13:15.189425",
+          "end_time": "2025-07-27 20:13:15.230584"
+        }
+      },
+      {
+        "games_completed": 17,
+        "batch_execution_time": 0.24600625038146973,
+        "total_cache_entries": 92170,
+        "cache_stats": {
+          "global_stats": {
+            "hit_rate": 0.39205322946155124,
+            "total_entries": 92170,
+            "cache_size_mb": 90.009765625,
+            "max_size_mb": 100.0,
+            "hits": 541500,
+            "misses": 839690,
+            "writes": 839690,
+            "evictions": 747520,
+            "expired_cleanups": 0,
+            "disk_saves": 3,
+            "disk_loads": 2,
+            "total_requests": 1381190
+          },
+          "namespace_stats": {
+            "game_methods": {
+              "total_entries": 92149,
+              "expired_entries": 0,
+              "valid_entries": 92149,
+              "avg_access_count": 3.0523825543413383,
+              "age_range_seconds": 31.82284688949585,
+              "max_size": 50000000.0
+            },
+            "mcts_nodes": {
+              "total_entries": 21,
+              "expired_entries": 0,
+              "valid_entries": 21,
+              "avg_access_count": 1.0,
+              "age_range_seconds": 18.697953701019287,
+              "max_size": 50000000.0
+            },
+            "agent_decisions": {
+              "total_entries": 0,
+              "expired_entries": 0,
+              "valid_entries": 0,
+              "avg_access_count": 0,
+              "age_range_seconds": 0,
+              "max_size": 50000000.0
+            },
+            "training_data": {
+              "total_entries": 0,
+              "expired_entries": 0,
+              "valid_entries": 0,
+              "avg_access_count": 0,
+              "age_range_seconds": 0,
+              "max_size": 50000000.0
+            },
+            "evaluations": {
+              "total_entries": 0,
+              "expired_entries": 0,
+              "valid_entries": 0,
+              "avg_access_count": 0,
+              "age_range_seconds": 0,
+              "max_size": 50000000.0
+            }
+          }
+        },
+        "batch_results": {
+          "total_games": 1,
+          "completed_games": 1,
+          "detective_wins": 0,
+          "mrx_wins": 0,
+          "timeout_games": 0,
+          "total_turns": 46,
+          "saved_games": [
+            "game_20250727_201315_71c07627212d4bcf"
+          ],
+          "incomplete_games": [],
+          "mr_x_agent": "AgentType.RANDOM",
+          "detective_agent": "AgentType.RANDOM",
+          "start_time": "2025-07-27 20:13:15.465537",
+          "end_time": "2025-07-27 20:13:15.573061"
+        }
+      },
+      {
+        "games_completed": 18,
+        "batch_execution_time": 0.17682194709777832,
+        "total_cache_entries": 92337,
+        "cache_stats": {
+          "global_stats": {
+            "hit_rate": 0.3920269580608149,
+            "total_entries": 92337,
+            "cache_size_mb": 90.1728515625,
+            "max_size_mb": 100.0,
+            "hits": 541548,
+            "misses": 839857,
+            "writes": 839857,
+            "evictions": 747520,
+            "expired_cleanups": 0,
+            "disk_saves": 3,
+            "disk_loads": 2,
+            "total_requests": 1381405
+          },
+          "namespace_stats": {
+            "game_methods": {
+              "total_entries": 92316,
+              "expired_entries": 0,
+              "valid_entries": 92316,
+              "avg_access_count": 3.0491897395901035,
+              "age_range_seconds": 32.17700552940369,
+              "max_size": 50000000.0
+            },
+            "mcts_nodes": {
+              "total_entries": 21,
+              "expired_entries": 0,
+              "valid_entries": 21,
+              "avg_access_count": 1.0,
+              "age_range_seconds": 18.697953701019287,
+              "max_size": 50000000.0
+            },
+            "agent_decisions": {
+              "total_entries": 0,
+              "expired_entries": 0,
+              "valid_entries": 0,
+              "avg_access_count": 0,
+              "age_range_seconds": 0,
+              "max_size": 50000000.0
+            },
+            "training_data": {
+              "total_entries": 0,
+              "expired_entries": 0,
+              "valid_entries": 0,
+              "avg_access_count": 0,
+              "age_range_seconds": 0,
+              "max_size": 50000000.0
+            },
+            "evaluations": {
+              "total_entries": 0,
+              "expired_entries": 0,
+              "valid_entries": 0,
+              "avg_access_count": 0,
+              "age_range_seconds": 0,
+              "max_size": 50000000.0
+            }
+          }
+        },
+        "batch_results": {
+          "total_games": 1,
+          "completed_games": 1,
+          "detective_wins": 0,
+          "mrx_wins": 0,
+          "timeout_games": 0,
+          "total_turns": 43,
+          "saved_games": [
+            "game_20250727_201315_8db91987f4a54cc3"
+          ],
+          "incomplete_games": [],
+          "mr_x_agent": "AgentType.RANDOM",
+          "detective_agent": "AgentType.RANDOM",
+          "start_time": "2025-07-27 20:13:15.894878",
+          "end_time": "2025-07-27 20:13:15.925718"
+        }
+      },
+      {
+        "games_completed": 19,
+        "batch_execution_time": 0.19069123268127441,
+        "total_cache_entries": 92428,
+        "cache_stats": {
+          "global_stats": {
+            "hit_rate": 0.3920134576018947,
+            "total_entries": 92428,
+            "cache_size_mb": 90.26171875,
+            "max_size_mb": 100.0,
+            "hits": 541576,
+            "misses": 839948,
+            "writes": 839948,
+            "evictions": 747520,
+            "expired_cleanups": 0,
+            "disk_saves": 3,
+            "disk_loads": 2,
+            "total_requests": 1381524
+          },
+          "namespace_stats": {
+            "game_methods": {
+              "total_entries": 92407,
+              "expired_entries": 0,
+              "valid_entries": 92407,
+              "avg_access_count": 3.0474747584057487,
+              "age_range_seconds": 32.49985909461975,
+              "max_size": 50000000.0
+            },
+            "mcts_nodes": {
+              "total_entries": 21,
+              "expired_entries": 0,
+              "valid_entries": 21,
+              "avg_access_count": 1.0,
+              "age_range_seconds": 18.697953701019287,
+              "max_size": 50000000.0
+            },
+            "agent_decisions": {
+              "total_entries": 0,
+              "expired_entries": 0,
+              "valid_entries": 0,
+              "avg_access_count": 0,
+              "age_range_seconds": 0,
+              "max_size": 50000000.0
+            },
+            "training_data": {
+              "total_entries": 0,
+              "expired_entries": 0,
+              "valid_entries": 0,
+              "avg_access_count": 0,
+              "age_range_seconds": 0,
+              "max_size": 50000000.0
+            },
+            "evaluations": {
+              "total_entries": 0,
+              "expired_entries": 0,
+              "valid_entries": 0,
+              "avg_access_count": 0,
+              "age_range_seconds": 0,
+              "max_size": 50000000.0
+            }
+          }
+        },
+        "batch_results": {
+          "total_games": 1,
+          "completed_games": 1,
+          "detective_wins": 0,
+          "mrx_wins": 0,
+          "timeout_games": 0,
+          "total_turns": 23,
+          "saved_games": [
+            "game_20250727_201316_45f3c1e6b90e41c1"
+          ],
+          "incomplete_games": [],
+          "mr_x_agent": "AgentType.RANDOM",
+          "detective_agent": "AgentType.RANDOM",
+          "start_time": "2025-07-27 20:13:16.218443",
+          "end_time": "2025-07-27 20:13:16.247138"
+        }
+      },
+      {
+        "games_completed": 20,
+        "batch_execution_time": 0.10258316993713379,
+        "total_cache_entries": 92449,
+        "cache_stats": {
+          "global_stats": {
+            "hit_rate": 0.3920123397097186,
+            "total_entries": 92449,
+            "cache_size_mb": 90.2822265625,
+            "max_size_mb": 100.0,
+            "hits": 541587,
+            "misses": 839969,
+            "writes": 839969,
+            "evictions": 747520,
+            "expired_cleanups": 0,
+            "disk_saves": 3,
+            "disk_loads": 2,
+            "total_requests": 1381556
+          },
+          "namespace_stats": {
+            "game_methods": {
+              "total_entries": 92428,
+              "expired_entries": 0,
+              "valid_entries": 92428,
+              "avg_access_count": 3.0471285757562643,
+              "age_range_seconds": 32.7099666595459,
+              "max_size": 50000000.0
+            },
+            "mcts_nodes": {
+              "total_entries": 21,
+              "expired_entries": 0,
+              "valid_entries": 21,
+              "avg_access_count": 1.0,
+              "age_range_seconds": 18.697953701019287,
+              "max_size": 50000000.0
+            },
+            "agent_decisions": {
+              "total_entries": 0,
+              "expired_entries": 0,
+              "valid_entries": 0,
+              "avg_access_count": 0,
+              "age_range_seconds": 0,
+              "max_size": 50000000.0
+            },
+            "training_data": {
+              "total_entries": 0,
+              "expired_entries": 0,
+              "valid_entries": 0,
+              "avg_access_count": 0,
+              "age_range_seconds": 0,
+              "max_size": 50000000.0
+            },
+            "evaluations": {
+              "total_entries": 0,
+              "expired_entries": 0,
+              "valid_entries": 0,
+              "avg_access_count": 0,
+              "age_range_seconds": 0,
+              "max_size": 50000000.0
+            }
+          }
+        },
+        "batch_results": {
+          "total_games": 1,
+          "completed_games": 1,
+          "detective_wins": 0,
+          "mrx_wins": 0,
+          "timeout_games": 0,
+          "total_turns": 6,
+          "saved_games": [
+            "game_20250727_201316_0341c8458e504661"
+          ],
+          "incomplete_games": [],
+          "mr_x_agent": "AgentType.RANDOM",
+          "detective_agent": "AgentType.RANDOM",
+          "start_time": "2025-07-27 20:13:16.437488",
+          "end_time": "2025-07-27 20:13:16.452222"
+        }
+      }
+    ],
+    "final_cache_size": 92449
+  },
+  "performance_data": {
+    "game_length_data": [
+      39.0,
+      33.0,
+      11.0,
+      27.0,
+      45.0,
+      13.0,
+      41.0,
+      34.0,
+      27.0,
+      45.0,
+      11.0,
+      17.0,
+      41.0,
+      41.0,
+      41.0,
+      45.0,
+      46.0,
+      43.0,
+      23.0,
+      6.0
+    ],
+    "cache_size_data": [
+      100398,
+      100525,
+      100568,
+      100671,
+      100846,
+      100897,
+      101056,
+      101189,
+      101292,
+      101467,
+      101510,
+      101577,
+      101736,
+      101895,
+      102054,
+      102229,
+      92170,
+      92337,
+      92428,
+      92449
+    ],
+    "execution_time_data": [
+      0.1339409351348877,
+      0.11353349685668945,
+      0.09827613830566406,
+      0.14243602752685547,
+      0.1255943775177002,
+      0.11399173736572266,
+      0.16990303993225098,
+      0.21655035018920898,
+      0.12823820114135742,
+      0.157090425491333,
+      0.1505718231201172,
+      0.10708475112915039,
+      0.11225223541259766,
+      0.1700458526611328,
+      0.1300501823425293,
+      0.12079477310180664,
+      0.24600625038146973,
+      0.17682194709777832,
+      0.19069123268127441,
+      0.10258316993713379
+    ]
+  }
+}

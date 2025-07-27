@@ -1,0 +1,71 @@
+MCTS CACHE PERFORMANCE TEST REPORT
+======================================================================
+
+Test Date: 2025-07-27 20:45:05
+
+TEST CONFIGURATION:
+----------------------------------------
+Games per test:           3
+Map size:                 extended
+Number of detectives:     5
+Maximum turns per game:   30
+Agent types:              MCTS vs MCTS
+Test focus:               MCTS cache namespace isolation
+
+MCTS PERFORMANCE SUMMARY:
+----------------------------------------
+MCTS cache ENABLED thinking time/turn:  2.7051s
+MCTS cache DISABLED thinking time/turn: 2.6076s
+Thinking time speedup factor:           0.964x
+Game time speedup factor:               0.949x
+Throughput improvement:                 -5.10%
+Verdict:                                🟡 MCTS CACHE NEUTRAL: -3.6% thinking time change
+
+MEMORY ANALYSIS:
+----------------------------------------
+Initial memory usage:                   104.8 MB
+Memory after MCTS cache enabled test:   211.3 MB
+Memory after MCTS cache disabled test:  217.6 MB
+MCTS cache memory overhead:             -6.3 MB
+Memory verdict:                         MCTS cache adds -6.3 MB memory overhead
+
+GAME QUALITY ANALYSIS:
+----------------------------------------
+MCTS cache enabled avg turns:           43.00
+MCTS cache disabled avg turns:          42.33
+Game length difference:                 +0.67 turns
+Quality verdict:                        Game quality consistent
+
+MCTS CACHE EFFECTIVENESS:
+----------------------------------------
+Overall hit rate:                       36.56%
+Total cache requests:                   3,963,711
+Cache hits:                             1,449,137
+Cache misses:                           2,514,574
+Total cache size:                       99.1 MB
+
+MCTS nodes cache entries:               17
+MCTS nodes avg access count:            1.00
+Agent decisions cache entries:          0
+Agent decisions avg access count:       0.00
+
+DETAILED TEST RESULTS:
+----------------------------------------
+MCTS cache ENABLED test:
+  Completed games:      3/3
+  Total duration:       349.0s
+  Games per second:     0.01
+  Thinking time/turn:   2.705s
+  Memory delta:         +106.5 MB
+
+MCTS cache DISABLED test:
+  Completed games:      3/3
+  Total duration:       331.2s
+  Games per second:     0.01
+  Thinking time/turn:   2.608s
+  Memory delta:         +6.3 MB
+
+MCTS CACHE RECOMMENDATIONS:
+----------------------------------------
+🤷 MCTS CACHE NEUTRAL - No significant thinking time impact
+✅ LOW MEMORY OVERHEAD - Acceptable memory cost

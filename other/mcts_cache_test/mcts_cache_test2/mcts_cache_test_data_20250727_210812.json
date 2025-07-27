@@ -1,0 +1,252 @@
+{
+  "mcts_enabled": {
+    "test_name": "mcts_cache_enabled",
+    "num_games_requested": 3,
+    "completed_games": 3,
+    "incomplete_games": 0,
+    "total_duration": 287.40638852119446,
+    "avg_duration_per_game": 95.80212950706482,
+    "total_turns": 112,
+    "avg_turns_per_game": 37.333333333333336,
+    "avg_thinking_time_per_turn": 2.5661284689392363,
+    "games_per_second": 0.010438181334228653,
+    "turns_per_second": 0.38969210314453634,
+    "mcts_cache_enabled": true,
+    "agent_cache_enabled": true,
+    "game_cache_enabled": false,
+    "memory_usage": {
+      "start_mb": 104.58203125,
+      "end_mb": 197.47265625,
+      "peak_delta_mb": 92.890625
+    },
+    "batch_results": {
+      "total_games": 3,
+      "completed_games": 3,
+      "detective_wins": 0,
+      "mrx_wins": 0,
+      "timeout_games": 0,
+      "total_turns": 112,
+      "saved_games": [
+        "game_20250727_210045_35ee28b078bd4fbf",
+        "game_20250727_210232_5ad08d8a5e2443e4",
+        "game_20250727_210343_9be57e10316c4b49"
+      ],
+      "incomplete_games": [],
+      "mr_x_agent": "AgentType.OPTIMIZED_MCTS",
+      "detective_agent": "AgentType.OPTIMIZED_MCTS",
+      "start_time": "2025-07-27 20:58:56.222895",
+      "end_time": "2025-07-27 21:03:43.629284"
+    }
+  },
+  "mcts_disabled": {
+    "test_name": "mcts_cache_disabled",
+    "num_games_requested": 3,
+    "completed_games": 3,
+    "incomplete_games": 0,
+    "total_duration": 268.85629177093506,
+    "avg_duration_per_game": 89.61876392364502,
+    "total_turns": 112,
+    "avg_turns_per_game": 37.333333333333336,
+    "avg_thinking_time_per_turn": 2.4005026050976346,
+    "games_per_second": 0.011158377511789804,
+    "turns_per_second": 0.4165794271068194,
+    "mcts_cache_enabled": false,
+    "agent_cache_enabled": false,
+    "game_cache_enabled": false,
+    "memory_usage": {
+      "start_mb": 197.47265625,
+      "end_mb": 194.51171875,
+      "peak_delta_mb": -2.9609375
+    },
+    "batch_results": {
+      "total_games": 3,
+      "completed_games": 3,
+      "detective_wins": 0,
+      "mrx_wins": 0,
+      "timeout_games": 0,
+      "total_turns": 112,
+      "saved_games": [
+        "game_20250727_210530_c2fd9cf580814bce",
+        "game_20250727_210706_d4f7de3c396c41f6",
+        "game_20250727_210812_428ced56fd4346b0"
+      ],
+      "incomplete_games": [],
+      "mr_x_agent": "AgentType.OPTIMIZED_MCTS",
+      "detective_agent": "AgentType.OPTIMIZED_MCTS",
+      "start_time": "2025-07-27 21:03:43.652633",
+      "end_time": "2025-07-27 21:08:12.508925"
+    }
+  },
+  "analysis": {
+    "mcts_performance_summary": {
+      "mcts_enabled_thinking_time": 2.5661284689392363,
+      "mcts_disabled_thinking_time": 2.4005026050976346,
+      "thinking_time_speedup_factor": 0.9354569087844357,
+      "game_time_speedup_factor": 0.9354569087844355,
+      "throughput_improvement_percent": -6.4543091215564345,
+      "verdict": "\ud83d\udfe1 MCTS CACHE NEUTRAL: -6.5% thinking time change"
+    },
+    "memory_analysis": {
+      "initial_memory_mb": 104.5703125,
+      "memory_after_mcts_enabled_mb": 197.47265625,
+      "memory_after_mcts_disabled_mb": 194.51171875,
+      "mcts_cache_memory_overhead_mb": 2.9609375,
+      "memory_overhead_verdict": "MCTS cache adds +3.0 MB memory overhead"
+    },
+    "game_quality_analysis": {
+      "mcts_enabled_avg_turns": 37.333333333333336,
+      "mcts_disabled_avg_turns": 37.333333333333336,
+      "game_length_difference": 0.0,
+      "quality_verdict": "Game quality consistent"
+    },
+    "mcts_cache_effectiveness": {
+      "mcts_nodes": {
+        "total_entries": 275,
+        "avg_access_count": 1.0
+      },
+      "agent_decisions": {
+        "total_entries": 0,
+        "avg_access_count": 0
+      },
+      "global": {
+        "hit_rate_percent": 0.0,
+        "total_requests": 4820857,
+        "total_hits": 0,
+        "total_misses": 4820857,
+        "cache_size_mb": 92.73828125
+      }
+    },
+    "raw_metrics": {
+      "mcts_enabled": {
+        "test_name": "mcts_cache_enabled",
+        "num_games_requested": 3,
+        "completed_games": 3,
+        "incomplete_games": 0,
+        "total_duration": 287.40638852119446,
+        "avg_duration_per_game": 95.80212950706482,
+        "total_turns": 112,
+        "avg_turns_per_game": 37.333333333333336,
+        "avg_thinking_time_per_turn": 2.5661284689392363,
+        "games_per_second": 0.010438181334228653,
+        "turns_per_second": 0.38969210314453634,
+        "mcts_cache_enabled": true,
+        "agent_cache_enabled": true,
+        "game_cache_enabled": false,
+        "memory_usage": {
+          "start_mb": 104.58203125,
+          "end_mb": 197.47265625,
+          "peak_delta_mb": 92.890625
+        },
+        "batch_results": {
+          "total_games": 3,
+          "completed_games": 3,
+          "detective_wins": 0,
+          "mrx_wins": 0,
+          "timeout_games": 0,
+          "total_turns": 112,
+          "saved_games": [
+            "game_20250727_210045_35ee28b078bd4fbf",
+            "game_20250727_210232_5ad08d8a5e2443e4",
+            "game_20250727_210343_9be57e10316c4b49"
+          ],
+          "incomplete_games": [],
+          "mr_x_agent": "AgentType.OPTIMIZED_MCTS",
+          "detective_agent": "AgentType.OPTIMIZED_MCTS",
+          "start_time": "2025-07-27 20:58:56.222895",
+          "end_time": "2025-07-27 21:03:43.629284"
+        }
+      },
+      "mcts_disabled": {
+        "test_name": "mcts_cache_disabled",
+        "num_games_requested": 3,
+        "completed_games": 3,
+        "incomplete_games": 0,
+        "total_duration": 268.85629177093506,
+        "avg_duration_per_game": 89.61876392364502,
+        "total_turns": 112,
+        "avg_turns_per_game": 37.333333333333336,
+        "avg_thinking_time_per_turn": 2.4005026050976346,
+        "games_per_second": 0.011158377511789804,
+        "turns_per_second": 0.4165794271068194,
+        "mcts_cache_enabled": false,
+        "agent_cache_enabled": false,
+        "game_cache_enabled": false,
+        "memory_usage": {
+          "start_mb": 197.47265625,
+          "end_mb": 194.51171875,
+          "peak_delta_mb": -2.9609375
+        },
+        "batch_results": {
+          "total_games": 3,
+          "completed_games": 3,
+          "detective_wins": 0,
+          "mrx_wins": 0,
+          "timeout_games": 0,
+          "total_turns": 112,
+          "saved_games": [
+            "game_20250727_210530_c2fd9cf580814bce",
+            "game_20250727_210706_d4f7de3c396c41f6",
+            "game_20250727_210812_428ced56fd4346b0"
+          ],
+          "incomplete_games": [],
+          "mr_x_agent": "AgentType.OPTIMIZED_MCTS",
+          "detective_agent": "AgentType.OPTIMIZED_MCTS",
+          "start_time": "2025-07-27 21:03:43.652633",
+          "end_time": "2025-07-27 21:08:12.508925"
+        }
+      }
+    }
+  },
+  "cache_stats": {
+    "global_stats": {
+      "hit_rate": 0.0,
+      "total_entries": 94964,
+      "cache_size_mb": 92.73828125,
+      "max_size_mb": 100.0,
+      "hits": 0,
+      "misses": 4820857,
+      "writes": 265,
+      "evictions": 0,
+      "disk_saves": 8,
+      "disk_loads": 2,
+      "total_requests": 4820857
+    },
+    "namespace_stats": {
+      "game_methods": {
+        "total_entries": 94689,
+        "valid_entries": 94689,
+        "avg_access_count": 2.461067283422573,
+        "age_range_seconds": 15.647913217544556,
+        "max_size": 50000000.0
+      },
+      "mcts_nodes": {
+        "total_entries": 275,
+        "valid_entries": 275,
+        "avg_access_count": 1.0,
+        "age_range_seconds": 1488.148119688034,
+        "max_size": 50000000.0
+      },
+      "agent_decisions": {
+        "total_entries": 0,
+        "valid_entries": 0,
+        "avg_access_count": 0,
+        "age_range_seconds": 0,
+        "max_size": 50000000.0
+      },
+      "training_data": {
+        "total_entries": 0,
+        "valid_entries": 0,
+        "avg_access_count": 0,
+        "age_range_seconds": 0,
+        "max_size": 50000000.0
+      },
+      "evaluations": {
+        "total_entries": 0,
+        "valid_entries": 0,
+        "avg_access_count": 0,
+        "age_range_seconds": 0,
+        "max_size": 50000000.0
+      }
+    }
+  }
+}

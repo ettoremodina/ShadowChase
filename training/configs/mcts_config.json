@@ -6,6 +6,11 @@
     "max_depth": 50,
     "simulation_policy": "random"
   },
+  "cache_parameters": {
+    "max_size": 10000,
+    "max_age_seconds": 300.0,
+    "enable_caching": true
+  },
   "training_parameters": {
     "num_episodes": 1000,
     "evaluation_interval": 100,

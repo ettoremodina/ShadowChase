@@ -154,8 +154,8 @@ def execute_single_turn(controller: GameController, game: ScotlandYardGame,
             if not success:
                 display.print_error("AI detectives failed to move")
             
-            if play_mode == "ai_vs_ai":
-                time.sleep(1)  # Pause for AI vs AI
+            # if play_mode == "ai_vs_ai":
+            #     time.sleep(1)  # Pause for AI vs AI
     
     else:
         # Mr. X turn
@@ -173,8 +173,8 @@ def execute_single_turn(controller: GameController, game: ScotlandYardGame,
             if not success:
                 display.print_error("AI Mr. X failed to move")
             
-            if play_mode == "ai_vs_ai":
-                time.sleep(1)  # Pause for AI vs AI
+            # if play_mode == "ai_vs_ai":
+            #     time.sleep(1)  # Pause for AI vs AI
     
     # Reset turn state
     controller.reset_turn_state()

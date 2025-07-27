@@ -6,6 +6,11 @@ Runs all agent combinations and generates analysis.
 
 import subprocess
 import os
+from cache_system import (
+    enable_cache, disable_cache, is_cache_enabled, get_global_cache,
+    enable_namespace_cache, disable_namespace_cache, is_namespace_cache_enabled,
+    reset_namespace_cache_settings, get_cache_status, CacheNamespace
+)
 
 
 def play_combination(test_name, mr_x_agent, detective_agent, games_per_combo, map_size, num_detectives, max_turns):
@@ -38,10 +43,16 @@ def main():
     from agents import AgentSelector, AgentType
     
     # Configuration
-    test_name = "test_optimization" 
-    games_per_combo = 3
+    test_name = "test_optimization_all_agents" 
+    games_per_combo = 5
     num_detectives = 5
     map_size = "extracted"
+    enable_cache()
+    reset_namespace_cache_settings()
+    disable_namespace_cache(CacheNamespace.GAME_METHODS)
+    enable_namespace_cache(CacheNamespace.MCTS_NODES)
+    enable_namespace_cache(CacheNamespace.AGENT_DECISIONS)
+        
 
     
     # Get agent types dynamically
@@ -51,12 +62,12 @@ def main():
     print(f"Games per combination: {games_per_combo}")
     print(f"Test directory: {test_name}")
     # play_combination(test_name, "mcts", "mcts", games_per_combo, map_size, num_detectives, 24)
-    play_combination(test_name, "optimized_mcts", "optimized_mcts", games_per_combo, map_size, num_detectives, 24)
+    # play_combination(test_name, "optimized_mcts", "optimized_mcts", games_per_combo, map_size, num_detectives, 24)
 
     # RUN ALL COMBINATIONS
-    # for mr_x in agent_types:
-    #     for detective in agent_types:
-    #         play_combination(test_name, mr_x, detective, games_per_combo, map_size, num_detectives, 24)
+    for mr_x in agent_types:
+        for detective in agent_types:
+            play_combination(test_name, mr_x, detective, games_per_combo, map_size, num_detectives, 24)
 
 
 

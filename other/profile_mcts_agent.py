@@ -25,8 +25,17 @@ from pathlib import Path
 project_root = Path(__file__).parent
 sys.path.insert(0, str(project_root))
 
-from ScotlandYard.core.game import ScotlandYardGame, Player, TransportType
-from agents.mcts_agent import MCTSMrXAgent, MCTSDetectiveAgent, MCTSMultiDetectiveAgent
+from ScotlandYard.core.game import Player
+# from agents.mcts_agent import MCTSMrXAgent, MCTSMultiDetectiveAgent
+# from agents.mcts_agent import MCTSAgent, MCTSNode
+
+
+from agents.optimized_mcts_agent import OptimizedMCTSAgent as MCTSAgent
+from agents.optimized_mcts_agent import OptimizedMCTSNode as MCTSNode
+from agents.optimized_mcts_agent import OptimizedMCTSMrXAgent as MCTSMrXAgent
+from agents.optimized_mcts_agent import OptimizedMCTSMultiDetectiveAgent as MCTSMultiDetectiveAgent
+
+
 from ScotlandYard.examples.example_games import create_extracted_board_game
 
 class FunctionProfiler:
@@ -144,8 +153,8 @@ game_analyzer = GameStateAnalyzer()
 # Monkey patch MCTS classes to add profiling
 def patch_mcts_for_profiling():
     """Add profiling decorators to MCTS methods."""
-    from agents.optimized_mcts_agent import OptimizedMCTSAgent as MCTSAgent
-    from agents.optimized_mcts_agent import OptimizedMCTSNode as MCTSNode
+
+   
     
     # Patch MCTSNode methods
     original_init = MCTSNode.__init__
@@ -407,7 +416,7 @@ def main():
             
             # Add cProfile analysis for the first scenario
             if scenario['name'] == 'quick_test':
-                session_results['cprofile_analysis'] = run_cprofile_analysis(3)
+                session_results['cprofile_analysis'] = run_cprofile_analysis(10)
             
             # Analyze optimization opportunities
             session_results['optimization_analysis'] = analyze_optimization_opportunities(session_results)
@@ -424,6 +433,7 @@ def main():
             results['profiling_sessions'][scenario['name']] = {'error': str(e)}
     
     # Save results
+    # output_file = "mcts_profiling_results.json"
     output_file = "mcts_profiling_results_2.json"
     with open(output_file, 'w') as f:
         json.dump(results, f, indent=2, default=str)

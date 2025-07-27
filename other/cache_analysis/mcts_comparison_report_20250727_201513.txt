@@ -1,0 +1,50 @@
+MCTS PERFORMANCE COMPARISON REPORT
+==================================================
+
+Analysis Date: 2025-07-27 20:15:13
+
+GAME LENGTH COMPARISON:
+------------------------------
+Baseline MCTS game turns:    45
+Post-cache MCTS game turns:  39
+Turn difference:             -6 (-13.3%)
+
+EXECUTION TIME COMPARISON:
+------------------------------
+Baseline execution time:     129.078s
+Post-cache execution time:   115.728s
+Time difference:             -13.349s (-10.3%)
+
+CACHE UTILIZATION:
+------------------------------
+Cache entries before baseline:  0
+Cache entries after baseline:   100247
+Cache entries before post-test: 92449
+Cache entries after post-test:  95709
+
+CACHE HIT ANALYSIS:
+------------------------------
+
+Baseline Game Cache Activity:
+  Total cache hits during game:   540,858
+  Total cache misses during game: 837,527
+  Game cache hit rate:            39.2%
+
+  Cache entries added by namespace:
+    game_methods        : 100,224 new entries
+    mcts_nodes          : 23 new entries
+    agent_decisions     : 0 new entries
+    training_data       : 0 new entries
+    evaluations         : 0 new entries
+
+Post-cache Game Cache Activity:
+  Total cache hits during game:   590,281
+  Total cache misses during game: 1,098,940
+  Game cache hit rate:            34.9%
+
+  Cache entries added by namespace:
+    game_methods        : 3,269 new entries
+    mcts_nodes          : 0 new entries
+    agent_decisions     : 0 new entries
+    training_data       : 0 new entries
+    evaluations         : 0 new entries

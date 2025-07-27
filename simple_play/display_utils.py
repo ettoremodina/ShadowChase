@@ -422,7 +422,7 @@ def display_game_start_info(display: GameDisplay, play_mode: str, map_size: str)
 
 def display_game_over(game: ScotlandYardGame, display: GameDisplay, turn_count: int, max_turns: int):
     """Display game over information"""
-    display.clear_screen()
+    # display.clear_screen()
     display.print_title("GAME OVER")
     display.print_game_state(game)
     

@@ -21,6 +21,11 @@ class TicketType(Enum):
     UNDERGROUND = "underground"
     BLACK = "black"
     DOUBLE_MOVE = "double_move"
+    
+    def __lt__(self, other):
+        if not isinstance(other, TicketType):
+            return NotImplemented
+        return self.value < other.value
 
 class GameState:
     """Represents the current state of the game"""

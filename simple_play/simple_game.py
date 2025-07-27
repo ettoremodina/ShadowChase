@@ -38,10 +38,6 @@ def main():
     if args.batch:
         print(f"🤖 Batch mode: Playing {args.batch} AI vs AI games")
         
-        # Convert string agent types to AgentType enum
-        mr_x_agent_type = AgentType.RANDOM if args.mr_x_agent == 'random' else AgentType.HEURISTIC
-        detective_agent_type = AgentType.RANDOM if args.detective_agent == 'random' else AgentType.HEURISTIC
-        
         print(f"Mr. X Agent: {args.mr_x_agent}")
         print(f"Detective Agent: {args.detective_agent}")
         
@@ -52,40 +48,41 @@ def main():
             num_detectives=args.detectives,
             verbosity=args.verbosity,  # Use the verbosity from command line args
             max_turns=args.max_turns,
-            mr_x_agent_type=mr_x_agent_type,
-            detective_agent_type=detective_agent_type,
+            mr_x_agent_type=args.mr_x_agent,
+            detective_agent_type=args.detective_agent,
             save_dir=args.save_dir
         )
         return results
     
     # Interactive single game mode
-    try:
-        # Get full game configuration including agent types
-        map_size, play_mode, num_detectives, verbosity, mr_x_agent, detective_agent = get_game_configuration()
-        
-        # Play single interactive game
-        game_id, turn_count, completed = play_single_game(
-            map_size=map_size,
-            play_mode=play_mode,
-            num_detectives=num_detectives,
-            verbosity=verbosity,
-            auto_save=False,
-            max_turns=args.max_turns,
-            mr_x_agent_type=mr_x_agent,
-            detective_agent_type=detective_agent,
-            save_dir=args.save_dir
-        )
-        
-        if completed:
-            print("\nThanks for playing Scotland Yard! 🎮")
-        else:
-            print("\n👋 Game ended early. Thanks for playing!")
+    else:
+        try:
+            # Get full game configuration including agent types
+            map_size, play_mode, num_detectives, verbosity, mr_x_agent, detective_agent = get_game_configuration()
             
-    except KeyboardInterrupt:
-        print("\n\n👋 Game interrupted by user. Goodbye!")
-    except Exception as e:
-        print(f"\n❌ An error occurred: {e}")
-        print("Please check your game setup and try again.")
+            # Play single interactive game
+            game_id, turn_count, completed = play_single_game(
+                map_size=map_size,
+                play_mode=play_mode,
+                num_detectives=num_detectives,
+                verbosity=verbosity,
+                auto_save=False,
+                max_turns=args.max_turns,
+                mr_x_agent_type=mr_x_agent,
+                detective_agent_type=detective_agent,
+                save_dir=args.save_dir
+            )
+            
+            if completed:
+                print("\nThanks for playing Scotland Yard! 🎮")
+            else:
+                print("\n👋 Game ended early. Thanks for playing!")
+                
+        except KeyboardInterrupt:
+            print("\n\n👋 Game interrupted by user. Goodbye!")
+        except Exception as e:
+            print(f"\n❌ An error occurred: {e}")
+            print("Please check your game setup and try again.")
 
 if __name__ == "__main__":
     main()

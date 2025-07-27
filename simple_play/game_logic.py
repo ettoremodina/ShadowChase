@@ -149,7 +149,7 @@ class GameController:
             
             return (dest, transport)
     
-    def make_mr_x_move(self, player: Player = Player.MRX) -> bool:
+    def make_mr_x_move(self) -> bool:
         """Handle Mr. X move"""
         available_moves = self.display.print_available_moves(self.game, Player.MRX)
         if not available_moves:

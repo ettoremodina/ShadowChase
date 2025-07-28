@@ -435,6 +435,7 @@ source,target,transport_type,edge_type
 142,128,taxi,1
 128,172,taxi,1
 163,146,taxi,1
+138,152,taxi,1
 157,115,ferry,4
 115,108,ferry,4
 157,194,ferry,4

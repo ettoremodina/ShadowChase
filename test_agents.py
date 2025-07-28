@@ -57,7 +57,7 @@ def main():
     
     # Get agent types dynamically
     # agent_types = [agent_name[0] for agent_name in AgentSelector.get_agent_choices_for_ui()]
-    agent_types = ["epsilon_greedy_mcts", "optimized_mcts"]
+    agent_types = ["deep_q", "heuristic"]
     print(f"Testing agents: {agent_types}")
     print(f"Games per combination: {games_per_combo}")
     print(f"Test directory: {test_name}")

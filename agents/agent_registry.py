@@ -15,6 +15,14 @@ from .mcts_agent import MCTSMrXAgent, MCTSMultiDetectiveAgent
 from .optimized_mcts_agent import OptimizedMCTSMrXAgent, OptimizedMCTSMultiDetectiveAgent
 from .epsilon_greedy_mcts_agent import EpsilonGreedyMCTSMrXAgent, EpsilonGreedyMCTSMultiDetectiveAgent
 
+# DQN agents (only import if PyTorch is available and avoid circular imports)
+try:
+    import torch
+    DQN_AVAILABLE = True
+except ImportError:
+    DQN_AVAILABLE = False
+
+
 class AgentType(Enum):
     """Available agent types"""
     RANDOM = "random"
@@ -22,9 +30,9 @@ class AgentType(Enum):
     # MCTS = "mcts"
     OPTIMIZED_MCTS = "optimized_mcts"
     EPSILON_GREEDY_MCTS = "epsilon_greedy_mcts"
+    DEEP_Q = "deep_q"
     # Future agent types can be added here
     # MINIMAX = "minimax"
-    # DEEP_Q = "deep_q"
 
 
 class AgentRegistry:
@@ -37,7 +45,7 @@ class AgentRegistry:
             AgentType.HEURISTIC: (HeuristicMrXAgent, "Heuristic Mr. X - Maximizes distance from closest detective"),
             # AgentType.MCTS: (MCTSMrXAgent, "MCTS Mr. X - Uses Monte Carlo Tree Search with random simulations"),
             AgentType.OPTIMIZED_MCTS: (OptimizedMCTSMrXAgent, "Optimized MCTS Mr. X - Fast MCTS with caching and minimal deep copying"),
-            AgentType.EPSILON_GREEDY_MCTS: (EpsilonGreedyMCTSMrXAgent, "Epsilon-Greedy MCTS Mr. X - MCTS with heuristic-guided simulations")
+            AgentType.EPSILON_GREEDY_MCTS: (EpsilonGreedyMCTSMrXAgent, "Epsilon-Greedy MCTS Mr. X - MCTS with heuristic-guided simulations"),
         }
         
         self._multi_detective_agents: Dict[AgentType, Tuple[Type[MultiDetectiveAgent], str]] = {
@@ -45,9 +53,25 @@ class AgentRegistry:
             AgentType.HEURISTIC: (HeuristicMultiDetectiveAgent, "Heuristic Detectives - Minimize distance to Mr. X's last known position"),
             # AgentType.MCTS: (MCTSMultiDetectiveAgent, "MCTS Detectives - Use Monte Carlo Tree Search with random simulations"),
             AgentType.OPTIMIZED_MCTS: (OptimizedMCTSMultiDetectiveAgent, "Optimized MCTS Detectives - Fast MCTS with caching and minimal deep copying"),
-            AgentType.EPSILON_GREEDY_MCTS: (EpsilonGreedyMCTSMultiDetectiveAgent, "Epsilon-Greedy MCTS Detectives - MCTS with heuristic-guided simulations")
+            AgentType.EPSILON_GREEDY_MCTS: (EpsilonGreedyMCTSMultiDetectiveAgent, "Epsilon-Greedy MCTS Detectives - MCTS with heuristic-guided simulations"),
         }
+        
+        # Add DQN agents if available
+        if DQN_AVAILABLE:
+            self._mr_x_agents[AgentType.DEEP_Q] = (self._get_dqn_mr_x_agent_class, "Deep Q-Learning Mr. X - Uses trained neural network for decision making")
+            self._multi_detective_agents[AgentType.DEEP_Q] = (self._get_dqn_multi_detective_agent_class, "Deep Q-Learning Detectives - Use trained neural network for decision making")
     
+    def _get_dqn_mr_x_agent_class(self):
+        """Lazy loading for DQN Mr. X agent class"""
+        from .dqn_agent import DQNMrXAgent
+        return DQNMrXAgent
+    
+    def _get_dqn_multi_detective_agent_class(self):
+        """Lazy loading for DQN Multi-Detective agent class"""
+        from .dqn_agent import DQNMultiDetectiveAgent
+        return DQNMultiDetectiveAgent
+        
+ 
     def get_available_agent_types(self) -> List[AgentType]:
         """Get list of available agent types"""
         return list(self._mr_x_agents.keys())
@@ -65,7 +89,9 @@ class AgentRegistry:
             AgentType.RANDOM: "Random AI",
             AgentType.HEURISTIC: "Heuristic AI",
             # AgentType.MCTS: "MCTS AI",
-            AgentType.OPTIMIZED_MCTS: "Optimized MCTS AI"
+            AgentType.OPTIMIZED_MCTS: "Optimized MCTS AI",
+            AgentType.EPSILON_GREEDY_MCTS: "Epsilon-Greedy MCTS AI",
+            AgentType.DEEP_Q: "Deep Q-Learning AI"
         }
         return display_names.get(agent_type, str(agent_type.value).title())
     
@@ -74,7 +100,13 @@ class AgentRegistry:
         if agent_type not in self._mr_x_agents:
             raise ValueError(f"Unknown Mr. X agent type: {agent_type}")
         
-        agent_class = self._mr_x_agents[agent_type][0]
+        agent_class_or_factory = self._mr_x_agents[agent_type][0]
+        
+        # Handle lazy loading for DQN agents
+        if callable(agent_class_or_factory) and hasattr(agent_class_or_factory, '__name__') and agent_class_or_factory.__name__.startswith('_get_dqn'):
+            agent_class = agent_class_or_factory()
+        else:
+            agent_class = agent_class_or_factory
         
         return agent_class()
     
@@ -83,7 +115,13 @@ class AgentRegistry:
         if agent_type not in self._multi_detective_agents:
             raise ValueError(f"Unknown multi-detective agent type: {agent_type}")
         
-        agent_class = self._multi_detective_agents[agent_type][0]
+        agent_class_or_factory = self._multi_detective_agents[agent_type][0]
+        
+        # Handle lazy loading for DQN agents
+        if callable(agent_class_or_factory) and hasattr(agent_class_or_factory, '__name__') and agent_class_or_factory.__name__.startswith('_get_dqn'):
+            agent_class = agent_class_or_factory()
+        else:
+            agent_class = agent_class_or_factory
     
         return agent_class(num_detectives)
     

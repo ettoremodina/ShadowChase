@@ -61,6 +61,9 @@ class GameVisualizer(BaseVisualizer):
         self.detective_selections = []
         self.selected_nodes = []
         
+        # Board image overlay settings
+        self.show_edges_with_image = False  # Hide edges when board image is shown
+        
         # Mr. X special moves state
         self.use_black_ticket = tk.BooleanVar()
         self.mr_x_selections = []
@@ -182,6 +185,18 @@ class GameVisualizer(BaseVisualizer):
         self.video_export_button = StyledButton(button_frame, "🎬 Export Video", 
                                               command=self.show_video_export_dialog)
         self.video_export_button.pack(fill=tk.X, pady=3)
+        
+        self.toggle_board_button = StyledButton(button_frame, "🖼️ Toggle Board Image", 
+                                              command=self.toggle_board_image_overlay)
+        self.toggle_board_button.pack(fill=tk.X, pady=3)
+        
+        # self.calibrate_button = StyledButton(button_frame, "🎯 Calibrate Board Overlay", 
+        #                                    command=self.open_calibrator)
+        # self.calibrate_button.pack(fill=tk.X, pady=3)
+        
+        # self.refresh_calibration_button = StyledButton(button_frame, "🔄 Refresh Calibration", 
+        #                                              command=self.refresh_calibration)
+        # self.refresh_calibration_button.pack(fill=tk.X, pady=3)
         
         # self.history_button = StyledButton(button_frame, "📈 Game History", 
         #                                  command=self.show_game_history)
@@ -647,6 +662,10 @@ class GameVisualizer(BaseVisualizer):
         """Draw the game graph with parallel edges for multiple transport types"""
         self.ax.clear()
         
+        # Draw board image first (as background)
+        if hasattr(self, 'show_board_image') and self.show_board_image:
+            self.draw_board_image()
+        
         # Update available moves for highlighting
         if not self.setup_mode:
             self.update_available_moves()
@@ -660,13 +679,39 @@ class GameVisualizer(BaseVisualizer):
                     highlighted_by_transport[transport] = []
                 highlighted_by_transport[transport].append((from_pos, to_pos))
         
-        # Use base class method for drawing edges with highlighting
-        self.draw_edges_with_parallel_positioning(alpha=0.3, highlighted_edges=highlighted_by_transport)
+        # Determine whether to show edges based on board image overlay
+        show_edges = not (hasattr(self, 'show_board_image') and self.show_board_image and not self.show_edges_with_image)
         
-        # Draw nodes based on game state
-        node_colors, node_sizes = self._get_game_node_colors_and_sizes()
-        nx.draw_networkx_nodes(self.game.graph, self.pos, ax=self.ax,
-                              node_color=node_colors, node_size=node_sizes)
+        # Use base class method for drawing edges with highlighting
+        self.draw_edges_with_parallel_positioning(
+            alpha=0.3, 
+            highlighted_edges=highlighted_by_transport,
+            show_edges=show_edges
+        )
+        
+        # Draw nodes based on game state - only show active nodes when board image is displayed
+        if hasattr(self, 'show_board_image') and self.show_board_image:
+            active_nodes = self._get_active_nodes()
+            filtered_pos = {node: pos for node, pos in self.pos.items() if node in active_nodes}
+            
+            # Get colors and sizes specifically for active nodes
+            filtered_colors, filtered_sizes = self._get_active_node_colors_and_sizes(active_nodes)
+            
+            if filtered_pos:
+                # Draw nodes with same style as when board is not shown
+                nx.draw_networkx_nodes(self.game.graph.subgraph(active_nodes), filtered_pos, ax=self.ax,
+                                      node_color=filtered_colors, node_size=filtered_sizes)
+                
+                # Draw labels only for active nodes with same style as when board is not shown
+                nx.draw_networkx_labels(self.game.graph.subgraph(active_nodes), filtered_pos, ax=self.ax, 
+                                      font_size=8)
+        else:
+            # Show all nodes when board image is not displayed
+            node_colors, node_sizes = self._get_game_node_colors_and_sizes()
+            nx.draw_networkx_nodes(self.game.graph, self.pos, ax=self.ax,
+                                  node_color=node_colors, node_size=node_sizes)
+            # Draw labels
+            nx.draw_networkx_labels(self.game.graph, self.pos, ax=self.ax, font_size=8)
         
         # Draw heuristic shadows for possible Mr. X positions (only during detective turns)
         self._draw_heuristic_shadows()
@@ -678,19 +723,97 @@ class GameVisualizer(BaseVisualizer):
                 circle = plt.Circle((x, y), 0.04, fill=False, color='black', 
                                   linewidth=2, linestyle='--', alpha=0.8)
                 self.ax.add_patch(circle)
-        
-        # Draw labels
-        nx.draw_networkx_labels(self.game.graph, self.pos, ax=self.ax, font_size=8)
 
         self.ax.set_title("Scotland Yard Game", fontsize=14, fontweight='bold')
 
-        # Use base class method for legend
-        self.draw_transport_legend()
+        # Use base class method for legend - only show when edges are visible
+        if show_edges:
+            self.draw_transport_legend()
         
         self.ax.axis('off')
         self.canvas.draw()
         
         self.update_info()
+        
+    def _get_active_nodes(self):
+        """Get nodes that should be visible when board image is shown"""
+        active_nodes = set()
+        
+        if not self.game.game_state:
+            # During setup, show selected positions
+            active_nodes.update(self.selected_positions)
+        else:
+            # Add detective positions
+            if hasattr(self.game.game_state, 'detective_positions'):
+                active_nodes.update(self.game.game_state.detective_positions)
+            
+            # Add Mr. X position if visible
+            if hasattr(self.game.game_state, 'mr_x_position'):
+                if hasattr(self.game.game_state, 'mr_x_visible') and self.game.game_state.mr_x_visible:
+                    active_nodes.add(self.game.game_state.mr_x_position)
+            
+            # Add possible Mr. X positions during detective turns (heuristic shadows)
+            if (hasattr(self.game.game_state, 'current_turn') and 
+                self.game.game_state.current_turn.value == 'detective' and 
+                hasattr(self, 'heuristics') and self.heuristics):
+                try:
+                    possible_positions = self.heuristics.get_possible_positions()
+                    if possible_positions:
+                        active_nodes.update(possible_positions)
+                except:
+                    pass
+            
+            # Add nodes from current highlighted moves
+            for edge_info in self.highlighted_edges:
+                if len(edge_info) >= 2:
+                    active_nodes.add(edge_info[0])  # from node
+                    active_nodes.add(edge_info[1])  # to node
+            
+            # Add selected nodes
+            active_nodes.update(self.selected_nodes)
+        
+        return active_nodes
+    
+    def toggle_board_image_overlay(self):
+        """Toggle the board image overlay"""
+        if hasattr(self, 'toggle_board_image'):
+            is_shown = self.toggle_board_image()
+            if is_shown:
+                self.toggle_board_button.config(text="🖼️ Hide Board Image")
+            else:
+                self.toggle_board_button.config(text="🖼️ Show Board Image")
+            self.draw_graph()
+        else:
+            messagebox.showinfo("Info", "Board image functionality not available")
+    
+    def open_calibrator(self):
+        """Open the board overlay calibrator"""
+        try:
+            import subprocess
+            import sys
+            
+            # Run the calibrator script
+            subprocess.Popen([sys.executable, "calibrate_board_overlay.py"])
+            messagebox.showinfo("Calibrator", "Board overlay calibrator opened in a new window")
+        except Exception as e:
+            messagebox.showerror("Error", f"Could not open calibrator: {e}")
+    
+    def refresh_calibration(self):
+        """Refresh calibration parameters and redraw"""
+        try:
+            # Reload calibration parameters
+            if hasattr(self, 'load_calibration_parameters'):
+                self.load_calibration_parameters()
+            
+            # Recalculate positions
+            if hasattr(self.game, 'node_positions') and self.game.node_positions:
+                self.calculate_calibrated_positions()
+            
+            # Redraw graph
+            self.draw_graph()
+            messagebox.showinfo("Success", "Calibration refreshed successfully")
+        except Exception as e:
+            messagebox.showerror("Error", f"Could not refresh calibration: {e}")
     
     def _get_game_node_colors_and_sizes(self):
         """Get node colors and sizes based on game state"""
@@ -698,6 +821,53 @@ class GameVisualizer(BaseVisualizer):
         node_sizes = []
         
         for node in self.game.graph.nodes():
+            if self.setup_mode:
+                if node in self.selected_positions:
+                    if len(self.selected_positions) <= self.game.num_detectives:
+                        node_colors.append('blue')
+                    else:
+                        node_colors.append('red')
+                    node_sizes.append(NODE_SIZE)
+                else:
+                    node_colors.append('lightgray')
+                    node_sizes.append(NODE_SIZE)
+            else:
+                if self.game.game_state:
+                    if node in self.active_player_positions:
+                        if node in self.game.game_state.detective_positions:
+                            node_colors.append('cyan')
+                        else:
+                            node_colors.append('orange')
+                        node_sizes.append(NODE_SIZE)
+                    elif node in self.detective_selections:
+                        node_colors.append('purple')
+                        node_sizes.append(NODE_SIZE)
+                    elif node in self.game.game_state.detective_positions:
+                        node_colors.append('blue')
+                        node_sizes.append(NODE_SIZE)
+                    elif node == self.game.game_state.MrX_position:
+                        is_scotland_yard = isinstance(self.game, ScotlandYardGame)
+                        if not is_scotland_yard or self.game.game_state.mr_x_visible:
+                            node_colors.append('red')
+                            node_sizes.append(NODE_SIZE)
+                        else:
+                            node_colors.append('lightgray')
+                            node_sizes.append(NODE_SIZE)
+                    else:
+                        node_colors.append('lightgray')
+                        node_sizes.append(NODE_SIZE)
+                else:
+                    node_colors.append('lightgray')
+                    node_sizes.append(NODE_SIZE)
+        
+        return node_colors, node_sizes
+    
+    def _get_active_node_colors_and_sizes(self, active_nodes):
+        """Get node colors and sizes specifically for active nodes when board image is shown"""
+        node_colors = []
+        node_sizes = []
+        
+        for node in active_nodes:
             if self.setup_mode:
                 if node in self.selected_positions:
                     if len(self.selected_positions) <= self.game.num_detectives:

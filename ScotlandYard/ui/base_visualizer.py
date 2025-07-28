@@ -3,8 +3,10 @@ import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.figure import Figure
 import matplotlib.lines as mlines
+import matplotlib.image as mpimg
 import networkx as nx
 import numpy as np
+import os
 from ..core.game import ScotlandYardGame
 
 
@@ -27,6 +29,11 @@ class BaseVisualizer:
         self.ax = None
         self.canvas = None
         self.pos = None
+        
+        # Board image overlay settings
+        self.show_board_image = True
+        self.board_image = None
+        self.board_image_path = "data/board.png"
     
     def setup_graph_display(self, parent_frame):
         """Setup matplotlib graph display"""
@@ -36,31 +43,90 @@ class BaseVisualizer:
         self.canvas = FigureCanvasTkAgg(self.fig, parent_frame)
         self.canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True)
         
+        # Load board image if available
+        self.load_board_image()
+        
+        # Load calibration parameters
+        self.load_calibration_parameters()
+        
         # Check if game has extracted node positions
         if hasattr(self.game, 'node_positions') and self.game.node_positions:
-            # Use extracted board positions (need to normalize for matplotlib)
-            positions = self.game.node_positions
-            
-            # Normalize positions to fit in standard layout bounds
-            x_coords = [pos[0] for pos in positions.values()]
-            y_coords = [pos[1] for pos in positions.values()]
-            
-            x_min, x_max = min(x_coords), max(x_coords)
-            y_min, y_max = min(y_coords), max(y_coords)
-            
-            # Normalize to roughly [-1, 1] range like spring layout
-            x_range = x_max - x_min
-            y_range = y_max - y_min
-            scale = max(x_range, y_range)
-            
-            self.pos = {}
-            for node, (x, y) in positions.items():
-                normalized_x = 2 * (x - x_min) / scale - 1
-                normalized_y = 2 * (y - y_min) / scale - 1
-                self.pos[node] = (normalized_x, -normalized_y)  # Flip Y to match image coordinates
+            # Use extracted board positions with calibration
+            self.calculate_calibrated_positions()
         else:
             # Calculate graph layout using spring layout
             self.pos = nx.spring_layout(self.game.graph, seed=42, k=1, iterations=50)
+    
+    def load_calibration_parameters(self):
+        """Load calibration parameters from file if available"""
+        self.calibration = {
+            'x_offset': 0.0,
+            'y_offset': 0.0, 
+            'x_scale': 1.0,
+            'y_scale': 1.0,
+            'image_alpha': 0.8
+        }
+        
+        try:
+            import json
+            calibration_file = "data/board_calibration.json"
+            if os.path.exists(calibration_file):
+                with open(calibration_file, 'r') as f:
+                    saved_calibration = json.load(f)
+                    self.calibration.update(saved_calibration)
+                print(f"Loaded calibration parameters: {self.calibration}")
+        except Exception as e:
+            print(f"Could not load calibration parameters: {e}")
+    
+    def calculate_calibrated_positions(self):
+        """Calculate calibrated positions using loaded parameters"""
+        positions = self.game.node_positions
+        
+        # Get coordinate bounds
+        x_coords = [pos[0] for pos in positions.values()]
+        y_coords = [pos[1] for pos in positions.values()]
+        
+        x_min, x_max = min(x_coords), max(x_coords)
+        y_min, y_max = min(y_coords), max(y_coords)
+        
+        # Apply calibration scaling to ranges
+        x_range = (x_max - x_min) * self.calibration['x_scale']
+        y_range = (y_max - y_min) * self.calibration['y_scale']
+        
+        self.pos = {}
+        for node, (x, y) in positions.items():
+            # Normalize to [-1, 1] range with calibration parameters
+            normalized_x = 2 * ((x - x_min) / x_range) - 1 + self.calibration['x_offset']
+            normalized_y = -(2 * ((y - y_min) / y_range) - 1) + self.calibration['y_offset']  # Flip Y and apply offset
+            self.pos[node] = (normalized_x, normalized_y)
+    
+    def load_board_image(self):
+        """Load the board image for overlay"""
+        try:
+            if os.path.exists(self.board_image_path):
+                self.board_image = mpimg.imread(self.board_image_path)
+                print(f"Board image loaded: {self.board_image.shape}")
+            else:
+                print(f"Board image not found at: {self.board_image_path}")
+                self.board_image = None
+                self.show_board_image = False
+        except Exception as e:
+            print(f"Error loading board image: {e}")
+            self.board_image = None
+            self.show_board_image = False
+    
+    def draw_board_image(self):
+        """Draw the board image as background"""
+        if self.show_board_image and self.board_image is not None:
+            # Use calibrated alpha if available
+            alpha = self.calibration.get('image_alpha', 0.8) if hasattr(self, 'calibration') else 0.8
+            # Display the image with the same extent as the normalized coordinates
+            self.ax.imshow(self.board_image, extent=[-1, 1, -1, 1], alpha=alpha, aspect='auto')
+    
+    def toggle_board_image(self):
+        """Toggle board image visibility"""
+        self.show_board_image = not self.show_board_image
+        return self.show_board_image
     
     def calculate_parallel_edge_positions(self, u, v, transport_types, offset_distance=0.02):
         """Calculate parallel positions for multiple edges between two nodes"""
@@ -101,8 +167,12 @@ class BaseVisualizer:
         
         return positions
     
-    def draw_edges_with_parallel_positioning(self, alpha=0.6, highlighted_edges=None):
+    def draw_edges_with_parallel_positioning(self, alpha=0.6, highlighted_edges=None, show_edges=True):
         """Draw edges with parallel positioning for multiple transport types"""
+        # Skip drawing edges if show_edges is False (for board image overlay mode)
+        if not show_edges:
+            return
+            
         # highlighted_edges should be a dict of {transport_type: [(u, v), ...]}
         if highlighted_edges is None:
             highlighted_edges = {}

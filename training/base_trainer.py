@@ -15,9 +15,9 @@ from pathlib import Path
 
 from ScotlandYard.core.game import ScotlandYardGame, Player
 from .utils.evaluation import AgentEvaluator, EvaluationConfig
-from agents.base_agent import Agent
 import pickle
 
+from agents.base_agent import Agent
 @dataclass
 class TrainingResult:
     """Results from a training session."""
@@ -140,84 +140,6 @@ class BaseTrainer(ABC):
             TrainingResult object with training metrics and history
         """
         pass
-    
-    @abstractmethod
-    def get_trained_agent(self, player: Player) -> Agent:
-        """
-        Get a trained agent for the specified player.
-        
-        Args:
-            player: Player type (MrX for Mr. X, detectives for detectives)
-            
-        Returns:
-            Trained agent instance
-            
-        Raises:
-            RuntimeError: If training hasn't been completed
-        """
-        pass
-    
-    def evaluate(self,
-                 num_games: int,
-                 opponent_agent_type: str = "random",
-                 map_size: str = "test",
-                 num_detectives: int = 2,
-                 max_turns_per_game: int = 24) -> EvaluationResult:
-        """
-        Evaluate the trained agent against a baseline opponent.
-        
-        Args:
-            num_games: Number of evaluation games
-            opponent_agent_type: Type of opponent ("random", "heuristic")
-            map_size: Game map size
-            num_detectives: Number of detective agents
-            max_turns_per_game: Maximum turns per game
-            
-        Returns:
-            EvaluationResult with performance metrics
-        """
-        if not self.is_trained:
-            raise RuntimeError("Agent must be trained before evaluation")
-        
-        # Import here to avoid circular dependencies
-        
-        
-        # Determine which player the trained agent plays
-        trained_agent_mr_x = self.get_trained_agent(Player.MRX)
-        trained_agent_det = self.get_trained_agent(Player.DETECTIVES)
-        
-        if trained_agent_mr_x is not None:
-            player_role = "mr_x"
-            trained_agent = trained_agent_mr_x
-        elif trained_agent_det is not None:
-            player_role = "detectives"
-            trained_agent = trained_agent_det
-        else:
-            raise RuntimeError("No trained agent available for either role")
-        
-        # Create evaluator and run evaluation
-        eval_config = EvaluationConfig(
-            num_games=num_games,
-            map_size=map_size,
-            num_detectives=num_detectives,
-            max_turns_per_game=max_turns_per_game,
-            baseline_agents=[opponent_agent_type]
-        )
-        
-        evaluator = AgentEvaluator(eval_config)
-        eval_results = evaluator.evaluate_agent(trained_agent, player_role, opponent_agent_type)
-        
-        # Convert to EvaluationResult format
-        return EvaluationResult(
-            agent_name=f"{self.algorithm_name}_agent",
-            opponent_agent=opponent_agent_type,
-            total_games=eval_results['total_games'],
-            games_won=eval_results['agent_wins'],
-            games_lost=eval_results['baseline_wins'],
-            win_rate=eval_results['agent_win_rate'],
-            avg_game_length=eval_results['avg_game_length'],
-            detailed_results=[r.__dict__ for r in eval_results['results']]
-        )
     
     def save_model(self, model_name: Optional[str] = None) -> str:
         """

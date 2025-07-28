@@ -8,11 +8,11 @@ import argparse
 from typing import Tuple, Optional
 from ScotlandYard.core.game import Player, ScotlandYardGame
 from ScotlandYard.services.game_service import GameService
-from agents.agent_registry import create_agents_from_strings
 from simple_play.display_utils import GameDisplay, VerbosityLevel, display_game_start_info, display_game_over
 from simple_play.game_logic import GameController, GameSetup
-from agents import AgentType
 from tqdm import tqdm
+
+from agents import AgentType
 
 
 def parse_arguments():

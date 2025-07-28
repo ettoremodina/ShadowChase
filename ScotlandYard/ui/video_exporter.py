@@ -96,7 +96,7 @@ class GameVideoExporter(BaseVisualizer):
         else:
             # Try to load board positions from CSV if available
             try:
-                from board_loader import load_board_graph_from_csv
+                from ScotlandYard.services.board_loader import load_board_graph_from_csv
                 _, node_positions = load_board_graph_from_csv()
                 
                 # Check if this game uses the same nodes as the extracted board

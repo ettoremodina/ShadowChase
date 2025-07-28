@@ -6,12 +6,13 @@ Runs all agent combinations and generates analysis.
 
 import subprocess
 import os
-from cache_system import (
+from ScotlandYard.services.cache_system import (
     enable_cache, disable_cache, is_cache_enabled, get_global_cache,
     enable_namespace_cache, disable_namespace_cache, is_namespace_cache_enabled,
     reset_namespace_cache_settings, get_cache_status, CacheNamespace
 )
 
+from agents import AgentSelector
 
 def play_combination(test_name, mr_x_agent, detective_agent, games_per_combo, map_size, num_detectives, max_turns):
     """Helper function to run a single agent combination"""
@@ -37,14 +38,22 @@ def play_combination(test_name, mr_x_agent, detective_agent, games_per_combo, ma
     except subprocess.CalledProcessError:
         print(f"✗ Failed: {combo}")
 
+def analyze_games(test_name):
+    """Analyze the games played in the test"""
+    print(f"\nAnalyzing games in {test_name}...")
+    try:
+        subprocess.run(["python", "services/analyze_games.py", test_name], check=True)
+        print(f"✓ Analysis complete: {test_name}/analysis_graphs/")
+    except subprocess.CalledProcessError:
+        print("✗ Analysis failed")
+
 
 def main():
     # Import AgentSelector inside the function to avoid circular imports
-    from agents import AgentSelector, AgentType
     
     # Configuration
-    test_name = "test_epsilon_greedy_mcts" 
-    games_per_combo = 10
+    test_name = "fast_models" 
+    games_per_combo = 50
     num_detectives = 5
     map_size = "extracted"
     enable_cache()
@@ -57,12 +66,13 @@ def main():
     
     # Get agent types dynamically
     # agent_types = [agent_name[0] for agent_name in AgentSelector.get_agent_choices_for_ui()]
-    agent_types = ["deep_q", "heuristic"]
+    agent_types = ["deep_q", "random", "heuristic"]
     print(f"Testing agents: {agent_types}")
     print(f"Games per combination: {games_per_combo}")
     print(f"Test directory: {test_name}")
 
-    # play_combination(test_name, "epsilon_greedy_mcts", "epsilon_greedy_mcts", games_per_combo, map_size, num_detectives, 24)
+    # play_combination(test_name, "deep_q", "heuristic", games_per_combo, map_size, num_detectives, 24)
+
 
     # RUN ALL COMBINATIONS
     for mr_x in agent_types:
@@ -71,14 +81,7 @@ def main():
 
 
 
-
-    # Generate analysis
-    print(f"\nGenerating analysis...")
-    try:
-        subprocess.run(["python", "analyze_games.py", test_name], check=True)
-        print(f"✓ Analysis complete: {test_name}/analysis_graphs/")
-    except subprocess.CalledProcessError:
-        print("✗ Analysis failed")
+    # analyze_games(test_name)
 
 if __name__ == "__main__":
     main()

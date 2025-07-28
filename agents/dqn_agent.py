@@ -11,53 +11,79 @@ from pathlib import Path
 from typing import Optional, Tuple, List, Set
 import numpy as np
 
-try:
-    import torch
-    TORCH_AVAILABLE = True
-except ImportError:
-    TORCH_AVAILABLE = False
+import torch
+
 
 from ScotlandYard.core.game import ScotlandYardGame, Player, TransportType
-from agents.base_agent import MrXAgent, MultiDetectiveAgent, DetectiveAgent
 from training.feature_extractor import GameFeatureExtractor, FeatureConfig
 from training.deep_q.dqn_model import create_dqn_model
-from training.deep_q.dqn_model import DQNModel
 
+from agents.base_agent import MrXAgent, MultiDetectiveAgent, DetectiveAgent
 
 class DQNMrXAgent(MrXAgent):
     """
-    DQN-based Mr. X agent that loads a trained model.
+    DQN-based Mr. X agent that can work in training or inference mode.
     """
     
-    def __init__(self, model_path: Optional[str] = None, epsilon: float = 0.05):
+    def __init__(self, model_path: Optional[str] = None, trainer=None, epsilon: float = 0.05):
         """
         Initialize DQN Mr. X agent.
         
         Args:
-            model_path: Path to trained model file (.pth)
+            model_path: Path to trained model file (.pth) - for inference mode
+            trainer: DQNTrainer instance - for training mode
             epsilon: Exploration rate for epsilon-greedy action selection
         """
         super().__init__()
-        
-        if not TORCH_AVAILABLE:
-            raise ImportError("PyTorch is required for DQN agents. Please install PyTorch.")
-        
+
         self.epsilon = epsilon
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        # self.device = "cpu"
         
         # Model and feature extractor will be loaded
         self.model = None
         self.feature_extractor = None
+        self.trainer = trainer
+        self.training_mode = trainer is not None
         
-        # Find and load model
-        if model_path is None:
-            model_path = self._find_latest_model("mr_x")
-        
-        if model_path and os.path.exists(model_path):
-            self.load_model(model_path)
+        if self.training_mode:
+            # Training mode: use trainer's components
+            self.model = trainer.main_network
+            self.feature_extractor = trainer.feature_extractor
+            # print("🎯 DQN Mr. X agent initialized in training mode")
         else:
-            print(f"Warning: No trained DQN model found at {model_path}")
-            print("Agent will use random moves until a model is loaded.")
+            # Inference mode: load from saved model
+            if model_path is None:
+                model_path = self._find_latest_model("mr_x")
+            
+            if model_path and os.path.exists(model_path):
+                self.load_model(model_path)
+            else:
+                print(f"Warning: No trained DQN model found at {model_path}")
+                print("Agent will use random moves until a model is loaded.")
+    
+
+    def finalize_episode(self, game: ScotlandYardGame, final_reward: float):
+        """Store the final experience for the episode with the actual reward."""
+        if self.training_mode and hasattr(self, '_previous_state'):
+            # Extract current final state features
+            final_state_features = self.feature_extractor.extract_features(game, self.player)
+            
+            # Store final experience with the actual episode reward
+            self.trainer.replay_buffer.push(
+                state=self._previous_state,
+                action=self._previous_action,
+                reward=final_reward,
+                next_state=final_state_features,
+                done=True,
+                valid_moves=self._previous_valid_moves,
+                next_valid_moves=set()  # No valid moves in terminal state
+            )
+            
+            # Clear previous state
+            delattr(self, '_previous_state')
+            delattr(self, '_previous_action')
+            delattr(self, '_previous_valid_moves')
     
     def _find_latest_model(self, player_role: str) -> Optional[str]:
         """Find the latest trained model for the given player role."""
@@ -125,18 +151,55 @@ class DQNMrXAgent(MrXAgent):
             return self._random_move(game)
         
         try:
-            # Extract features
-            features = self.feature_extractor.extract_features(game, self.player)
-            features_tensor = torch.FloatTensor(features).unsqueeze(0).to(self.device)
+            # Extract features from current state
+            current_state_features = self.feature_extractor.extract_features(game, self.player)
+            features_tensor = torch.FloatTensor(current_state_features).unsqueeze(0).to(self.device)
             
             # Get valid moves
             valid_moves = game.get_valid_moves(Player.MRX)
             if not valid_moves:
                 return None
             
+            # Store previous state if we have one (for experience collection)
+            if self.training_mode and hasattr(self, '_previous_state'):
+                # We have a previous state, so we can create an experience
+                prev_state = self._previous_state
+                prev_action = self._previous_action
+                prev_valid_moves = self._previous_valid_moves
+                
+                # Calculate reward (simple step reward - the final reward will be assigned at episode end)
+                step_reward = 0.0
+                
+                # Check if game ended
+                done = game.is_game_over()
+                
+                # Get current valid moves for next_valid_moves
+                current_valid_moves = valid_moves
+                
+                # Store experience in replay buffer
+                self.trainer.replay_buffer.push(
+                    state=prev_state,
+                    action=prev_action,
+                    reward=step_reward,
+                    next_state=current_state_features,
+                    done=done,
+                    valid_moves=prev_valid_moves,
+                    next_valid_moves=current_valid_moves
+                )
+
+            
             # Select action using epsilon-greedy
+            # Use trainer's epsilon if in training mode, otherwise use agent's epsilon
+            current_epsilon = self.trainer.current_epsilon if self.training_mode else self.epsilon
+            
             with torch.no_grad():
-                dest, transport = self.model.select_action(features_tensor, valid_moves, epsilon=0.0)
+                dest, transport = self.model.select_action(features_tensor, valid_moves, epsilon=current_epsilon)
+            
+            # Store current state and action for next experience
+            if self.training_mode:
+                self._previous_state = current_state_features
+                self._previous_action = (dest, transport)
+                self._previous_valid_moves = valid_moves
             
             # Decide on double move (simple heuristic)
             use_double_move = False
@@ -156,7 +219,8 @@ class DQNMrXAgent(MrXAgent):
         if not valid_moves:
             return None
         
-        dest, transport = np.random.choice(list(valid_moves))
+        chosen_move = np.random.choice(len(valid_moves))
+        dest, transport = list(valid_moves)[chosen_move]
         use_double_move = False
         
         if hasattr(game, 'can_use_double_move') and game.can_use_double_move():
@@ -170,35 +234,47 @@ class DQNDetectiveAgent(DetectiveAgent):
     DQN-based detective agent for a single detective.
     """
     
-    def __init__(self, detective_id: int, model_path: Optional[str] = None, epsilon: float = 0.05):
+    def __init__(self, detective_id: int, model_path: Optional[str] = None, trainer=None, epsilon: float = 0.05):
         """
         Initialize DQN detective agent.
         
         Args:
             detective_id: ID of this detective (0, 1, 2, ...)
-            model_path: Path to trained model file
+            model_path: Path to trained model file - for inference mode
+            trainer: DQNTrainer instance - for training mode
             epsilon: Exploration rate
         """
         super().__init__(detective_id)
         
-        if not TORCH_AVAILABLE:
-            raise ImportError("PyTorch is required for DQN agents. Please install PyTorch.")
-        
         self.epsilon = epsilon
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        # self.device = "cpu"
         
         # Model and feature extractor
         self.model = None
         self.feature_extractor = None
+        self.trainer = trainer
+        self.training_mode = trainer is not None
         
-        # Find and load model
-        if model_path is None:
-            model_path = self._find_latest_model("detectives")
-        
-        if model_path and os.path.exists(model_path):
-            self.load_model(model_path)
+        if self.training_mode:
+            # Training mode: use trainer's components
+            self.model = trainer.main_network
+            self.feature_extractor = trainer.feature_extractor
+            print(f"🎯 DQN Detective agent {detective_id} initialized in training mode")
         else:
-            print(f"Warning: No trained DQN detective model found at {model_path}")
+            # Inference mode: load from saved model
+            if model_path is None:
+                model_path = self._find_latest_model("detectives")
+            
+            if model_path and os.path.exists(model_path):
+                self.load_model(model_path)
+            else:
+                print(f"Warning: No trained DQN detective model found at {model_path}")
+    
+    def store_experience(self, state, action, reward, next_state, done, valid_moves, next_valid_moves):
+        """Store experience in trainer's replay buffer (only in training mode)."""
+        if self.training_mode and self.trainer:
+            self.trainer.replay_buffer.push(state, action, reward, next_state, done, valid_moves, next_valid_moves)
     
     def _find_latest_model(self, player_role: str) -> Optional[str]:
         """Find the latest trained model for detectives."""
@@ -259,8 +335,11 @@ class DQNDetectiveAgent(DetectiveAgent):
             features_tensor = torch.FloatTensor(features).unsqueeze(0).to(self.device)
             
             # Select action
+            # Use trainer's epsilon if in training mode, otherwise use agent's epsilon
+            current_epsilon = self.trainer.current_epsilon if self.training_mode else self.epsilon
+            
             with torch.no_grad():
-                dest, transport = self.model.select_action(features_tensor, valid_moves, epsilon=0.0)
+                dest, transport = self.model.select_action(features_tensor, valid_moves, epsilon=current_epsilon)
             
             return (dest, transport)
             
@@ -274,7 +353,8 @@ class DQNDetectiveAgent(DetectiveAgent):
         valid_moves = game.get_valid_moves(Player.DETECTIVES, position)
         if not valid_moves:
             return None
-        return np.random.choice(list(valid_moves))
+        chosen_move = np.random.choice(len(valid_moves))
+        return list(valid_moves)[chosen_move]
 
 
 class DQNMultiDetectiveAgent(MultiDetectiveAgent):
@@ -282,20 +362,21 @@ class DQNMultiDetectiveAgent(MultiDetectiveAgent):
     DQN-based agent that controls multiple detectives.
     """
     
-    def __init__(self, num_detectives: int = 2, model_path: Optional[str] = None, epsilon: float = 0.05):
+    def __init__(self, num_detectives: int = 2, model_path: Optional[str] = None, trainer=None, epsilon: float = 0.05):
         """
         Initialize DQN multi-detective agent.
         
         Args:
             num_detectives: Number of detectives to control
-            model_path: Path to trained model
+            model_path: Path to trained model - for inference mode
+            trainer: DQNTrainer instance - for training mode
             epsilon: Exploration rate
         """
         super().__init__(num_detectives)
         
         # Create individual detective agents
         self.detective_agents = [
-            DQNDetectiveAgent(i, model_path, epsilon) 
+            DQNDetectiveAgent(i, model_path, trainer, epsilon) 
             for i in range(num_detectives)
         ]
     
@@ -323,11 +404,11 @@ class DQNMultiDetectiveAgent(MultiDetectiveAgent):
 
 
 # Factory functions for agent registry
-def create_dqn_mr_x_agent(model_path: Optional[str] = None) -> DQNMrXAgent:
+def create_dqn_mr_x_agent(model_path: Optional[str] = None, trainer=None) -> DQNMrXAgent:
     """Create a DQN Mr. X agent."""
-    return DQNMrXAgent(model_path)
+    return DQNMrXAgent(model_path, trainer)
 
 
-def create_dqn_multi_detective_agent(num_detectives: int, model_path: Optional[str] = None) -> DQNMultiDetectiveAgent:
+def create_dqn_multi_detective_agent(num_detectives: int, model_path: Optional[str] = None, trainer=None) -> DQNMultiDetectiveAgent:
     """Create a DQN multi-detective agent."""
-    return DQNMultiDetectiveAgent(num_detectives, model_path)
+    return DQNMultiDetectiveAgent(num_detectives, model_path, trainer)

@@ -225,7 +225,7 @@ class AgentEvaluator:
             import sys
             import os
             sys.path.append(os.getcwd())  # Ensure we can import from root
-            from analyze_games import GameAnalyzer
+            from ScotlandYard.services.analyze_games import GameAnalyzer
             
             # Create analyzer and generate full analysis
             analyzer = GameAnalyzer(str(data_dir))

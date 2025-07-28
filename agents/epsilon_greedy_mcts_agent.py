@@ -34,7 +34,7 @@ from ScotlandYard.core.game import ScotlandYardGame, Player, TransportType
 from .base_agent import MrXAgent, MultiDetectiveAgent, DetectiveAgent
 from .mcts_agent import load_mcts_config
 from .heuristics import GameHeuristics
-from cache_system import get_global_cache, CacheNamespace
+from ScotlandYard.services.cache_system import get_global_cache, CacheNamespace
 
 
 class GameStateHash(NamedTuple):

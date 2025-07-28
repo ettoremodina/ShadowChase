@@ -9,6 +9,8 @@ from typing import Dict, List, Optional, Tuple
 from dataclasses import dataclass
 
 from ScotlandYard.core.game import ScotlandYardGame, Player, TransportType, TicketType
+
+
 from agents.heuristics import GameHeuristics
 
 
@@ -139,22 +141,22 @@ class GameFeatureExtractor:
         
         # Current turn normalized
         max_turns = 24  # Standard Scotland Yard game length
-        current_turn = game.game_state.turn_count if hasattr(game.game_state, 'turn_count') else 0
+        current_turn = game.game_state.MrX_turn_count if hasattr(game.game_state, 'MrX_turn_count') else 0
         features.append(min(current_turn / max_turns, 1.0))
         
-        # Mr. X visibility
-        features.append(1.0 if getattr(game.game_state, 'mr_x_visible', False) else 0.0)
+        # # Mr. X visibility
+        # features.append(1.0 if getattr(game.game_state, 'mr_x_visible', False) else 0.0)
         
-        # Game phase (early/mid/late game)
-        turn_ratio = current_turn / max_turns
-        if turn_ratio < 0.33:
-            features.extend([1.0, 0.0, 0.0])  # Early game
-        elif turn_ratio < 0.67:
-            features.extend([0.0, 1.0, 0.0])  # Mid game
-        else:
-            features.extend([0.0, 0.0, 1.0])  # Late game
+        # # Game phase (early/mid/late game)
+        # turn_ratio = current_turn / max_turns
+        # if turn_ratio < 0.33:
+        #     features.extend([1.0, 0.0, 0.0])  # Early game
+        # elif turn_ratio < 0.67:
+        #     features.extend([0.0, 1.0, 0.0])  # Mid game
+        # else:
+        #     features.extend([0.0, 0.0, 1.0])  # Late game
         
-        return features
+        return features, len(features)
     
     def _extract_board_state_features(self, game: ScotlandYardGame, player: Player) -> List[float]:
         """Extract features representing board positions."""
@@ -176,7 +178,7 @@ class GameFeatureExtractor:
             if 0 <= detective_pos < self.config.max_nodes:
                 features[detective_pos] = -1.0  # Negative for detectives
         
-        return features
+        return features, len(features)
     
     def _extract_distance_features(self, game: ScotlandYardGame, player: Player) -> List[float]:
         """Extract distance-based features."""
@@ -192,7 +194,7 @@ class GameFeatureExtractor:
             if i < len(detective_positions):
                 det_pos = detective_positions[i]
                 try:
-                    dist = self.heuristics.get_shortest_distance(mr_x_pos, det_pos)
+                    dist = self.heuristics.calculate_shortest_distance(mr_x_pos, det_pos)
                     distances.append(min(dist / self.config.distance_normalization, 1.0))
                 except:
                     distances.append(0.5)  # Default if distance calculation fails
@@ -202,15 +204,15 @@ class GameFeatureExtractor:
         features.extend(distances)
         
         # Summary statistics
-        if distances and any(d > 0 for d in distances):
-            active_distances = [d for d in distances if d > 0]
-            features.append(min(active_distances))  # Min distance
-            features.append(max(active_distances))  # Max distance  
-            features.append(sum(active_distances) / len(active_distances))  # Avg distance
-        else:
-            features.extend([0.0, 0.0, 0.0])
+        # if distances and any(d > 0 for d in distances):
+        #     active_distances = [d for d in distances if d > 0]
+        #     features.append(min(active_distances))  # Min distance
+        #     features.append(max(active_distances))  # Max distance  
+        #     features.append(sum(active_distances) / len(active_distances))  # Avg distance
+        # else:
+        #     features.extend([0.0, 0.0, 0.0])
         
-        return features
+        return features, len(features)
     
     def _extract_ticket_features(self, game: ScotlandYardGame, player: Player) -> List[float]:
         """Extract ticket-based features."""
@@ -235,7 +237,7 @@ class GameFeatureExtractor:
             else:
                 features.extend([0.0, 0.0, 0.0])
         
-        return features
+        return features, len(features)  
     
     def _extract_connectivity_features(self, game: ScotlandYardGame, player: Player) -> List[float]:
         """Extract transport connectivity features."""
@@ -314,7 +316,7 @@ class GameFeatureExtractor:
             # Fallback if connectivity calculation fails
             features = [0.0] * 9
         
-        return features
+        return features, len(features)
     
     def _extract_possible_positions_features(self, game: ScotlandYardGame, player: Player) -> List[float]:
         """Extract features related to possible Mr. X positions."""
@@ -365,7 +367,7 @@ class GameFeatureExtractor:
             # Fallback values
             features = [0.5, 0.5, 0.5]
         
-        return features
+        return features, len(features)
     
     def get_feature_names(self) -> List[str]:
         """Get names of all features for debugging."""

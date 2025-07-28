@@ -149,7 +149,7 @@ def create_simple_test_scotland_yard_game(num_detectives: int = 2,
 def create_extracted_board_game(num_detectives: int = 3) -> ScotlandYardGame:
     """Create Scotland Yard game using extracted board data from board_progress.json"""
     try:
-        from board_loader import create_extracted_board_game as _create_game
+        from ScotlandYard.services.board_loader import create_extracted_board_game as _create_game
         return _create_game(num_detectives)
     except ImportError:
         print("Warning: board_loader not available, falling back to CSV data")

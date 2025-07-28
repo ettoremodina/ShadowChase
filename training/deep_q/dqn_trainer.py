@@ -11,25 +11,26 @@ import numpy as np
 from pathlib import Path
 from typing import Dict, List, Optional, Any, Tuple
 
-try:
-    import torch
-    import torch.nn as nn
-    import torch.optim as optim
-    import torch.nn.functional as F
-    TORCH_AVAILABLE = True
-except ImportError:
-    TORCH_AVAILABLE = False
-    print("Warning: PyTorch not available. DQN training will not work.")
 
-from ScotlandYard.core.game import ScotlandYardGame, Player, TransportType
+import torch
+import torch.nn as nn
+import torch.optim as optim
+import torch.nn.functional as F
+
+from ScotlandYard.core.game import ScotlandYardGame
 from training.base_trainer import BaseTrainer, TrainingResult
 from training.feature_extractor import GameFeatureExtractor, FeatureConfig
 from training.utils.training_environment import TrainingEnvironment
-from agents.base_agent import Agent, MrXAgent, DetectiveAgent
 
-if TORCH_AVAILABLE:
-    from .dqn_model import DQNModel, create_dqn_model
-    from .replay_buffer import ReplayBuffer, create_replay_buffer
+
+from .dqn_model import create_dqn_model
+from .replay_buffer import create_replay_buffer
+
+from simple_play.game_utils import create_and_initialize_game
+
+
+from agents import AgentType, get_agent_registry
+from agents.dqn_agent import DQNMrXAgent, DQNMultiDetectiveAgent
 
 
 class DQNTrainer(BaseTrainer):
@@ -52,9 +53,7 @@ class DQNTrainer(BaseTrainer):
             save_dir: Directory to save training results
         """
         super().__init__("dqn", save_dir)
-        
-        if not TORCH_AVAILABLE:
-            raise ImportError("PyTorch is required for DQN training. Please install PyTorch.")
+    
         
         self.player_role = player_role
         self.config_path = config_path
@@ -72,10 +71,11 @@ class DQNTrainer(BaseTrainer):
         self.epsilon_end = training_params.get('epsilon_end', 0.01)
         self.epsilon_decay = training_params.get('epsilon_decay', 0.995)
         self.target_update_frequency = training_params.get('target_update_frequency', 100)
-        self.min_replay_size = training_params.get('min_replay_buffer_size', 1000)
+        self.min_replay_size = training_params.get('min_replay_buffer_size', 100)
         
         # Set device
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        # self.device = "cpu"  # Force CPU for now
         print(f"Using device: {self.device}")
         
         # Initialize feature extractor
@@ -147,15 +147,12 @@ class DQNTrainer(BaseTrainer):
         )
         
         # Create a sample game to initialize networks
-        from simple_play.game_utils import create_and_initialize_game
         sample_game = create_and_initialize_game(map_size, num_detectives)
-        
         # Initialize networks if not already done
         if self.main_network is None:
             self._initialize_networks(sample_game)
         
         # Create baseline opponent
-        from agents import AgentType, get_agent_registry
         registry = get_agent_registry()
         
         if self.player_role == "mr_x":
@@ -169,6 +166,10 @@ class DQNTrainer(BaseTrainer):
         
         # Training loop
         for episode in range(num_episodes):
+            # if we are after X% of episodes the opponent becomes the heuristic agent
+            if episode >= int(num_episodes * 0.9):  
+                opponent_agent = registry.create_multi_detective_agent(AgentType.HEURISTIC, num_detectives) if self.player_role == "mr_x" else registry.create_mr_x_agent(AgentType.HEURISTIC)
+
             episode_reward = self._train_episode(env, opponent_agent)
             self.episode_rewards.append(episode_reward)
             
@@ -229,42 +230,38 @@ class DQNTrainer(BaseTrainer):
         
         # Create our training agent
         if self.player_role == "mr_x":
-            our_agent = DQNAgent(self, Player.MRX)
-            result, experiences = env.run_episode(our_agent, opponent_agent, collect_experience=True)
+            our_agent = DQNMrXAgent(trainer=self)
+            # Run episode without collecting environment experiences
+            result, _ = env.run_episode(our_agent, opponent_agent, collect_experience=False)
         else:
-            our_agent = DQNAgent(self, Player.DETECTIVES)
-            result, experiences = env.run_episode(opponent_agent, our_agent, collect_experience=True)
+            # Get number of detectives from environment
+            num_detectives = env.num_detectives
+            our_agent = DQNMultiDetectiveAgent(num_detectives=num_detectives, trainer=self)
+            result, _ = env.run_episode(opponent_agent, our_agent, collect_experience=False)
         
-        # Process experiences and add to replay buffer
-        episode_reward = self._process_episode_experiences(result, experiences)
+        # Calculate episode reward based on game outcome
+        episode_reward = self._calculate_episode_reward(result)
+        
+
         
         # Train on batch if we have enough experiences
         if len(self.replay_buffer) >= self.min_replay_size:
             loss = self._train_step()
             if loss is not None:
                 self.losses.append(loss)
+    
         
         return episode_reward
     
-    def _process_episode_experiences(self, result, experiences) -> float:
-        """Process episode experiences and add to replay buffer."""
-        episode_reward = 0.0
-        
+    def _calculate_episode_reward(self, result) -> float:
+        """Calculate episode reward based on game outcome."""
         # Simple reward shaping based on game outcome
         if result.winner == self.player_role.replace("_", ""):
-            final_reward = 10.0  # Win
+            return 10.0  # Win
         elif result.winner == "timeout":
-            final_reward = 0.0   # Neutral
+            return 0.0   # Neutral
         else:
-            final_reward = -10.0  # Loss
-        
-        episode_reward = final_reward
-        
-        # For now, just assign the final reward to the last step
-        # In a more sophisticated implementation, we'd do reward shaping
-        # throughout the episode
-        
-        return episode_reward
+            return -10.0  # Loss
     
     def _train_step(self) -> Optional[float]:
         """Perform one training step using batch from replay buffer."""
@@ -274,27 +271,37 @@ class DQNTrainer(BaseTrainer):
         # Sample batch
         experiences = self.replay_buffer.sample(self.batch_size)
         
-        # Convert to tensors
-        states = torch.FloatTensor([exp.state for exp in experiences]).to(self.device)
-        actions = [exp.action for exp in experiences]
-        rewards = torch.FloatTensor([exp.reward for exp in experiences]).to(self.device)
-        next_states = torch.FloatTensor([exp.next_state for exp in experiences]).to(self.device)
-        dones = torch.BoolTensor([exp.done for exp in experiences]).to(self.device)
-        valid_moves = [exp.valid_moves for exp in experiences]
+        # Convert to tensors (efficiently)
+        states = torch.FloatTensor(np.array([exp.state for exp in experiences])).to(self.device)
+        actions = [exp.action for exp in experiences]  # (dest, transport) pairs
+        rewards = torch.FloatTensor(np.array([exp.reward for exp in experiences])).to(self.device)
+        next_states = torch.FloatTensor(np.array([exp.next_state for exp in experiences])).to(self.device)
+        dones = torch.BoolTensor(np.array([exp.done for exp in experiences])).to(self.device)
         next_valid_moves = [exp.next_valid_moves for exp in experiences]
         
-        # Get current Q-values
-        current_q_values = self.main_network.get_masked_q_values(states, valid_moves)
-        action_indices = torch.LongTensor([
-            self.main_network.get_action_index(dest, transport) 
-            for dest, transport in actions
-        ]).to(self.device)
-        current_q_values = current_q_values.gather(1, action_indices.unsqueeze(1)).squeeze(1)
+        # Get current Q-values using efficient batching
+        current_q_values = self.main_network.query_batch_actions(states, actions)
         
-        # Get next Q-values
+        # Get next Q-values (max over valid actions for each next state) - using batching
         with torch.no_grad():
-            next_q_values = self.target_network.get_masked_q_values(next_states, next_valid_moves)
-            max_next_q_values = next_q_values.max(1)[0]
+            # Filter out terminal states for batch processing
+            non_terminal_indices = [i for i, done in enumerate(dones) if not done and next_valid_moves[i]]
+            
+            if non_terminal_indices:
+                # Process non-terminal states in batch
+                non_terminal_states = next_states[non_terminal_indices]
+                non_terminal_valid_moves = [next_valid_moves[i] for i in non_terminal_indices]
+                
+                batch_max_q_values = self.target_network.query_batch_max_q_values(
+                    non_terminal_states, non_terminal_valid_moves
+                )
+                
+                # Create full tensor with zeros for terminal states
+                max_next_q_values = torch.zeros(len(experiences), device=self.device)
+                max_next_q_values[non_terminal_indices] = batch_max_q_values
+            else:
+                # All states are terminal or have no valid moves
+                max_next_q_values = torch.zeros(len(experiences), device=self.device)
             target_q_values = rewards + (self.gamma * max_next_q_values * ~dones)
         
         # Compute loss
@@ -311,42 +318,6 @@ class DQNTrainer(BaseTrainer):
         
         self.step_count += 1
         return loss.item()
-    
-    def get_trained_agent(self, player: Player) -> Agent:
-        """Get the trained agent for the specified player."""
-        if self.main_network is None:
-            raise RuntimeError("No trained model available. Train first.")
-        
-        if self.player_role == "mr_x" and player == Player.MRX:
-            return DQNMrXAgent(self)
-        elif self.player_role == "detectives" and player == Player.DETECTIVES:
-            return DQNMultiDetectiveAgent(self)
-        else:
-            return None
-    
-    def find_latest_model(self, player_role: Optional[str] = None) -> Optional[str]:
-        """
-        Find the most recent trained model for the given player role.
-        
-        Args:
-            player_role: Player role ("mr_x" or "detectives"). If None, uses self.player_role.
-            
-        Returns:
-            Path to the most recent model file, or None if no models found.
-        """
-        if player_role is None:
-            player_role = self.player_role
-        
-        # Look for DQN models with the naming pattern: dqn_{player_role}_{timestamp}.pth
-        pattern = f"dqn_{player_role}_*.pth"
-        models = list(self.save_dir.glob(pattern))
-        
-        if models:
-            # Return the most recently modified
-            latest_model = max(models, key=lambda p: p.stat().st_mtime)
-            return str(latest_model)
-        
-        return None
     
     def save_model(self, model_name: Optional[str] = None) -> str:
         """Save the trained model."""
@@ -372,85 +343,3 @@ class DQNTrainer(BaseTrainer):
         print(f"Model saved to: {model_path}")
         return str(model_path)
 
-
-class DQNAgent(Agent):
-    """Base DQN agent that uses trained model for action selection."""
-    
-    def __init__(self, trainer: DQNTrainer, player: Player):
-        super().__init__(player)
-        self.trainer = trainer
-        self.epsilon = 0.05  # Small epsilon for inference
-    
-    def choose_move(self, game: ScotlandYardGame) -> Optional[Tuple]:
-        """Choose move using trained DQN model."""
-        # Extract features
-        features = self.trainer.feature_extractor.extract_features(game, self.player)
-        features_tensor = torch.FloatTensor(features).unsqueeze(0).to(self.trainer.device)
-        
-        # Get valid moves
-        if self.player == Player.MRX:
-            valid_moves = game.get_valid_moves(Player.MRX)
-            if not valid_moves:
-                return None
-            
-            # Select action
-            dest, transport = self.trainer.main_network.select_action(
-                features_tensor, valid_moves, self.epsilon
-            )
-            
-            # Check if double move is possible (simplified)
-            can_double = game.can_use_double_move() if hasattr(game, 'can_use_double_move') else False
-            use_double = can_double and random.random() < 0.1  # 10% chance to use double move
-            
-            return (dest, transport, use_double)
-        
-        else:  # Detective
-            # For detective, we need to know which detective we are
-            # This is a simplified implementation
-            position = game.game_state.detective_positions[0]  # Use first detective
-            valid_moves = game.get_valid_moves(Player.DETECTIVES, position)
-            if not valid_moves:
-                return None
-            
-            dest, transport = self.trainer.main_network.select_action(
-                features_tensor, valid_moves, self.epsilon
-            )
-            return (dest, transport)
-
-
-class DQNMrXAgent(MrXAgent, DQNAgent):
-    """DQN agent for Mr. X."""
-    
-    def __init__(self, trainer: DQNTrainer):
-        super().__init__()
-        DQNAgent.__init__(self, trainer, Player.MRX)
-
-
-class DQNMultiDetectiveAgent(DQNAgent):
-    """DQN agent for multiple detectives."""
-    
-    def __init__(self, trainer: DQNTrainer):
-        super().__init__(trainer, Player.DETECTIVES)
-        self.num_detectives = 2  # Default
-    
-    def choose_moves(self, game: ScotlandYardGame) -> List[Tuple[int, TransportType]]:
-        """Choose moves for all detectives."""
-        moves = []
-        for i in range(self.num_detectives):
-            if i < len(game.game_state.detective_positions):
-                position = game.game_state.detective_positions[i]
-                valid_moves = game.get_valid_moves(Player.DETECTIVES, position)
-                
-                if valid_moves:
-                    features = self.trainer.feature_extractor.extract_features(game, self.player)
-                    features_tensor = torch.FloatTensor(features).unsqueeze(0).to(self.trainer.device)
-                    
-                    dest, transport = self.trainer.main_network.select_action(
-                        features_tensor, valid_moves, self.epsilon
-                    )
-                    moves.append((dest, transport))
-                else:
-                    # Stay in place if no valid moves
-                    moves.append((position, TransportType.TAXI))
-            
-        return moves

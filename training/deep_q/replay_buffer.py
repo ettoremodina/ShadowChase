@@ -192,7 +192,7 @@ def create_replay_buffer(config: Dict) -> ReplayBuffer:
         Initialized replay buffer
     """
     training_params = config.get('training_parameters', {})
-    buffer_size = training_params.get('replay_buffer_size', 10000)
+    buffer_size = training_params.get('replay_buffer_size', 100000)
     
     # For now, use simple replay buffer
     # Can extend to prioritized replay later

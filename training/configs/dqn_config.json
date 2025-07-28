@@ -7,20 +7,21 @@
     "dropout_rate": 0.1
   },
   "training_parameters": {
-    "num_episodes": 5000,
+    "player_role": "mr_x",
+    "num_episodes": 500,
     "batch_size": 32,
-    "learning_rate": 0.001,
-    "gamma": 0.95,
+    "learning_rate": 0.05,
+    "gamma": 0.99,
     "epsilon_start": 1.0,
     "epsilon_end": 0.01,
-    "epsilon_decay": 0.995,
+    "epsilon_decay": 0.9995,
     "target_update_frequency": 100,
-    "replay_buffer_size": 10000,
-    "min_replay_buffer_size": 1000
+    "replay_buffer_size": 100000,
+    "min_replay_buffer_size": 100
   },
   "game_parameters": {
-    "map_size": "test",
-    "num_detectives": 2,
+    "map_size": "extended",
+    "num_detectives": 5,
     "max_turns_per_game": 24,
     "evaluation_interval": 200
   },

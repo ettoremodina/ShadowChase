@@ -8,16 +8,16 @@ game episode execution during training.
 import time
 from typing import Dict, List, Any, Tuple
 
-from attr import dataclass
-
+from dataclasses import dataclass
 from ScotlandYard.core.game import ScotlandYardGame, Player
 from simple_play.game_utils import create_and_initialize_game, execute_single_turn
 from simple_play.game_logic import GameController
 from simple_play.display_utils import GameDisplay, VerbosityLevel
-from agents import AgentType
 
 from ScotlandYard.storage.game_loader import GameLoader
 from ScotlandYard.services.game_service import GameService
+
+from agents import AgentType
 
 @dataclass
 class GameResult:
@@ -88,8 +88,8 @@ class TrainingEnvironment:
                                    AgentType.RANDOM)
         
         # Replace the controller's agents with our custom ones
-        controller.mr_x_agent = mr_x_agent
-        controller.multi_detective_agent = detective_agent
+        controller.agent_mrx = mr_x_agent
+        controller.agent_detectives = detective_agent
         
         # Track experience data
         experience_data = []

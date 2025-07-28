@@ -16,7 +16,7 @@
     "enable_adaptive_epsilon": false
   },
   "cache_parameters": {
-    "max_size": 10000,
+    "max_size": 100000,
     "max_age_seconds": 300.0,
     "enable_caching": true
   },
@@ -30,10 +30,10 @@
   "feature_extraction": {
     "include_distances": true,
     "include_tickets": true,
-    "include_board_state": true,
+    "include_board_state": false,
     "include_game_phase": true,
-    "include_transport_connectivity": true,
-    "include_possible_positions": true,
+    "include_transport_connectivity": false,
+    "include_possible_positions": false,   
     "max_nodes": 200,
     "distance_normalization": 20.0
   },

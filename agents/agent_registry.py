@@ -15,12 +15,8 @@ from .mcts_agent import MCTSMrXAgent, MCTSMultiDetectiveAgent
 from .optimized_mcts_agent import OptimizedMCTSMrXAgent, OptimizedMCTSMultiDetectiveAgent
 from .epsilon_greedy_mcts_agent import EpsilonGreedyMCTSMrXAgent, EpsilonGreedyMCTSMultiDetectiveAgent
 
-# DQN agents (only import if PyTorch is available and avoid circular imports)
-try:
-    import torch
-    DQN_AVAILABLE = True
-except ImportError:
-    DQN_AVAILABLE = False
+# DQN agents are imported lazily to avoid circular imports
+
 
 
 class AgentType(Enum):
@@ -57,14 +53,14 @@ class AgentRegistry:
         }
         
         # Add DQN agents if available
-        if DQN_AVAILABLE:
-            self._mr_x_agents[AgentType.DEEP_Q] = (self._get_dqn_mr_x_agent_class, "Deep Q-Learning Mr. X - Uses trained neural network for decision making")
-            self._multi_detective_agents[AgentType.DEEP_Q] = (self._get_dqn_multi_detective_agent_class, "Deep Q-Learning Detectives - Use trained neural network for decision making")
+        # # if DQN_AVAILABLE:
+        self._mr_x_agents[AgentType.DEEP_Q] = (self._get_dqn_mr_x_agent_class, "Deep Q-Learning Mr. X - Uses trained neural network for decision making")
+        self._multi_detective_agents[AgentType.DEEP_Q] = (self._get_dqn_multi_detective_agent_class, "Deep Q-Learning Detectives - Use trained neural network for decision making")
     
     def _get_dqn_mr_x_agent_class(self):
         """Lazy loading for DQN Mr. X agent class"""
         from .dqn_agent import DQNMrXAgent
-        return DQNMrXAgent
+        return DQNMrXAgent 
     
     def _get_dqn_multi_detective_agent_class(self):
         """Lazy loading for DQN Multi-Detective agent class"""

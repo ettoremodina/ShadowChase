@@ -6,6 +6,7 @@ import random
 from typing import List, Tuple, Optional
 from ScotlandYard.core.game import ScotlandYardGame, Player, TicketType, TransportType
 from .display_utils import GameDisplay, format_transport_input
+
 from agents import AgentType, AgentSelector, get_agent_registry
 
 
@@ -366,7 +367,7 @@ def get_game_mode() -> Tuple[str, str, int, AgentType, AgentType]:
             map_size = "extracted"
             # Check if extracted board is available
             try:
-                from board_loader import load_board_graph_from_csv
+                from ScotlandYard.services.board_loader import load_board_graph_from_csv
                 graph, positions = load_board_graph_from_csv()
                 print(f"✓ Found extracted board with {len(graph.nodes())} nodes")
                 num_detectives = 5

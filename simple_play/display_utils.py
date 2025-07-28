@@ -4,14 +4,8 @@ Provides clean, customizable output formatting without graph visualization.
 """
 from typing import Dict, List, Tuple, Optional, Set
 from ScotlandYard.core.game import ScotlandYardGame, Player, TicketType, TransportType
+from agents.heuristics import GameHeuristics
 
-
-# Import heuristics for advanced analysis
-try:
-    from agents.heuristics import GameHeuristics
-    HEURISTICS_AVAILABLE = True
-except ImportError:
-    HEURISTICS_AVAILABLE = False
 
 
 class VerbosityLevel:
@@ -47,12 +41,12 @@ class GameDisplay:
     
     def set_game(self, game: ScotlandYardGame):
         """Set the game instance and initialize heuristics if needed"""
-        if HEURISTICS_AVAILABLE and self.verbosity >= VerbosityLevel.HEURISTICS:
-            try:
-                self.heuristics = GameHeuristics(game)
-            except Exception as e:
-                print(f"⚠️ Warning: Could not initialize heuristics: {e}")
-                self.heuristics = None
+        
+        try:
+            self.heuristics = GameHeuristics(game)
+        except Exception as e:
+            print(f"⚠️ Warning: Could not initialize heuristics: {e}")
+            self.heuristics = None
     
     def clear_screen(self):
         """Clear terminal screen"""
@@ -271,11 +265,6 @@ class GameDisplay:
 
     def _print_heuristic_analysis(self, game: ScotlandYardGame):
         """Print heuristic analysis (verbosity level 5)"""
-        if not HEURISTICS_AVAILABLE:
-            print("\n🔍 HEURISTIC ANALYSIS:")
-            print("  ❌ Heuristics module not available")
-            return
-        
         if not self.heuristics:
             try:
                 self.heuristics = GameHeuristics(game)

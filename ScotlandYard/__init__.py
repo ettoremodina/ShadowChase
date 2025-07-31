@@ -25,7 +25,7 @@ from .examples.example_games import (
     create_distance_k_game,
     create_distance_k_win_game
 )
-from .storage.game_loader import GameLoader, GameRecord
+from .services.game_loader import GameLoader, GameRecord
 
 __version__ = "1.0.0"
 __author__ = "detectives and MrXs Game"

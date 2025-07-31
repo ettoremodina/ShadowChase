@@ -1,5 +1,3 @@
-import tkinter as tk
-from tkinter import ttk, messagebox
 import networkx as nx
 import sys
 import os

@@ -6,7 +6,7 @@ from matplotlib.figure import Figure
 import networkx as nx
 import numpy as np
 from ..core.game import Game, Player, ScotlandYardGame, TicketType, TransportType
-from ..storage.game_loader import GameLoader
+from ..services.game_loader import GameLoader
 from .ui_components import StyledButton, InfoDisplay
 from .base_visualizer import BaseVisualizer
 

@@ -32,7 +32,7 @@ if str(current_dir) not in sys.path:
 from game_controls.game_utils import play_single_game, play_multiple_games
 from game_controls.display_utils import VerbosityLevel
 from ScotlandYard.services.cache_system import get_global_cache, CacheNamespace
-from ScotlandYard.storage.game_loader import GameLoader
+from ScotlandYard.services.game_loader import GameLoader
 from ScotlandYard.services.game_service import GameService
 
 from agents import AgentType

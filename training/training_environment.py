@@ -14,7 +14,7 @@ from game_controls.game_utils import create_and_initialize_game, execute_single_
 from game_controls.game_logic import GameController
 from game_controls.display_utils import GameDisplay, VerbosityLevel
 
-from ScotlandYard.storage.game_loader import GameLoader
+from ScotlandYard.services.game_loader import GameLoader
 from ScotlandYard.services.game_service import GameService
 from agents.heuristics import GameHeuristics
 from agents import AgentType

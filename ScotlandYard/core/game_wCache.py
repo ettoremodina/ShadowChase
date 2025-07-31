@@ -368,7 +368,7 @@ class Game:
         """
         # Maintain backward compatibility but recommend using GameService
         if loader is None:
-            from ..storage.game_loader import GameLoader
+            from ..services.game_loader import GameLoader
             loader = GameLoader()
         return loader.save_game(self, game_id, additional_metadata)
     

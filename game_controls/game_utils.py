@@ -68,7 +68,7 @@ def save_game_session(game: ScotlandYardGame, play_mode: str, map_size: str,
                      mr_x_agent_type=None, detective_agent_type=None, save_dir: str = "fritto_misto", execution_time: float = None) -> Optional[str]:
     """Save a completed game session with metadata"""
     try:
-        from ScotlandYard.storage.game_loader import GameLoader
+        from ScotlandYard.services.game_loader import GameLoader
         game_loader = GameLoader(save_dir)
         game_service = GameService(game_loader)
         

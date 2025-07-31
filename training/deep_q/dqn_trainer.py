@@ -18,7 +18,7 @@ import torch.nn.functional as F
 from ScotlandYard.core.game import ScotlandYardGame
 from training.base_trainer import BaseTrainer, TrainingResult
 from training.feature_extractor_simple import GameFeatureExtractor, FeatureConfig
-from training.utils.training_environment import TrainingEnvironment
+from training.training_environment import TrainingEnvironment
 
 
 from .dqn_model import create_dqn_model

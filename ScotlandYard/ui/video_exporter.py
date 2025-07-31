@@ -16,7 +16,7 @@ from typing import Optional, List, Dict, Any
 from tkinter import messagebox, filedialog, simpledialog
 
 from ..core.game import ScotlandYardGame, Player
-from ..storage.game_loader import GameLoader
+from ..services.game_loader import GameLoader
 from .base_visualizer import BaseVisualizer
 
 
@@ -692,7 +692,7 @@ def export_video_from_command_line(game_file: str, output_file: str = None,
         game_id = Path(game_file).stem
     elif hasattr(game_data, 'game_config'):
         # GameRecord object - need to reconstruct
-        from ..storage.game_loader import GameLoader
+        from ..services.game_loader import GameLoader
         loader = GameLoader()
         game = loader._reconstruct_game_from_record(game_data)
         game_id = game_data.game_id

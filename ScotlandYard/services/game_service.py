@@ -4,7 +4,7 @@ This service handles all game persistence operations with consistent metadata.
 """
 from datetime import datetime
 from typing import Dict, Optional
-from ..storage.game_loader import GameLoader
+from .game_loader import GameLoader
 from ..core.game import ScotlandYardGame
 
 

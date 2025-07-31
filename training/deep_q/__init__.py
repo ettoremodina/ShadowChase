@@ -6,13 +6,12 @@ This module contains DQN-specific training algorithms and agents for Scotland Ya
 
 # Core DQN components
 try:
-    from .dqn_model import DQNModel, DoubleDQNModel, create_dqn_model
+    from .dqn_model import DQNModel, create_dqn_model
     from .replay_buffer import ReplayBuffer, PrioritizedReplayBuffer, create_replay_buffer
     from .dqn_trainer import DQNTrainer
     
     __all__ = [
-        'DQNModel',
-        'DoubleDQNModel', 
+        'DQNModel', 
         'create_dqn_model',
         'ReplayBuffer',
         'PrioritizedReplayBuffer',

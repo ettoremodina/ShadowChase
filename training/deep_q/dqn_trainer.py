@@ -6,10 +6,8 @@ This module implements the DQN training algorithm using the existing training in
 
 import json
 import time
-import random
 import numpy as np
-from pathlib import Path
-from typing import Dict, List, Optional, Any, Tuple
+from typing import Optional
 
 
 import torch
@@ -19,14 +17,14 @@ import torch.nn.functional as F
 
 from ScotlandYard.core.game import ScotlandYardGame
 from training.base_trainer import BaseTrainer, TrainingResult
-from training.feature_extractor import GameFeatureExtractor, FeatureConfig
+from training.feature_extractor_simple import GameFeatureExtractor, FeatureConfig
 from training.utils.training_environment import TrainingEnvironment
 
 
 from .dqn_model import create_dqn_model
 from .replay_buffer import create_replay_buffer
 
-from simple_play.game_utils import create_and_initialize_game
+from game_controls.game_utils import create_and_initialize_game
 
 
 from agents import AgentType, get_agent_registry
@@ -88,6 +86,7 @@ class DQNTrainer(BaseTrainer):
         self.optimizer = None
         self.replay_buffer = None
         self.current_epsilon = self.epsilon_start
+        self.epsilon_decay_rate = (self.epsilon_start - self.epsilon_end) / training_params.get('num_episodes', 10000)
         
         # Training state
         self.step_count = 0
@@ -167,8 +166,8 @@ class DQNTrainer(BaseTrainer):
         # Training loop
         for episode in range(num_episodes):
             # if we are after X% of episodes the opponent becomes the heuristic agent
-            if episode >= int(num_episodes * 0.9):  
-                opponent_agent = registry.create_multi_detective_agent(AgentType.HEURISTIC, num_detectives) if self.player_role == "mr_x" else registry.create_mr_x_agent(AgentType.HEURISTIC)
+            # if episode >= int(num_episodes * 0.9):  
+            #     opponent_agent = registry.create_multi_detective_agent(AgentType.HEURISTIC, num_detectives) if self.player_role == "mr_x" else registry.create_mr_x_agent(AgentType.HEURISTIC)
 
             episode_reward = self._train_episode(env, opponent_agent)
             self.episode_rewards.append(episode_reward)
@@ -178,9 +177,13 @@ class DQNTrainer(BaseTrainer):
                 self.target_network.load_state_dict(self.main_network.state_dict())
             
             # Decay epsilon
+            # self.current_epsilon = max(
+            #     self.epsilon_end, 
+            #     self.current_epsilon * self.epsilon_decay
+            # )
             self.current_epsilon = max(
-                self.epsilon_end, 
-                self.current_epsilon * self.epsilon_decay
+                self.epsilon_end,
+                self.epsilon_start - self.epsilon_decay_rate * episode
             )
             
             # Logging
@@ -254,14 +257,26 @@ class DQNTrainer(BaseTrainer):
         return episode_reward
     
     def _calculate_episode_reward(self, result) -> float:
-        """Calculate episode reward based on game outcome."""
-        # Simple reward shaping based on game outcome
+        """Calculate episode reward based on game outcome and distance-based shaping for both roles."""
+        # Final outcome reward
         if result.winner == self.player_role.replace("_", ""):
-            return 10.0  # Win
-        elif result.winner == "timeout":
-            return 0.0   # Neutral
+            outcome = 10.0
         else:
-            return -10.0  # Loss
+            outcome = -10.0
+        total_turns = result.total_turns
+        # Distance-based shaping
+        shaping = 0.0
+        if hasattr(result, 'mr_x_min_distances') and result.mr_x_min_distances:
+            valid_distances = [d for d in result.mr_x_min_distances if d >= 0]
+            if valid_distances:
+                avg_min_dist = np.mean(valid_distances)
+                # Mr. X: reward being far from detectives; Detectives: reward being close
+                if self.player_role == "mr_x":
+                    shaping = 0.2 * avg_min_dist + total_turns * 0.1  # scale factor can be tuned
+                else:
+                    shaping = -0.2 * avg_min_dist - total_turns * 0.1  # Detectives: negative for being far
+
+        return outcome + shaping 
     
     def _train_step(self) -> Optional[float]:
         """Perform one training step using batch from replay buffer."""
@@ -306,16 +321,10 @@ class DQNTrainer(BaseTrainer):
         
         # Compute loss
         loss = F.mse_loss(current_q_values, target_q_values)
-        
-        # Optimize
         self.optimizer.zero_grad()
         loss.backward()
-        
-        # Gradient clipping
-        torch.nn.utils.clip_grad_norm_(self.main_network.parameters(), max_norm=1.0)
-        
-        self.optimizer.step()
-        
+        # torch.nn.utils.clip_grad_norm_(self.main_network.parameters(), max_norm=1.0)
+        self.optimizer.step() 
         self.step_count += 1
         return loss.item()
     

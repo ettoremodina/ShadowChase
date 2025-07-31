@@ -6,6 +6,7 @@ Runs all agent combinations and generates analysis.
 
 import subprocess
 import os
+import sys
 from ScotlandYard.services.cache_system import (
     enable_cache, disable_cache, is_cache_enabled, get_global_cache,
     enable_namespace_cache, disable_namespace_cache, is_namespace_cache_enabled,
@@ -20,8 +21,9 @@ def play_combination(test_name, mr_x_agent, detective_agent, games_per_combo, ma
     save_dir = f"{test_name}/{combo}"
 
     print(f"\nRunning: {combo}")
+    # Use the same Python executable that's running this script
     cmd = [
-        "python", "simple_play/simple_game.py",
+        sys.executable, "game_controls/simple_game.py",
         "--batch", str(games_per_combo),
         "--map-size", map_size,
         "--detectives", str(num_detectives),
@@ -42,7 +44,7 @@ def analyze_games(test_name):
     """Analyze the games played in the test"""
     print(f"\nAnalyzing games in {test_name}...")
     try:
-        subprocess.run(["python", "services/analyze_games.py", test_name], check=True)
+        subprocess.run([sys.executable, "ScotlandYard/services/analyze_games.py", test_name], check=True)
         print(f"✓ Analysis complete: {test_name}/analysis_graphs/")
     except subprocess.CalledProcessError:
         print("✗ Analysis failed")
@@ -52,8 +54,8 @@ def main():
     # Import AgentSelector inside the function to avoid circular imports
     
     # Configuration
-    test_name = "fast_models" 
-    games_per_combo = 50
+    test_name = "fast_model3" 
+    games_per_combo = 200
     num_detectives = 5
     map_size = "extracted"
     enable_cache()
@@ -71,7 +73,7 @@ def main():
     print(f"Games per combination: {games_per_combo}")
     print(f"Test directory: {test_name}")
 
-    # play_combination(test_name, "deep_q", "heuristic", games_per_combo, map_size, num_detectives, 24)
+    # play_combination(test_name, "deep_q", "random", games_per_combo, map_size, num_detectives, 24)
 
 
     # RUN ALL COMBINATIONS
@@ -81,7 +83,7 @@ def main():
 
 
 
-    # analyze_games(test_name)
+    analyze_games(test_name)
 
 if __name__ == "__main__":
     main()

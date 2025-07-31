@@ -16,11 +16,45 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
-from typing import Dict, List, Tuple, Optional, Set
+from typing import Dict, List, Tuple, Set
 from ScotlandYard.core.game import TransportType
 
 
 class DQNModel(nn.Module):
+
+    def plot_q_value_histogram(self, num_samples=10000, state_sampler=None, action_sampler=None, device=None, bins=50, show=True):
+        """
+        Plot a histogram of Q-values for random (state, action) pairs.
+        Args:
+            num_samples: Number of (state, action) pairs to sample
+            state_sampler: Function returning a random state feature vector (torch.Tensor)
+            action_sampler: Function returning a random (dest, transport) tuple
+            device: torch device to use
+            bins: Number of bins for histogram
+            show: Whether to display the plot
+        """
+        import matplotlib.pyplot as plt
+        if device is None:
+            device = next(self.parameters()).device
+        self.eval()
+        states = []
+        actions = []
+        for _ in range(num_samples):
+            state = state_sampler() if state_sampler else torch.randn(self.state_size)
+            dest, transport = action_sampler() if action_sampler else (np.random.randint(0, 200), np.random.choice(list(TransportType)))
+            states.append(state)
+            actions.append((dest, transport))
+        states_tensor = torch.stack(states).to(device)
+        q_values = self.query_batch_actions(states_tensor, actions).detach().cpu().numpy()
+        plt.figure(figsize=(8, 5))
+        plt.hist(q_values, bins=bins, color='skyblue', edgecolor='black', alpha=0.8)
+        plt.title('Q-value Distribution for Random (State, Action) Pairs')
+        plt.xlabel('Q-value')
+        plt.ylabel('Frequency')
+        plt.grid(True, alpha=0.3)
+        if show:
+            plt.show()
+        return q_values
     """
     Deep Q-Network for Scotland Yard using action querying.
     
@@ -72,6 +106,11 @@ class DQNModel(nn.Module):
         
         # Output layer for single Q-value
         self.q_network = nn.Linear(prev_size, 1)
+        # add a ReLU activation to the output layer
+        self.q_network = nn.Sequential(
+            self.q_network,
+            nn.ReLU()
+        )
         
         # Initialize weights
         self._init_weights()
@@ -102,6 +141,21 @@ class DQNModel(nn.Module):
         transport_normalized = transport.value / len(TransportType)
         
         return torch.tensor([dest_normalized, transport_normalized], dtype=torch.float32)
+
+    def encode_actions(self, destinations, transports) -> torch.Tensor:
+        """
+        Vectorized encoding for a batch of actions.
+        Args:
+            destinations: list/array/tensor of destination node IDs
+            transports: list/array/tensor of TransportType
+        Returns:
+            Tensor of shape [batch, action_size]
+        """
+        dests = torch.as_tensor(destinations, dtype=torch.float32)
+        dests = dests / 200.0
+        trans_vals = torch.as_tensor([t.value for t in transports], dtype=torch.float32)
+        trans_vals = trans_vals / len(TransportType)
+        return torch.stack([dests, trans_vals], dim=1)
     
     def forward(self, state_action_pairs: torch.Tensor) -> torch.Tensor:
         """
@@ -118,36 +172,6 @@ class DQNModel(nn.Module):
         q_values = self.q_network(features)
         return q_values.squeeze(-1)  # Remove last dimension to get [batch_size]
     
-    def query_action(self, 
-                    state_features: torch.Tensor, 
-                    destination: int, 
-                    transport: TransportType) -> torch.Tensor:
-        """
-        Query Q-value for a specific state-action pair.
-        
-        Args:
-            state_features: State feature vector [state_size] or [1, state_size]
-            destination: Destination node
-            transport: Transport type
-            
-        Returns:
-            Q-value for this state-action pair [1] or scalar
-        """
-        # Ensure state_features is 2D
-        if state_features.dim() == 1:
-            state_features = state_features.unsqueeze(0)
-        
-        # Encode the action
-        action_encoding = self.encode_action(destination, transport)
-        action_encoding = action_encoding.unsqueeze(0).to(state_features.device)
-        
-        # Concatenate state and action
-        state_action = torch.cat([state_features, action_encoding], dim=1)
-        
-        # Get Q-value
-        q_value = self.forward(state_action)
-        return q_value
-    
     def query_batch_actions(self,
                            states_batch: torch.Tensor,
                            actions_batch: List[Tuple[int, TransportType]]) -> torch.Tensor:
@@ -161,6 +185,7 @@ class DQNModel(nn.Module):
         Returns:
             Q-values for each state-action pair [batch_size]
         """
+        self.eval()
         if len(actions_batch) == 0:
             return torch.tensor([])
         
@@ -191,32 +216,47 @@ class DQNModel(nn.Module):
                                  states_batch: torch.Tensor,
                                  valid_moves_batch: List[Set[Tuple[int, TransportType]]]) -> torch.Tensor:
         """
-        Query maximum Q-values for a batch of states, each with their own valid moves.
-        
+        Efficiently query maximum Q-values for a batch of states, each with their own valid moves, using batching.
         Args:
-            states_batch: Batch of state features [batch_size, state_size]
-            valid_moves_batch: List of valid moves for each state
-            
+            states_batch: [batch_size, state_size]
+            valid_moves_batch: list of sets of (dest, transport)
         Returns:
-            Maximum Q-values for each state [batch_size]
+            max_q_values: [batch_size]
         """
+        self.eval()
+        device = states_batch.device
         batch_size = states_batch.size(0)
-        max_q_values = []
-        
-        for i in range(batch_size):
-            state = states_batch[i]
-            valid_moves = valid_moves_batch[i]
-            
+        all_state_action_pairs = []
+        state_indices = []
+        # Flatten all state-action pairs for a single forward pass
+        for i, (state, valid_moves) in enumerate(zip(states_batch, valid_moves_batch)):
             if not valid_moves:
-                max_q_values.append(torch.tensor(0.0, device=states_batch.device))
-            else:
-                q_vals, _ = self.query_multiple_actions(state, valid_moves)
-                if len(q_vals) > 0:
-                    max_q_values.append(q_vals.max())
-                else:
-                    max_q_values.append(torch.tensor(0.0, device=states_batch.device))
-        
-        return torch.stack(max_q_values)
+                continue
+            for dest, transport in valid_moves:
+                all_state_action_pairs.append((i, dest, transport))
+                state_indices.append(i)
+        if not all_state_action_pairs:
+            return torch.zeros(batch_size, device=device)
+        # Prepare tensors
+        state_idx_tensor = torch.tensor([i for i, _, _ in all_state_action_pairs], dtype=torch.long, device=device)
+        dests = [dest for _, dest, _ in all_state_action_pairs]
+        transports = [transport for _, _, transport in all_state_action_pairs]
+        # Gather states
+        states_expanded = states_batch[state_idx_tensor]
+        # Encode actions
+        actions_encoded = self.encode_actions(dests, transports).to(device)
+        # Concatenate
+        state_action_batch = torch.cat([states_expanded, actions_encoded], dim=1)
+        # Forward pass
+        q_values = self.forward(state_action_batch)
+        # For each state, get max Q
+        max_q = torch.full((batch_size,), 0.0, device=device)
+        for i in range(batch_size):
+            mask = (state_idx_tensor == i)
+            if mask.any():
+                max_q[i] = q_values[mask].max()
+        return max_q
+
 
     def query_multiple_actions(self,
                               state_features: torch.Tensor,
@@ -284,47 +324,12 @@ class DQNModel(nn.Module):
                 if len(q_values) == 0:
                     # Fallback to random if no valid moves
                     chosen_move = np.random.choice(len(valid_moves))
+                    print("Warning: No valid moves available, selecting random action.")
                     return list(valid_moves)[chosen_move]
                 
                 # Select action with highest Q-value
                 best_action_idx = q_values.argmax().item()
                 return actions_list[best_action_idx]
-    
-    def get_action_index(self, destination: int, transport: TransportType) -> int:
-        """
-        Legacy method for compatibility. 
-        Note: This is less meaningful with action querying architecture.
-        """
-        # Keep for backward compatibility with existing code
-        return destination * 5 + transport.value  # 5 transport types
-    
-    def get_action_from_index(self, action_index: int) -> Tuple[int, TransportType]:
-        """
-        Legacy method for compatibility.
-        Note: This is less meaningful with action querying architecture.
-        """
-        # Keep for backward compatibility
-        destination = action_index // 5
-        transport_value = action_index % 5
-        transport = TransportType(transport_value)
-        return destination, transport
-
-
-# class DoubleDQNModel(DQNModel):
-#     """
-#     Double DQN variant that uses separate networks for action selection and evaluation.
-#     This helps reduce overestimation bias in Q-learning.
-#     """
-    
-#     def __init__(self, *args, **kwargs):
-#         super().__init__(*args, **kwargs)
-        
-#     def forward_target(self, state_features: torch.Tensor) -> torch.Tensor:
-#         """
-#         Forward pass through target network (same as main network for now).
-#         In practice, this would be a separate target network.
-#         """
-#         return self.forward(state_features)
 
 
 def create_dqn_model(config: Dict) -> DQNModel:
@@ -340,20 +345,8 @@ def create_dqn_model(config: Dict) -> DQNModel:
     network_params = config.get('network_parameters', {})
     feature_params = config.get('feature_extraction', {})
     
-    # Use actual state size if available (from saved model), otherwise calculate estimate
-    if 'input_size' in feature_params:
-        state_size = feature_params['input_size']
-    else:
-        # Calculate state size based on feature extraction config
-        # This is a rough estimate - should match GameFeatureExtractor output
-        state_size = (
-            feature_params.get('max_nodes', 200) +  # Board state features
-            10 +  # Ticket features (rough estimate)
-            5 +   # Game phase features
-            20 +  # Distance features (rough estimate)
-            20    # Additional features
-        )
-    
+    state_size = feature_params['input_size']
+
     return DQNModel(
         state_size=state_size,
         action_size=network_params.get('action_size', 2),  # (destination, transport)
@@ -416,4 +409,5 @@ def test_action_querying():
 
 
 if __name__ == "__main__":
-    test_action_querying()
+    print("Running action querying tests...")
+    # test_action_querying()

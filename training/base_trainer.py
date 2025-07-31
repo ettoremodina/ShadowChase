@@ -7,17 +7,13 @@ This module provides the foundational classes that all training algorithms
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Dict, List, Optional, Any, Tuple
+from typing import Dict, List, Optional, Any
 from datetime import datetime
 import json
 import os
 from pathlib import Path
 
-from ScotlandYard.core.game import ScotlandYardGame, Player
-from .utils.evaluation import AgentEvaluator, EvaluationConfig
 import pickle
-
-from agents.base_agent import Agent
 @dataclass
 class TrainingResult:
     """Results from a training session."""

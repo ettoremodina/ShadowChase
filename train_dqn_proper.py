@@ -34,7 +34,7 @@ def plot_training_metrics(model_path: str, save_plots: bool = True):
     """
     try:
         # Load the saved model to get training stats
-        checkpoint = torch.load(model_path, map_location='cpu')
+        checkpoint = torch.load(model_path, map_location='cpu', weights_only=False)
         training_stats = checkpoint.get('training_stats', {})
         
         episode_rewards = training_stats.get('episode_rewards', [])
@@ -248,7 +248,14 @@ def main():
     # Plot training metrics
     print(f"\n📊 Generating training plots...")
     plot_training_metrics(result.model_path, save_plots=True)
-    
+
+    # Plot Q-value histogram for random (state, action) pairs
+    if agent.model is not None:
+        print("\n📊 Plotting Q-value histogram for random (state, action) pairs...")
+        agent.model.plot_q_value_histogram(num_samples=10000)
+    else:
+        print("⚠️  Cannot plot Q-value histogram: model not loaded.")
+
     print(f"\n✅ Training script completed!")
     print("   You can now use the trained agent in games.")
 

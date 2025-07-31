@@ -15,7 +15,7 @@ Package structure:
 
 # Main training infrastructure
 from .base_trainer import BaseTrainer, TrainingResult, EvaluationResult
-from .feature_extractor import GameFeatureExtractor, FeatureConfig
+from .feature_extractor_simple import GameFeatureExtractor 
 
 # Training utilities (accessed via training.utils.*)
 from . import utils

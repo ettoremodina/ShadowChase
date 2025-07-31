@@ -5,10 +5,10 @@ This module converts game states into feature vectors that can be used by
 machine learning algorithms like MCTS and Deep Q-Learning.
 """
 import numpy as np
-from typing import Dict, List, Optional, Tuple
+from typing import List, Optional
 from dataclasses import dataclass
 
-from ScotlandYard.core.game import ScotlandYardGame, Player, TransportType, TicketType
+from ScotlandYard.core.game import ScotlandYardGame, Player, TicketType
 
 
 from agents.heuristics import GameHeuristics
@@ -44,9 +44,9 @@ class GameFeatureExtractor:
         """
         self.config = config or FeatureConfig()
         self.heuristics = None
-        self._feature_size = None
+        self._feature_size = 0
         
-    def get_feature_size(self, game: ScotlandYardGame) -> int:
+    def get_feature_size(self, game: ScotlandYardGame, player: Player = Player.MRX) -> int:
         """
         Get the size of the feature vector for this game.
         
@@ -56,39 +56,10 @@ class GameFeatureExtractor:
         Returns:
             Size of the feature vector
         """
-        if self._feature_size is None:
-            # Calculate feature size based on configuration
-            size = 0
-            
-            # Basic game state features
-            if self.config.include_game_phase:
-                size += 5  # turn_normalized, mr_x_visible, early_game, mid_game, late_game
-            
-            # Position features
-            if self.config.include_board_state:
-                size += self.config.max_nodes  # One-hot encoding for all positions
-                
-            # Distance features  
-            if self.config.include_distances:
-                max_detectives = 5  # Assume max 5 detectives
-                size += max_detectives  # Distance to each detective
-                size += 3  # Min, max, avg distances
-                
-            # Ticket features
-            if self.config.include_tickets:
-                size += 5  # Mr. X tickets: taxi, bus, underground, black, double
-                size += 15  # Detective tickets: taxi, bus, underground for each of 5 detectives
-                
-            # Transport connectivity features
-            if self.config.include_transport_connectivity:
-                size += 9  # 3 transport types * 3 connectivity metrics
-                
-            # Possible positions features (for Mr. X when hidden)
-            if self.config.include_possible_positions:
-                size += 3  # num_possible_positions, avg_dist_to_possible, connectivity_score
-                
-            self._feature_size = size
-            
+        if self._feature_size > 0:
+            return self._feature_size
+        else:
+            _ = self.extract_features(game, player)  # Use any player to initialize
         return self._feature_size
     
     def extract_features(self, game: ScotlandYardGame, player: Player) -> np.ndarray:
@@ -111,28 +82,36 @@ class GameFeatureExtractor:
         
         # Game phase features
         if self.config.include_game_phase:
-            features.extend(self._extract_game_phase_features(game))
-        
+            temp_features, feature_size = self._extract_game_phase_features(game)
+            features.extend(temp_features)
+            self._feature_size += feature_size
+
         # Board state features
         if self.config.include_board_state:
-            features.extend(self._extract_board_state_features(game, player))
-        
+            temp_features, feature_size = self._extract_board_state_features(game, player)
+            features.extend(temp_features)
+            self._feature_size += feature_size
+
         # Distance features
         if self.config.include_distances:
-            features.extend(self._extract_distance_features(game, player))
-        
+            temp_features, feature_size = self._extract_distance_features(game, player)
+            features.extend(temp_features)
+            self._feature_size += feature_size
         # Ticket features
         if self.config.include_tickets:
-            features.extend(self._extract_ticket_features(game, player))
-        
+            temp_features, feature_size = self._extract_ticket_features(game, player)
+            features.extend(temp_features)
+            self._feature_size += feature_size
         # Transport connectivity features
         if self.config.include_transport_connectivity:
-            features.extend(self._extract_connectivity_features(game, player))
-        
+            temp_features, feature_size = self._extract_connectivity_features(game, player)
+            features.extend(temp_features)
+            self._feature_size += feature_size
         # Possible positions features
         if self.config.include_possible_positions:
-            features.extend(self._extract_possible_positions_features(game, player))
-        
+            temp_features, feature_size = self._extract_possible_positions_features(game, player)
+            features.extend(temp_features)
+            self._feature_size += feature_size
         return np.array(features, dtype=np.float32)
     
     def _extract_game_phase_features(self, game: ScotlandYardGame) -> List[float]:
@@ -143,18 +122,6 @@ class GameFeatureExtractor:
         max_turns = 24  # Standard Scotland Yard game length
         current_turn = game.game_state.MrX_turn_count if hasattr(game.game_state, 'MrX_turn_count') else 0
         features.append(min(current_turn / max_turns, 1.0))
-        
-        # # Mr. X visibility
-        # features.append(1.0 if getattr(game.game_state, 'mr_x_visible', False) else 0.0)
-        
-        # # Game phase (early/mid/late game)
-        # turn_ratio = current_turn / max_turns
-        # if turn_ratio < 0.33:
-        #     features.extend([1.0, 0.0, 0.0])  # Early game
-        # elif turn_ratio < 0.67:
-        #     features.extend([0.0, 1.0, 0.0])  # Mid game
-        # else:
-        #     features.extend([0.0, 0.0, 1.0])  # Late game
         
         return features, len(features)
     
@@ -202,15 +169,6 @@ class GameFeatureExtractor:
                 distances.append(0.0)  # No detective at this index
         
         features.extend(distances)
-        
-        # Summary statistics
-        # if distances and any(d > 0 for d in distances):
-        #     active_distances = [d for d in distances if d > 0]
-        #     features.append(min(active_distances))  # Min distance
-        #     features.append(max(active_distances))  # Max distance  
-        #     features.append(sum(active_distances) / len(active_distances))  # Avg distance
-        # else:
-        #     features.extend([0.0, 0.0, 0.0])
         
         return features, len(features)
     

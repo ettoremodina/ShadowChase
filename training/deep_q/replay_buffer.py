@@ -18,7 +18,6 @@ Experience = namedtuple('Experience', [
     'reward',          # Immediate reward
     'next_state',      # Feature vector of next state
     'done',            # Whether episode ended
-    'valid_moves',     # Valid moves from current state
     'next_valid_moves' # Valid moves from next state
 ])
 
@@ -47,7 +46,6 @@ class ReplayBuffer:
              reward: float,
              next_state: np.ndarray,
              done: bool,
-             valid_moves: Set[Tuple[int, TransportType]],
              next_valid_moves: Set[Tuple[int, TransportType]]):
         """
         Add a new experience to the buffer.
@@ -67,7 +65,6 @@ class ReplayBuffer:
             reward=reward,
             next_state=next_state.copy(),
             done=done,
-            valid_moves=set(valid_moves),  # Make a copy
             next_valid_moves=set(next_valid_moves)
         )
         
@@ -123,7 +120,6 @@ class PrioritizedReplayBuffer(ReplayBuffer):
              reward: float,
              next_state: np.ndarray,
              done: bool,
-             valid_moves: Set[Tuple[int, TransportType]],
              next_valid_moves: Set[Tuple[int, TransportType]],
              priority: Optional[float] = None):
         """
@@ -132,7 +128,7 @@ class PrioritizedReplayBuffer(ReplayBuffer):
         Args:
             priority: Priority for this experience (uses max if None)
         """
-        super().push(state, action, reward, next_state, done, valid_moves, next_valid_moves)
+        super().push(state, action, reward, next_state, done, next_valid_moves)
         
         if priority is None:
             priority = self.max_priority

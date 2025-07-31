@@ -28,8 +28,8 @@ current_dir = Path(__file__).parent
 if str(current_dir) not in sys.path:
     sys.path.insert(0, str(current_dir))
 
-from simple_play.game_utils import play_single_game, play_multiple_games
-from simple_play.display_utils import VerbosityLevel
+from game_controls.game_utils import play_single_game, play_multiple_games
+from game_controls.display_utils import VerbosityLevel
 from agents import AgentType
 from ScotlandYard.services.cache_system import enable_cache, disable_cache, is_cache_enabled, get_global_cache
 

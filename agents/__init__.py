@@ -7,7 +7,7 @@ including basic random agents and more sophisticated AI strategies.
 
 from .base_agent import Agent, DetectiveAgent, MrXAgent, MultiDetectiveAgent
 from .random_agent import RandomMrXAgent, RandomMultiDetectiveAgent
-from .heuristic_agent import HeuristicMrXAgent, HeuristicMultiDetectiveAgent, HeuristicDetectiveAgent
+from .heuristic_agent import HeuristicMrXAgent, HeuristicMultiDetectiveAgent
 from .mcts_agent import MCTSMrXAgent, MCTSMultiDetectiveAgent, MCTSDetectiveAgent
 from .agent_registry import (
     AgentType, AgentRegistry, agent_registry, get_agent_registry,
@@ -24,7 +24,6 @@ __all__ = [
     'RandomMultiDetectiveAgent',
     'HeuristicMrXAgent',
     'HeuristicMultiDetectiveAgent',
-    'HeuristicDetectiveAgent',
     'MCTSMrXAgent',
     'MCTSMultiDetectiveAgent',
     'MCTSDetectiveAgent',

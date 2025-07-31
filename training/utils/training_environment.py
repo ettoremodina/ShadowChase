@@ -9,14 +9,14 @@ import time
 from typing import Dict, List, Any, Tuple
 
 from dataclasses import dataclass
-from ScotlandYard.core.game import ScotlandYardGame, Player
-from simple_play.game_utils import create_and_initialize_game, execute_single_turn
-from simple_play.game_logic import GameController
-from simple_play.display_utils import GameDisplay, VerbosityLevel
+from ScotlandYard.core.game import Player
+from game_controls.game_utils import create_and_initialize_game, execute_single_turn
+from game_controls.game_logic import GameController
+from game_controls.display_utils import GameDisplay, VerbosityLevel
 
 from ScotlandYard.storage.game_loader import GameLoader
 from ScotlandYard.services.game_service import GameService
-
+from agents.heuristics import GameHeuristics
 from agents import AgentType
 
 @dataclass
@@ -28,6 +28,7 @@ class GameResult:
     mr_x_final_position: int
     detective_final_positions: List[int]
     moves_history: List[Dict[str, Any]]
+    mr_x_min_distances: List[int]  # For reward shaping, min distance to Mr. X after each turn
 
 
 class TrainingEnvironment:
@@ -96,47 +97,30 @@ class TrainingEnvironment:
         moves_history = []
         turn_count = 0
         
+        # For reward shaping: track min distance to Mr. X after each turn
+        mr_x_min_distances = []
+        heuristics = GameHeuristics(game)
+
         # Main game loop
-        while not game.is_game_over() and turn_count < self.max_turns:
-            turn_count += 1
-            
+        while not game.is_game_over():
             # Collect pre-move state if requested
-            if collect_experience:
-                pre_state = {
-                    'turn': turn_count,
-                    'current_player': game.game_state.turn,
-                    'mr_x_position': game.game_state.MrX_position,
-                    'detective_positions': game.game_state.detective_positions.copy(),
-                    'mr_x_visible': game.game_state.mr_x_visible,
-                    'mr_x_tickets': game.get_mr_x_tickets(),
-                    'game_state_detective': game.get_state_copy() if hasattr(game, 'get_state_detective') else None
-                }
-            
-            # Execute turn
+            # if collect_experience:
+
             success = execute_single_turn(controller, game, "ai_vs_ai", display)
             if not success:
                 break
-            
             # Collect post-move data if requested
-            if collect_experience:
-                post_state = {
-                    'mr_x_position': game.game_state.MrX_position,
-                    'detective_positions': game.game_state.detective_positions.copy(),
-                    'mr_x_visible': game.game_state.mr_x_visible
-                }
-                
-                # Record the experience
-                experience_data.append({
-                    'pre_state': pre_state,
-                    'post_state': post_state,
-                    'turn': turn_count,
-                    'player': pre_state['current_player']
-                })
-            
+            # if collect_experience:
+
             # Track moves
             if hasattr(game, 'game_history') and game.game_history:
                 last_move = game.game_history[-1]
                 moves_history.append(last_move)
+            # For reward shaping: record min distance to Mr. X after this turn
+            if heuristics:
+                min_dist = heuristics.get_minimum_distance_to_mr_x()
+                mr_x_min_distances.append(min_dist)
+            turn_count += 1
         
         # Determine winner
         end_time = time.time()
@@ -149,9 +133,9 @@ class TrainingEnvironment:
             elif winner == Player.DETECTIVES:
                 winner_str = "detectives"
             else:
-                winner_str = "unknown"
+                winner_str = "unknown" #never reached in this setup
         else:
-            winner_str = "timeout"
+            winner_str = "timeout" #never reached in this setup
         
         # Create result
         result = GameResult(
@@ -160,8 +144,10 @@ class TrainingEnvironment:
             game_length=game_length,
             mr_x_final_position=game.game_state.MrX_position,
             detective_final_positions=game.game_state.detective_positions.copy(),
-            moves_history=moves_history
+            moves_history=moves_history,
+            mr_x_min_distances=mr_x_min_distances
         )
+
             
         
         # Define missing variables for game saving

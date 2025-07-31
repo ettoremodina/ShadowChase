@@ -9,21 +9,12 @@ Module responsibilities:
 - evaluation: Agent evaluation, comparison, and performance reporting
 """
 from .training_environment import TrainingEnvironment
-from .evaluation import (
-    AgentEvaluator, 
-    EvaluationConfig,
-)
-
 __all__ = [
     # Core data structures
     'GameResult',
     
     # Training environment
     'TrainingEnvironment',
-    
-    # Evaluation and reporting
-    'AgentEvaluator',
-    'EvaluationConfig',
     
     # Basic calculations
     'calculate_win_rate',

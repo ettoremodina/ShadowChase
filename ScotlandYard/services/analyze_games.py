@@ -410,7 +410,7 @@ class GameAnalyzer:
             for i, (bar, rate, game_count, ci) in enumerate(zip(bars1, win_rates, games, ci_data)):
                 height = bar.get_height()
                 ax1.text(bar.get_x() + bar.get_width()/2., height + upper_errors[i] + 2,
-                        f'{rate:.1f}%\\n[{ci[0]:.1f}%, {ci[1]:.1f}%]\\n({game_count} games)',
+                        f'{rate:.1f}%\n[{ci[0]:.1f}%, {ci[1]:.1f}%]\n({game_count} games)',
                         ha='center', va='bottom', fontsize=9)
         
         # Detective win rates

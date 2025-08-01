@@ -1,7 +1,7 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
 from .ui_components import StyledButton, InfoDisplay
-from ..core.game import Player, ScotlandYardGame, TransportType, TicketType
+from ..core.game import Player, ScotlandYardGame, TicketType
 
 class GameControls:
     """Handles game control UI and logic"""

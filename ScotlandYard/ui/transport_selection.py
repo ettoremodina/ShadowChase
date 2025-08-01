@@ -5,7 +5,7 @@ Allows users to choose between multiple transport types when moving between node
 
 import tkinter as tk
 from tkinter import ttk
-from typing import List, Optional, Tuple
+from typing import List, Optional
 from ..core.game import TransportType
 
 

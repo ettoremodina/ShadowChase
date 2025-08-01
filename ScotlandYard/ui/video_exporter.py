@@ -7,15 +7,11 @@ import os
 import tempfile
 import subprocess
 from pathlib import Path
-import matplotlib.pyplot as plt
-from matplotlib.figure import Figure
-import matplotlib.animation as animation
-import networkx as nx
-import numpy as np
-from typing import Optional, List, Dict, Any
-from tkinter import messagebox, filedialog, simpledialog
 
-from ..core.game import ScotlandYardGame, Player
+from matplotlib.figure import Figure
+import networkx as nx
+from tkinter import messagebox, filedialog
+from ..core.game import ScotlandYardGame
 from ..services.game_loader import GameLoader
 from .base_visualizer import BaseVisualizer
 

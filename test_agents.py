@@ -54,8 +54,8 @@ def main():
     # Import AgentSelector inside the function to avoid circular imports
     
     # Configuration
-    test_name = "fast_model3" 
-    games_per_combo = 200
+    test_name = "debug" 
+    games_per_combo = 300
     num_detectives = 5
     map_size = "extracted"
     enable_cache()
@@ -68,7 +68,7 @@ def main():
     
     # Get agent types dynamically
     # agent_types = [agent_name[0] for agent_name in AgentSelector.get_agent_choices_for_ui()]
-    agent_types = ["deep_q", "random", "heuristic"]
+    agent_types = ["deep_q", "random"]
     print(f"Testing agents: {agent_types}")
     print(f"Games per combination: {games_per_combo}")
     print(f"Test directory: {test_name}")

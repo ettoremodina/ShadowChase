@@ -17,9 +17,6 @@ Package structure:
 from .base_trainer import BaseTrainer, TrainingResult, EvaluationResult
 from .feature_extractor_simple import GameFeatureExtractor 
 
-# Training utilities (accessed via training.utils.*)
-from . import utils
-
 __all__ = [
     # Core training infrastructure
     'BaseTrainer',
@@ -27,7 +24,5 @@ __all__ = [
     'EvaluationResult',
     'GameFeatureExtractor',
     'FeatureConfig',
-    
-    # Utilities subpackage
-    'utils'
+
 ]

@@ -1,11 +1,7 @@
 import tkinter as tk
-from tkinter import ttk, messagebox
-import matplotlib.pyplot as plt
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-from matplotlib.figure import Figure
+from tkinter import ttk
 import networkx as nx
-import numpy as np
-from ..core.game import Game, Player, ScotlandYardGame, TicketType, TransportType
+from ..core.game import  ScotlandYardGame
 from ..services.game_loader import GameLoader
 from .ui_components import StyledButton, InfoDisplay
 from .base_visualizer import BaseVisualizer

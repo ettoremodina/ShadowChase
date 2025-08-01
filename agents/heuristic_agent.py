@@ -29,13 +29,12 @@ class HeuristicMrXAgent(MrXAgent):
         
         valid_moves = list(game.get_valid_moves(Player.MRX))
         if not valid_moves:
-            return None
+            return (None, None, False)  # No valid moves
         
         # Evaluate each move and choose the one that maximizes distance from closest detective
         best_moves = []
         best_score = -1
         
-        current_position = game.game_state.MrX_position
         detective_positions = game.game_state.detective_positions
         
         for destination, transport in valid_moves:

@@ -204,10 +204,6 @@ class BaseTrainer(ABC):
         }
         
         self.training_history.append(step_data)
-        
-        # Print progress every 100 episodes or at the end
-        if episode % 100 == 0 or episode == 1:
-            print(f"Episode {episode}: {metrics}")
     
     def get_training_summary(self) -> Dict[str, Any]:
         """

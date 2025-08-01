@@ -284,8 +284,10 @@ class GameController:
                     self.display.print_error("AI Mr. X move failed")
                     return False
             else:
-                self.display.print_error("AI Mr. X could not find valid moves")
-                return False
+                self.display.print_info("AI Mr. X has no valid moves")
+                self.game.game_state.turn = Player.DETECTIVES  # Skip to next detective turn
+                # AI could not move, game over
+                return True
     
     def reset_turn_state(self):
         """Reset turn-specific state"""

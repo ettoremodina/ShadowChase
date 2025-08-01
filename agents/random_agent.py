@@ -18,14 +18,17 @@ class RandomMrXAgent(MrXAgent):
         valid_moves = list(game.get_valid_moves(Player.MRX))
         
         if not valid_moves:
-            return None
-        valid_moves = [move for move in valid_moves if move[1] != TransportType.BLACK]  # Exclude black ticket
-        if not valid_moves:
-            return None
-        
-        destination, transport = random.choice(valid_moves)
+            return (None, None, False)  # No valid moves
+        # Randomly decide to use double move 
         use_double = (self.should_use_double_move(game) and random.choice([True, False]))
-
+        # Filter out black ticket moves
+        valid_moves_filtered = [move for move in valid_moves if move[1] != TransportType.BLACK]  # Exclude black ticket
+        # first check if we have valid moves without black ticket
+        if valid_moves_filtered:
+            destination, transport = random.choice(valid_moves_filtered)
+        else:
+            destination, transport = random.choice(valid_moves)
+            return (destination, transport, use_double)
         # Decide whether to use black ticket randomly
         if self._should_use_black_ticket(game, transport):
             transport = TransportType.BLACK

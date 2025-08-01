@@ -19,17 +19,17 @@ from ScotlandYard.core.game import ScotlandYardGame
 from training.base_trainer import BaseTrainer, TrainingResult
 from training.feature_extractor_simple import GameFeatureExtractor, FeatureConfig
 from training.training_environment import TrainingEnvironment
-
+from ScotlandYard.core.game import TransportType
 
 from .dqn_model import create_dqn_model
 from .replay_buffer import create_replay_buffer
 
 from game_controls.game_utils import create_and_initialize_game
+from game_controls.game_utils import create_and_initialize_game
 
 
 from agents import AgentType, get_agent_registry
 from agents.dqn_agent import DQNMrXAgent, DQNMultiDetectiveAgent
-
 
 class DQNTrainer(BaseTrainer):
     """
@@ -92,6 +92,7 @@ class DQNTrainer(BaseTrainer):
         self.step_count = 0
         self.episode_rewards = []
         self.losses = []
+        self.q_value_samples = []  # For monitoring Q-value distributions
     
     def _initialize_networks(self, sample_game: ScotlandYardGame):
         """Initialize the neural networks based on a sample game."""
@@ -99,8 +100,17 @@ class DQNTrainer(BaseTrainer):
         feature_size = self.feature_extractor.get_feature_size(sample_game)
         print(f"Feature vector size: {feature_size}")
         
+        # Store feature size for monitoring
+        self._feature_size = feature_size
+        
         # Update config with actual feature size
         self.config['feature_extraction']['input_size'] = feature_size
+        
+        # Set action size - all agents use (destination, transport)
+        action_size = 2  # (destination, transport)
+        
+        self.config['network_parameters']['action_size'] = action_size
+        print(f"Action size for {self.player_role}: {action_size}")
         
         # Create networks
         self.main_network = create_dqn_model(self.config).to(self.device)
@@ -159,9 +169,12 @@ class DQNTrainer(BaseTrainer):
         else:
             opponent_agent = registry.create_mr_x_agent(AgentType.RANDOM)
         
-        print(f"\n🚀 Starting DQN training for {self.player_role}")
-        print(f"Episodes: {num_episodes}, Map: {map_size}, Detectives: {num_detectives}")
-        print("=" * 60)
+        print(f"\n🚀 Starting DQN Training for {self.player_role.upper()}")
+        print("=" * 80)
+        print(f"Episodes: {num_episodes:,} │ Map: {map_size} │ Detectives: {num_detectives}")
+        print(f"Device: {self.device} │ Network: {sum(p.numel() for p in self.main_network.parameters()):,} params")
+        print(f"Learning Rate: {self.learning_rate} │ Batch Size: {self.batch_size}")
+        print("=" * 80)
         
         # Training loop
         for episode in range(num_episodes):
@@ -171,6 +184,9 @@ class DQNTrainer(BaseTrainer):
 
             episode_reward = self._train_episode(env, opponent_agent)
             self.episode_rewards.append(episode_reward)
+            
+            # Monitor Q-values periodically
+            self.monitor_q_values(episode)
             
             # Update target network
             if episode % self.target_update_frequency == 0:
@@ -187,12 +203,16 @@ class DQNTrainer(BaseTrainer):
             )
             
             # Logging
-            if episode % 50 == 0:
-                avg_reward = np.mean(self.episode_rewards[-50:])
-                avg_loss = np.mean(self.losses[-50:]) if self.losses else 0
-                print(f"Episode {episode:4d} | Avg Reward: {avg_reward:6.2f} | "
-                      f"Epsilon: {self.current_epsilon:.3f} | Loss: {avg_loss:.4f} | "
-                      f"Buffer: {len(self.replay_buffer)}")
+            if episode % 100 == 0:
+                avg_reward = np.mean(self.episode_rewards[-100:])
+                avg_loss = np.mean(self.losses[-100:]) if self.losses else 0
+                buffer_size = len(self.replay_buffer)
+                win_rate = sum(1 for r in self.episode_rewards[-100:] if r > 0) / min(100, len(self.episode_rewards))
+                
+                print(f"Episode {episode:5d} │ Reward: {avg_reward:7.2f} │ "
+                      f"ε: {self.current_epsilon:.3f} │ Loss: {avg_loss:8.4f} │ "
+                      f"Buffer: {buffer_size:5d} │ Win%: {win_rate:5.1%}")
+                
             
             # Log training step
             self._log_training_step(episode, {
@@ -212,8 +232,11 @@ class DQNTrainer(BaseTrainer):
             'final_buffer_size': len(self.replay_buffer)
         }
         
-        print(f"\n✅ Training completed in {training_duration:.2f} seconds")
-        print(f"Final average reward: {final_performance['avg_episode_reward']:.2f}")
+        print(f"\n✅ Training Completed!")
+        print("=" * 80)
+        print(f"Duration: {training_duration:.1f}s │ Final Reward: {final_performance['avg_episode_reward']:.2f}")
+        print(f"Total Steps: {final_performance['total_steps']:,} │ Buffer Size: {final_performance['final_buffer_size']:,}")
+        print("=" * 80)
         
         # Save model
         model_path = self.save_model()
@@ -258,12 +281,29 @@ class DQNTrainer(BaseTrainer):
     
     def _calculate_episode_reward(self, result) -> float:
         """Calculate episode reward based on game outcome and distance-based shaping for both roles."""
-        # Final outcome reward
+        # Final outcome reward - scale based on game length
+        base_win_reward = 10.0
+        base_loss_reward = -10.0
+        
+        # Adjust reward based on game efficiency
+        # Shorter games for detectives are better, longer games for Mr. X are better
+        turn_factor = max(0.5, min(2.0, result.total_turns / 12.0))  # Normalize around 12 turns
+        
         if result.winner == self.player_role.replace("_", ""):
-            outcome = 10.0
+            if self.player_role == "mr_x":
+                # Mr. X: bonus for surviving longer
+                outcome = base_win_reward * turn_factor
+            else:
+                # Detectives: bonus for catching Mr. X quickly
+                outcome = base_win_reward / turn_factor
         else:
-            outcome = -10.0
-        total_turns = result.total_turns
+            if self.player_role == "mr_x":
+                # Mr. X: less penalty if survived longer
+                outcome = base_loss_reward / turn_factor
+            else:
+                # Detectives: more penalty for taking longer
+                outcome = base_loss_reward * turn_factor
+        
         # Distance-based shaping
         shaping = 0.0
         if hasattr(result, 'mr_x_min_distances') and result.mr_x_min_distances:
@@ -272,9 +312,9 @@ class DQNTrainer(BaseTrainer):
                 avg_min_dist = np.mean(valid_distances)
                 # Mr. X: reward being far from detectives; Detectives: reward being close
                 if self.player_role == "mr_x":
-                    shaping = 0.2 * avg_min_dist + total_turns * 0.1  # scale factor can be tuned
+                    shaping = 0.3 * avg_min_dist  # Reward staying far
                 else:
-                    shaping = -0.2 * avg_min_dist - total_turns * 0.1  # Detectives: negative for being far
+                    shaping = -0.3 * avg_min_dist  # Reward staying close
 
         return outcome + shaping 
     
@@ -323,10 +363,56 @@ class DQNTrainer(BaseTrainer):
         loss = F.mse_loss(current_q_values, target_q_values)
         self.optimizer.zero_grad()
         loss.backward()
-        # torch.nn.utils.clip_grad_norm_(self.main_network.parameters(), max_norm=1.0)
+        # Add gradient clipping to prevent exploding gradients
+        torch.nn.utils.clip_grad_norm_(self.main_network.parameters(), max_norm=1.0)
         self.optimizer.step() 
         self.step_count += 1
         return loss.item()
+    
+    def monitor_q_values(self, episode: int, plotting_every: int = 5000):
+        """Monitor Q-value distribution periodically."""
+        if episode % plotting_every == 0:  # Sample based on plotting_every parameter
+            try:
+                self.main_network.eval()
+                
+                # Create random state-action pairs
+                num_samples = 500
+                # Use the stored feature size from network initialization
+                if hasattr(self, '_feature_size'):
+                    feature_size = self._feature_size
+                else:
+                    # Fallback: create a sample game to get feature size
+                    sample_game = create_and_initialize_game("extended", 5)
+                    feature_size = self.feature_extractor.get_feature_size(sample_game)
+                    self._feature_size = feature_size
+                
+                q_values = []
+                for _ in range(num_samples):
+                    state = torch.randn(feature_size).to(self.device)
+                    dest = np.random.randint(1, 200)
+                    transport = np.random.choice(list(TransportType))
+                    
+                    # All agents use (destination, transport) actions
+                    action = (dest, transport)
+                    
+                    with torch.no_grad():
+                        q_val = self.main_network.query_batch_actions(state.unsqueeze(0), [action])
+                        q_values.append(q_val.item())
+                
+                self.q_value_samples.append(q_values)
+                
+                q_array = np.array(q_values)
+                print(f"\n📊 Q-Value Analysis (Episode {episode}):")
+                print(f"   Mean: {q_array.mean():8.3f} │ Std: {q_array.std():7.3f}")
+                print(f"   Range: [{q_array.min():7.3f}, {q_array.max():7.3f}]")
+                print(f"   Negative: {(q_array < 0).sum():3d}/{len(q_array)} ({100*(q_array < 0).mean():4.1f}%)")
+                print("─" * 60)
+                
+                # Put network back in training mode
+                self.main_network.train()
+            
+            except Exception as e:
+                print(f"Warning: Could not monitor Q-values: {e}")
     
     def save_model(self, model_name: Optional[str] = None) -> str:
         """Save the trained model."""
@@ -345,7 +431,8 @@ class DQNTrainer(BaseTrainer):
                 'episode_rewards': self.episode_rewards,
                 'losses': self.losses,
                 'step_count': self.step_count,
-                'final_epsilon': self.current_epsilon
+                'final_epsilon': self.current_epsilon,
+                'q_value_samples': self.q_value_samples
             }
         }, model_path)
         

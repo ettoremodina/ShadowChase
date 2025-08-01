@@ -2,13 +2,11 @@
 import os
 import json
 import pickle
-import random
 import uuid
 from datetime import datetime
-from tkinter import ttk
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional
 import networkx as nx
-from ..core.game import Game, GameState, Player, ScotlandYardGame
+from ..core.game import Game, GameState, ScotlandYardGame
 
 class GameRecord:
     """Represents a saved game record"""

@@ -996,8 +996,8 @@ class EpsilonGreedyMCTSMultiDetectiveAgent(MultiDetectiveAgent):
             
             if not valid_moves:
                 # No valid moves, stay in place
-                detective_moves.append((current_pos, TransportType.TAXI))
-                pending_moves.append((current_pos, TransportType.TAXI))
+                detective_moves.append((current_pos, None))
+                pending_moves.append((current_pos, None))
             else:
                 # Create temporary agent for this detective with coalition reduction
                 temp_agent = EpsilonGreedyMCTSDetectiveAgent(i, **self.mcts_params)

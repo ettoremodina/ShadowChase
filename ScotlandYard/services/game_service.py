@@ -3,7 +3,7 @@ Centralized game service for saving, loading, and managing games.
 This service handles all game persistence operations with consistent metadata.
 """
 from datetime import datetime
-from typing import Dict, Optional
+from typing import Dict
 from .game_loader import GameLoader
 from ..core.game import ScotlandYardGame
 

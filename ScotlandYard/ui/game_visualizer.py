@@ -4,10 +4,7 @@ import networkx as nx
 import os
 import pickle
 import matplotlib.pyplot as plt
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-from matplotlib.figure import Figure
-import numpy as np
-from ..core.game import Game, Player, GameState, ScotlandYardGame, TicketType, TransportType
+from ..core.game import Game, Player, ScotlandYardGame, TicketType, TransportType
 from ..services.game_loader import GameLoader
 from ..services.game_service import GameService
 from .ui_components import ScrollableFrame, StyledButton, InfoDisplay

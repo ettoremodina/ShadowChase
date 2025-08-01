@@ -17,10 +17,145 @@ import torch
 from ScotlandYard.core.game import ScotlandYardGame, Player, TransportType
 from training.feature_extractor_simple import GameFeatureExtractor, FeatureConfig
 from training.deep_q.dqn_model import create_dqn_model
-
+from agents.heuristics import GameHeuristics
 from agents.base_agent import MrXAgent, MultiDetectiveAgent, DetectiveAgent
 
-class DQNMrXAgent(MrXAgent):
+class DQNAgentMixin:
+    """Mixin class for shared DQN agent functionality."""
+    
+    def _infer_model_config_from_state_dict(self, state_dict: dict) -> dict:
+        """
+        Attempt to infer model configuration from state dictionary.
+        This is a fallback when config is not available in checkpoint.
+        """
+        try:
+            # Get the first layer to infer input size
+            first_layer_key = None
+            for key in state_dict.keys():
+                if 'feature_network.0.weight' in key:
+                    first_layer_key = key
+                    break
+            
+            if first_layer_key is None:
+                raise ValueError("Cannot find first layer in state dict")
+            
+            # Input size is the second dimension of the first layer weights
+            input_size = state_dict[first_layer_key].shape[1]
+            
+            # Infer hidden layers by examining the network structure
+            hidden_layers = []
+            layer_idx = 0
+            while True:
+                weight_key = f'feature_network.{layer_idx * 3}.weight'  # Every 3rd layer is Linear
+                if weight_key in state_dict:
+                    hidden_layers.append(state_dict[weight_key].shape[0])
+                    layer_idx += 1
+                else:
+                    break
+            
+            # Default action size (destination + transport)
+            action_size = 2
+            
+            # State size is input size minus action size
+            state_size = input_size - action_size
+            
+            # Create minimal config
+            inferred_config = {
+                'network_parameters': {
+                    'action_size': action_size,
+                    'hidden_layers': hidden_layers,
+                    'dropout_rate': 0.1  # Default value
+                },
+                'feature_extraction': {
+                    'input_size': state_size,
+                    # Add some reasonable defaults for feature extraction
+                    'include_positions': True,
+                    'include_distances': True,
+                    'include_transport_info': True,
+                    'include_game_state': True
+                }
+            }
+            
+            print(f"⚠️  Inferred model config from state dict: state_size={state_size}, hidden_layers={hidden_layers}")
+            return inferred_config
+            
+        except Exception as e:
+            print(f"❌ Failed to infer model config from state dict: {e}")
+            raise ValueError("Cannot infer model structure from state dict")
+    
+    def load_model(self, model_path: str):
+        """Load a trained DQN model from checkpoint."""
+        try:
+            checkpoint = torch.load(model_path, map_location=self.device, weights_only=False)
+            
+            # Try to get configuration from checkpoint
+            config = checkpoint.get('config')
+            
+            if config is None:
+                print("⚠️  No config found in checkpoint, attempting to infer from state dict...")
+                # Fallback: try to infer config from state dict
+                config = self._infer_model_config_from_state_dict(checkpoint['main_network'])
+            
+            # Initialize feature extractor
+            feature_extraction_config = config.get('feature_extraction', {})
+            # Remove input_size if present (it's added during training but not part of FeatureConfig)
+            feature_extraction_config = {k: v for k, v in feature_extraction_config.items() if k != 'input_size'}
+            feature_config = FeatureConfig(**feature_extraction_config)
+            self.feature_extractor = GameFeatureExtractor(feature_config)
+            
+            # Create and load model
+            self.model = create_dqn_model(config).to(self.device)
+            self.model.load_state_dict(checkpoint['main_network'])
+            self.model.eval()
+            
+            # print(f"✅ Loaded DQN model from {model_path}")
+            
+        except Exception as e:
+            print(f"❌ Failed to load model from {model_path}: {e}")
+            self.model = None
+            self.feature_extractor = None
+    
+    def _find_latest_model(self, player_role: str) -> Optional[str]:
+        """Find the latest trained model for the given player role."""
+        model_dir = Path("training_results")
+        if not model_dir.exists():
+            return None
+        
+        # Look for DQN models for this player role
+        pattern = f"dqn_{player_role}_*.pth"
+        models = list(model_dir.glob(pattern))
+        
+        if models:
+            # Return the most recently modified
+            latest_model = max(models, key=lambda p: p.stat().st_mtime)
+            return str(latest_model)
+        
+        return None
+
+    def finalize_episode(self, game: ScotlandYardGame, final_reward: float):
+        """Store the final experience for the episode with the actual reward."""
+        if self.training_mode and hasattr(self, '_previous_state'):
+            # Extract current final state features
+            final_state_features = self.feature_extractor.extract_features(game, self.player)
+            
+            # Store final experience with the actual episode reward
+            self.trainer.replay_buffer.push(
+                state=self._previous_state,
+                action=self._previous_action,
+                reward=final_reward,
+                next_state=final_state_features,
+                done=True,
+                next_valid_moves=set()  # No valid moves in terminal state
+            )
+            
+            # Clear previous state
+            delattr(self, '_previous_state')
+            delattr(self, '_previous_action')
+            if hasattr(self, '_previous_valid_moves'):
+                delattr(self, '_previous_valid_moves')
+
+
+class DQNMrXAgent(MrXAgent, DQNAgentMixin):
     """
     DQN-based Mr. X agent that can work in training or inference mode.
     """
@@ -63,79 +198,28 @@ class DQNMrXAgent(MrXAgent):
                 print("Agent will use random moves until a model is loaded.")
     
 
-    def finalize_episode(self, game: ScotlandYardGame, final_reward: float):
-        """Store the final experience for the episode with the actual reward."""
-        if self.training_mode and hasattr(self, '_previous_state'):
-            # Extract current final state features
-            final_state_features = self.feature_extractor.extract_features(game, self.player)
-            
-            # Store final experience with the actual episode reward
-            self.trainer.replay_buffer.push(
-                state=self._previous_state,
-                action=self._previous_action,
-                reward=final_reward,
-                next_state=final_state_features,
-                done=True,
-                next_valid_moves=set()  # No valid moves in terminal state
-            )
-            
-            # Clear previous state
-            delattr(self, '_previous_state')
-            delattr(self, '_previous_action')
-            delattr(self, '_previous_valid_moves')
-    
-    def _find_latest_model(self, player_role: str) -> Optional[str]:
-        """Find the latest trained model for the given player role."""
-        model_dir = Path("training_results")
-        if not model_dir.exists():
-            return None
+    def _calculate_step_reward(self, game: ScotlandYardGame) -> float:
+        """Calculate step-wise reward for Mr. X to encourage good behavior."""
         
-        # Look for DQN models for this player role
-        pattern = f"dqn_{player_role}_*.pth"
-        models = list(model_dir.glob(pattern))
+        heuristics = GameHeuristics(game)
+        min_distance = heuristics.get_minimum_distance_to_mr_x()
         
-        if models:
-            # Return the most recently modified
-            latest_model = max(models, key=lambda p: p.stat().st_mtime)
-            return str(latest_model)
+        # Reward staying far from detectives
+        distance_reward = min_distance * 0.1
         
-        return None
+        # Small survival bonus
+        survival_bonus = 0.01
+        
+        # Penalty if too close to detectives
+        danger_penalty = 0.0
+        if min_distance <= 2:
+            danger_penalty = -0.5
+        elif min_distance <= 1:
+            danger_penalty = -1.0
+        
+        return distance_reward + survival_bonus + danger_penalty
     
-    def load_model(self, model_path: str):
-        """Load a trained DQN model."""
-        try:
-            checkpoint = torch.load(model_path, map_location=self.device, weights_only=False)
-            
-            # Load configuration
-            config = checkpoint['config']
-            
-            # Initialize feature extractor
-            feature_extraction_config = config.get('feature_extraction', {})
-            # Remove input_size if present (it's added during training but not part of FeatureConfig)
-            feature_extraction_config = {k: v for k, v in feature_extraction_config.items() if k != 'input_size'}
-            feature_config = FeatureConfig(**feature_extraction_config)
-            self.feature_extractor = GameFeatureExtractor(feature_config)
-            
-            # Create and load model
-            
-            self.model = create_dqn_model(config).to(self.device)
-            self.model.load_state_dict(checkpoint['main_network'])
-            self.model.eval()
-            
-            # print(f"✅ Loaded DQN model from {model_path}")
-            
-            # Print training stats if available
-            # if 'training_stats' in checkpoint:
-            #     stats = checkpoint['training_stats']
-            #     print(f"   Training episodes: {len(stats.get('episode_rewards', []))}")
-            #     print(f"   Final epsilon: {stats.get('final_epsilon', 'N/A')}")
-                
-        except Exception as e:
-            print(f"❌ Failed to load model from {model_path}: {e}")
-            self.model = None
-            self.feature_extractor = None
-    
-    def choose_move(self, game: ScotlandYardGame) -> Optional[Tuple[int, TransportType, bool]]:
+    def choose_move(self, game: ScotlandYardGame) -> Optional[Tuple[int, TransportType]]:
         """
         Choose a move using the trained DQN model.
         
@@ -143,7 +227,7 @@ class DQNMrXAgent(MrXAgent):
             game: Current game state
             
         Returns:
-            Tuple of (destination, transport, use_double_move) or None
+            Tuple of (destination, transport) or None
         """
         # Fallback to random if model not loaded
         if self.model is None or self.feature_extractor is None:
@@ -157,14 +241,14 @@ class DQNMrXAgent(MrXAgent):
             # Get valid moves
             valid_moves = game.get_valid_moves(Player.MRX)
             if not valid_moves:
-                return None
+                return (None, None, False)  # No valid moves
             
             # Store previous state if we have one (for experience collection)
             if self.training_mode and hasattr(self, '_previous_state'):
                 # We have a previous state, so we can create an experience
                 
-                # Calculate reward (simple step reward - the final reward will be assigned at episode end)
-                step_reward = 0.0
+                # Calculate step reward with better shaping
+                step_reward = self._calculate_step_reward(game)
                 
                 # Check if game ended
                 done = game.is_game_over()
@@ -188,26 +272,26 @@ class DQNMrXAgent(MrXAgent):
             current_epsilon = self.trainer.current_epsilon if self.training_mode else self.epsilon
             
             with torch.no_grad():
-                dest, transport = self.model.select_action(features_tensor, valid_moves, epsilon=current_epsilon)
+                action_result = self.model.select_action(
+                    features_tensor, 
+                    valid_moves, 
+                    epsilon=current_epsilon
+                )
+            
+            dest, transport = action_result
             
             # Store current state and action for next experience
             if self.training_mode:
                 self._previous_state = current_state_features
                 self._previous_action = (dest, transport)
             
-            # Decide on double move (simple heuristic)
-            use_double_move = False
-            if hasattr(game, 'can_use_double_move') and game.can_use_double_move():
-                # Use double move 10% of the time when available
-                use_double_move = np.random.random() < 0.1
-            
-            return (dest, transport, use_double_move)
+            return (dest, transport, False)
             
         except Exception as e:
             print(f"Error in DQN move selection: {e}")
             return self._random_move(game)
     
-    def _random_move(self, game: ScotlandYardGame) -> Optional[Tuple[int, TransportType, bool]]:
+    def _random_move(self, game: ScotlandYardGame) -> Optional[Tuple[int, TransportType]]:
         """Fallback random move selection."""
         valid_moves = game.get_valid_moves(Player.MRX)
         if not valid_moves:
@@ -215,15 +299,11 @@ class DQNMrXAgent(MrXAgent):
         
         chosen_move = np.random.choice(len(valid_moves))
         dest, transport = list(valid_moves)[chosen_move]
-        use_double_move = False
         
-        if hasattr(game, 'can_use_double_move') and game.can_use_double_move():
-            use_double_move = np.random.random() < 0.05  # 5% chance
-        
-        return (dest, transport, use_double_move)
+        return (dest, transport, False)
 
 
-class DQNDetectiveAgent(DetectiveAgent):
+class DQNDetectiveAgent(DetectiveAgent, DQNAgentMixin):
     """
     DQN-based detective agent for a single detective.
     """
@@ -239,6 +319,9 @@ class DQNDetectiveAgent(DetectiveAgent):
             epsilon: Exploration rate
         """
         super().__init__(detective_id)
+        
+        # Store detective ID for reward calculations
+        self.detective_id = detective_id
         
         self.epsilon = epsilon
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -270,46 +353,6 @@ class DQNDetectiveAgent(DetectiveAgent):
         if self.training_mode and self.trainer:
             self.trainer.replay_buffer.push(state, action, reward, next_state, done, next_valid_moves)
     
-    def _find_latest_model(self, player_role: str) -> Optional[str]:
-        """Find the latest trained model for detectives."""
-        model_dir = Path("training_results")
-        if not model_dir.exists():
-            return None
-        
-        pattern = f"dqn_{player_role}_*.pth"
-        models = list(model_dir.glob(pattern))
-        
-        if models:
-            latest_model = max(models, key=lambda p: p.stat().st_mtime)
-            return str(latest_model)
-        
-        return None
-    
-    def load_model(self, model_path: str):
-        """Load a trained DQN model."""
-        try:
-            checkpoint = torch.load(model_path, map_location=self.device, weights_only=False)
-            config = checkpoint['config']
-            
-            # Initialize feature extractor
-            feature_extraction_config = config.get('feature_extraction', {})
-            # Remove input_size if present (it's added during training but not part of FeatureConfig)
-            feature_extraction_config = {k: v for k, v in feature_extraction_config.items() if k != 'input_size'}
-            feature_config = FeatureConfig(**feature_extraction_config)
-            self.feature_extractor = GameFeatureExtractor(feature_config)
-            
-            
-            self.model = create_dqn_model(config).to(self.device)
-            self.model.load_state_dict(checkpoint['main_network'])
-            self.model.eval()
-            
-            # print(f"✅ Loaded DQN detective model from {model_path}")
-            
-        except Exception as e:
-            print(f"❌ Failed to load detective model: {e}")
-            self.model = None
-            self.feature_extractor = None
-    
     def choose_move(self, game: ScotlandYardGame, pending_moves) -> Optional[Tuple[int, TransportType]]:
         """Choose move for this detective using DQN."""
         if self.model is None or self.feature_extractor is None:
@@ -331,8 +374,8 @@ class DQNDetectiveAgent(DetectiveAgent):
             if self.training_mode and hasattr(self, '_previous_state') and hasattr(self, '_previous_action'):
                 # We have a previous state, so we can create an experience
                 
-                # Calculate reward (simple step reward - the final reward will be assigned at episode end)
-                step_reward = 0.0
+                # Calculate step reward with better shaping
+                step_reward = self._calculate_step_reward(game)
                 
                 # Check if game ended
                 done = game.is_game_over()
@@ -347,12 +390,17 @@ class DQNDetectiveAgent(DetectiveAgent):
                     next_valid_moves=valid_moves
                 )
 
-            # Select action
+            # Select action (detectives never use double moves)
             # Use trainer's epsilon if in training mode, otherwise use agent's epsilon
             current_epsilon = self.trainer.current_epsilon if self.training_mode else self.epsilon
             
             with torch.no_grad():
-                dest, transport = self.model.select_action(features_tensor, valid_moves, epsilon=current_epsilon)
+                action_result = self.model.select_action(
+                    features_tensor, 
+                    valid_moves, 
+                    epsilon=current_epsilon
+                )
+                dest, transport = action_result
                 
             if self.training_mode:
                 self._previous_state = current_state_features
@@ -363,6 +411,54 @@ class DQNDetectiveAgent(DetectiveAgent):
         except Exception as e:
             print(f"Error in DQN detective move selection: {e}")
             return self._random_move(game)
+        
+    def _calculate_step_reward(self, game: ScotlandYardGame) -> float:
+        """Calculate step-wise reward for detective to encourage good behavior."""        
+        heuristics = GameHeuristics(game)
+        
+        # Get this detective's current position
+        detective_pos = self.get_current_position(game)
+        
+        # Get all possible Mr. X positions
+        possible_mr_x_positions = heuristics.get_possible_mr_x_positions()
+        
+        if not possible_mr_x_positions:
+            # If no possible positions available, return small penalty
+            return -0.01
+        
+        # Calculate distances from this detective to all possible Mr. X positions
+        distances_to_possible_positions = []
+        for possible_pos in possible_mr_x_positions:
+            distance = heuristics.calculate_shortest_distance(detective_pos, possible_pos)
+            if distance >= 0:  # Only include valid paths
+                distances_to_possible_positions.append(distance)
+        
+        if not distances_to_possible_positions:
+            # No valid paths to any possible position - large penalty
+            sum_distance_to_mr_x = 100  # Large penalty proportional to sum
+        else:
+            # Use sum of distances to all possible Mr. X positions
+            sum_distance_to_mr_x = sum(distances_to_possible_positions)
+        
+        # Reward getting closer to possible Mr. X positions (inverse sum)
+        distance_reward = -sum_distance_to_mr_x * 0.01  # Negative because we want smaller sum, scaled down since it's a sum
+        
+        # Small step penalty to encourage ending games quickly
+        step_penalty = -0.01
+        
+        # Bonus for being very close to any possible Mr. X position (use min for proximity bonus)
+        proximity_bonus = 0.0
+        if distances_to_possible_positions:
+            min_distance = min(distances_to_possible_positions)
+            if min_distance <= 1:
+                proximity_bonus = 1.0  # Very close - excellent!
+            elif min_distance <= 2:
+                proximity_bonus = 0.5  # Close - good
+            elif min_distance <= 3:
+                proximity_bonus = 0.2  # Reasonably close
+        
+        return distance_reward + step_penalty + proximity_bonus
+    
     
     def _random_move(self, game: ScotlandYardGame) -> Optional[Tuple[int, TransportType]]:
         """Fallback random move."""
@@ -420,6 +516,11 @@ class DQNMultiDetectiveAgent(MultiDetectiveAgent):
                 moves.append(move)
             pending_moves.append(move)
         return moves
+
+    def finalize_episode(self, game: ScotlandYardGame, final_reward: float):
+        """Finalize episode for all detective agents."""
+        for agent in self.detective_agents:
+            agent.finalize_episode(game, final_reward)
 
 
 # Factory functions for agent registry

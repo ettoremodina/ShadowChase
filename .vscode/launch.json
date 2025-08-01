@@ -15,7 +15,7 @@
             "name": "DQNtrain",
             "type": "debugpy",
             "request": "launch",
-            "program": "train_dqn_proper.py",
+            "program": "train_dqn.py",
             "console": "integratedTerminal"
         }
     ]

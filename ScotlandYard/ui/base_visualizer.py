@@ -1,5 +1,4 @@
 import tkinter as tk
-import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.figure import Figure
 import matplotlib.lines as mlines
@@ -7,7 +6,6 @@ import matplotlib.image as mpimg
 import networkx as nx
 import numpy as np
 import os
-from ..core.game import ScotlandYardGame
 
 
 class BaseVisualizer:

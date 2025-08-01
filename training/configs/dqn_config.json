@@ -1,23 +1,22 @@
 {
   "algorithm": "dqn",
   "network_parameters": {
-    "hidden_layers": [32, 32, 32],
+    "hidden_layers": [128, 128, 64],
     "activation": "relu",
     "output_activation": "linear",
     "dropout_rate": 0.1
   },
   "training_parameters": {
-    "player_role": "detectives",
-    "num_episodes": 10000,
-    "batch_size": 32,
-    "learning_rate": 0.001,
-    "gamma": 0.99,
+    "num_episodes": 15000,
+    "batch_size": 64,
+    "learning_rate": 0.003,
+    "gamma": 0.95,
     "epsilon_start": 1.0,
-    "epsilon_end": 0.01,
-    "epsilon_decay": 0.999,
-    "target_update_frequency": 100,
+    "epsilon_end": 0.05,
+    "epsilon_decay": 0.9995,
+    "target_update_frequency": 200,
     "replay_buffer_size": 100000,
-    "min_replay_buffer_size": 100
+    "min_replay_buffer_size": 1000
   },
   "game_parameters": {
     "map_size": "extended",

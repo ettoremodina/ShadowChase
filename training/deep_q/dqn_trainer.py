@@ -73,7 +73,7 @@ class DQNTrainer(BaseTrainer):
         
         # Set device
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        # self.device = "cpu"  # Force CPU for now
+        # self.device = "cpu"  # Force CPU fsor now
         print(f"Using device: {self.device}")
         
         # Initialize feature extractor
@@ -133,6 +133,7 @@ class DQNTrainer(BaseTrainer):
               map_size: str = "test",
               num_detectives: int = 2,
               max_turns_per_game: int = 24,
+              plotting_every: int = 5000,
               **kwargs) -> TrainingResult:
         """
         Train the DQN agent.
@@ -186,7 +187,7 @@ class DQNTrainer(BaseTrainer):
             self.episode_rewards.append(episode_reward)
             
             # Monitor Q-values periodically
-            self.monitor_q_values(episode)
+            self.monitor_q_values(episode, plotting_every)
             
             # Update target network
             if episode % self.target_update_frequency == 0:

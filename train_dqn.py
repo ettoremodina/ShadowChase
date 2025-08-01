@@ -92,7 +92,6 @@ def train_with_monitoring(player_role="mr_x", num_episodes=5000, plotting_every=
         
         # Monitor Q-values periodically using trainer's method
         current_episode = len(trainer.episode_rewards)
-        trainer.monitor_q_values(current_episode, plotting_every)
 
         # Plot progress periodically
         if current_episode % plotting_every == 0 and current_episode > 0:
@@ -108,7 +107,8 @@ def train_with_monitoring(player_role="mr_x", num_episodes=5000, plotting_every=
         num_episodes=num_episodes,
         map_size="extended",  # Start with smaller map
         num_detectives=5,
-        max_turns_per_game=24
+        max_turns_per_game=24,
+        plotting_every=plotting_every
     )
     
     # Final plots
@@ -200,7 +200,7 @@ def main():
 if __name__ == "__main__":
     # For now, just run Mr. X training
     print("Starting DQN training with improved monitoring...")
-    result, trainer = train_with_monitoring("detectives", 15000, plotting_every=3000)
+    result, trainer = train_with_monitoring("detectives", 6000, plotting_every=2000)
     # result, trainer = train_with_monitoring("mr_x", 15000, plotting_every=3000)
     
     # Evaluate the trained agent

@@ -8,7 +8,7 @@ import numpy as np
 from typing import List, Optional
 from dataclasses import dataclass
 
-from ScotlandYard.core.game import ScotlandYardGame, Player, TicketType
+from ShadowChase.core.game import ScotlandYardGame, Player, TicketType
 
 
 from agents.heuristics import GameHeuristics

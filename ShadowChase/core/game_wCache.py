@@ -4,7 +4,7 @@ from enum import Enum
 import networkx as nx
 import hashlib
 import json
-from ScotlandYard.services.cache_system import get_global_cache, CacheNamespace
+from ShadowChase.services.cache_system import get_global_cache, CacheNamespace
 
 class Player(Enum):
     DETECTIVES = "detectives"

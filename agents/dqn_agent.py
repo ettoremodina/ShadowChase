@@ -14,7 +14,7 @@ import numpy as np
 import torch
 
 
-from ScotlandYard.core.game import ScotlandYardGame, Player, TransportType
+from ShadowChase.core.game import ScotlandYardGame, Player, TransportType
 from training.feature_extractor_simple import GameFeatureExtractor, FeatureConfig
 from training.deep_q.dqn_model import create_dqn_model
 from agents.heuristics import GameHeuristics
@@ -160,7 +160,7 @@ class DQNMrXAgent(MrXAgent, DQNAgentMixin):
     DQN-based Mr. X agent that can work in training or inference mode.
     """
     
-    def __init__(self, model_path: Optional[str] = None, trainer=None, epsilon: float = 0):
+    def __init__(self, model_path: Optional[str] = None, trainer=None, epsilon: float = 0, device=None):
         """
         Initialize DQN Mr. X agent.
         
@@ -168,12 +168,19 @@ class DQNMrXAgent(MrXAgent, DQNAgentMixin):
             model_path: Path to trained model file (.pth) - for inference mode
             trainer: DQNTrainer instance - for training mode
             epsilon: Exploration rate for epsilon-greedy action selection
+            device: PyTorch device to use (if None, will auto-detect)
         """
         super().__init__()
 
         self.epsilon = epsilon
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        # self.device = "cpu"
+        
+        # Set device - use trainer's device if available, otherwise use provided device or auto-detect
+        if trainer is not None:
+            self.device = trainer.device
+        elif device is not None:
+            self.device = device
+        else:
+            self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         
         # Model and feature extractor will be loaded
         self.model = None
@@ -323,7 +330,7 @@ class DQNDetectiveAgent(DetectiveAgent, DQNAgentMixin):
     DQN-based detective agent for a single detective.
     """
     
-    def __init__(self, detective_id: int, model_path: Optional[str] = None, trainer=None, epsilon: float = 0):
+    def __init__(self, detective_id: int, model_path: Optional[str] = None, trainer=None, epsilon: float = 0, device=None):
         """
         Initialize DQN detective agent.
         
@@ -332,6 +339,7 @@ class DQNDetectiveAgent(DetectiveAgent, DQNAgentMixin):
             model_path: Path to trained model file - for inference mode
             trainer: DQNTrainer instance - for training mode
             epsilon: Exploration rate
+            device: PyTorch device to use (if None, will auto-detect)
         """
         super().__init__(detective_id)
         
@@ -339,8 +347,14 @@ class DQNDetectiveAgent(DetectiveAgent, DQNAgentMixin):
         self.detective_id = detective_id
         
         self.epsilon = epsilon
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        # self.device = "cpu"
+        
+        # Set device - use trainer's device if available, otherwise use provided device or auto-detect
+        if trainer is not None:
+            self.device = trainer.device
+        elif device is not None:
+            self.device = device
+        else:
+            self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         
         # Model and feature extractor
         self.model = None
@@ -490,7 +504,7 @@ class DQNMultiDetectiveAgent(MultiDetectiveAgent):
     DQN-based agent that controls multiple detectives.
     """
     
-    def __init__(self, num_detectives: int = 2, model_path: Optional[str] = None, trainer=None, epsilon: float = 0):
+    def __init__(self, num_detectives: int = 2, model_path: Optional[str] = None, trainer=None, epsilon: float = 0, device=None):
         """
         Initialize DQN multi-detective agent.
         
@@ -499,12 +513,13 @@ class DQNMultiDetectiveAgent(MultiDetectiveAgent):
             model_path: Path to trained model - for inference mode
             trainer: DQNTrainer instance - for training mode
             epsilon: Exploration rate
+            device: PyTorch device to use (if None, will auto-detect)
         """
         super().__init__(num_detectives)
         
         # Create individual detective agents
         self.detective_agents = [
-            DQNDetectiveAgent(i, model_path, trainer, epsilon) 
+            DQNDetectiveAgent(i, model_path, trainer, epsilon, device) 
             for i in range(num_detectives)
         ]
     
@@ -539,11 +554,11 @@ class DQNMultiDetectiveAgent(MultiDetectiveAgent):
 
 
 # Factory functions for agent registry
-def create_dqn_mr_x_agent(model_path: Optional[str] = None, trainer=None) -> DQNMrXAgent:
+def create_dqn_mr_x_agent(model_path: Optional[str] = None, trainer=None, device=None) -> DQNMrXAgent:
     """Create a DQN Mr. X agent."""
-    return DQNMrXAgent(model_path, trainer)
+    return DQNMrXAgent(model_path, trainer, device=device)
 
 
-def create_dqn_multi_detective_agent(num_detectives: int, model_path: Optional[str] = None, trainer=None) -> DQNMultiDetectiveAgent:
+def create_dqn_multi_detective_agent(num_detectives: int, model_path: Optional[str] = None, trainer=None, device=None) -> DQNMultiDetectiveAgent:
     """Create a DQN multi-detective agent."""
-    return DQNMultiDetectiveAgent(num_detectives, model_path, trainer)
+    return DQNMultiDetectiveAgent(num_detectives, model_path, trainer, device=device)

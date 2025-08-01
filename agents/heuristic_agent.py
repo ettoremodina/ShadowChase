@@ -8,7 +8,7 @@ maximize distance from the closest detective.
 
 import random
 from typing import List, Tuple, Optional
-from ScotlandYard.core.game import ScotlandYardGame, Player, TransportType, TicketType
+from ShadowChase.core.game import ScotlandYardGame, Player, TransportType, TicketType
 from .base_agent import DetectiveAgent, MrXAgent, MultiDetectiveAgent
 from .heuristics import GameHeuristics
 

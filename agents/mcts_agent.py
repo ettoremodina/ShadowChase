@@ -13,7 +13,7 @@ import random
 from pathlib import Path
 from typing import List, Optional, Dict, Any, Tuple
 
-from ScotlandYard.core.game import ScotlandYardGame, Player, TransportType
+from ShadowChase.core.game import ScotlandYardGame, Player, TransportType
 from .base_agent import MrXAgent, MultiDetectiveAgent, DetectiveAgent
 
 

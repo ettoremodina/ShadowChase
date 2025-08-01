@@ -9,7 +9,7 @@ import matplotlib.image as mpimg
 import json
 import os
 import numpy as np
-from ScotlandYard.services.board_loader import create_extracted_board_game, load_board_metadata
+from ShadowChase.services.board_loader import create_extracted_board_game, load_board_metadata
 import tkinter as tk
 from tkinter import ttk, messagebox
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg

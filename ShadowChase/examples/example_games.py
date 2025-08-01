@@ -15,7 +15,7 @@ if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
 # Now import from the ScotlandYard package
-from ScotlandYard.core.game import Game, StandardMovement, DistanceKMovement, CaptureWinCondition, DistanceKWinCondition, ScotlandYardGame
+from ShadowChase.core.game import Game, StandardMovement, DistanceKMovement, CaptureWinCondition, DistanceKWinCondition, ScotlandYardGame
 
 def create_path_graph_game(n: int, num_detectives: int = 1) -> Game:
     """Create game on path graph"""
@@ -149,7 +149,7 @@ def create_simple_test_scotland_yard_game(num_detectives: int = 2,
 def create_extracted_board_game(num_detectives: int = 3) -> ScotlandYardGame:
     """Create Scotland Yard game using extracted board data from board_progress.json"""
     try:
-        from ScotlandYard.services.board_loader import create_extracted_board_game as _create_game
+        from ShadowChase.services.board_loader import create_extracted_board_game as _create_game
         return _create_game(num_detectives)
     except ImportError:
         print("Warning: board_loader not available, falling back to CSV data")

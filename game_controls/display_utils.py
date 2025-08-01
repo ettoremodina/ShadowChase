@@ -3,7 +3,7 @@ Display utilities for simple terminal-based Scotland Yard gameplay.
 Provides clean, customizable output formatting without graph visualization.
 """
 from typing import Dict, List, Tuple, Optional, Set
-from ScotlandYard.core.game import ScotlandYardGame, Player, TicketType, TransportType
+from ShadowChase.core.game import ScotlandYardGame, Player, TicketType, TransportType
 from agents.heuristics import GameHeuristics
 
 

@@ -5,21 +5,44 @@ Specialized class for analyzing game results and generating comprehensive visual
 
 import os
 import json
-import pickle
-import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 import numpy as np
-from datetime import datetime, timedelta
-from typing import Dict, List, Optional, Tuple, Any
+from datetime import datetime
+from typing import Dict, List, Tuple
 from pathlib import Path
-from collections import defaultdict, Counter
-import glob
+from collections import defaultdict
 from scipy import stats
 
 # Set style for better-looking plots
 plt.style.use('seaborn-v0_8' if 'seaborn-v0_8' in plt.style.available else 'default')
 sns.set_palette("husl")
+
+# Agent name mapping for better display names
+AGENT_NAME_MAPPING = {
+    "random": "Random Agent",
+    "heuristic": "Heuristic Agent", 
+    "optimized_mcts": "Optimized MCTS",
+    "epsilon_greedy_mcts": "ε-Greedy MCTS",
+    "deep_q": "Deep Q-Network"
+}
+increase = 7
+# Font size configuration variables for easy debugging and testing
+FONT_SIZE_LARGE_TITLE = 24   +increase       # Main titles and suptitles
+FONT_SIZE_TITLE = 20         +increase           # Plot titles
+FONT_SIZE_SUBTITLE = 18      +increase          # Subtitles
+FONT_SIZE_LABEL = 16         +increase         # Axis labels
+FONT_SIZE_TICK = 14          +increase          # Tick labels
+FONT_SIZE_LEGEND = 14        +increase      # Legend text
+FONT_SIZE_ANNOTATION = 13    +increase      # Value annotations on bars/plots
+FONT_SIZE_TEXT_STATS = 14    +increase     # Statistics text boxes
+FONT_SIZE_HEATMAP_ANNOT = 18 +increase   # Heatmap annotations
+FONT_SIZE_PIE_LABEL = 14     +increase    # Pie chart labels
+FONT_SIZE_PIE_PERCENT = 12   +increase    # Pie chart percentages
+
+def get_display_name(agent_name: str) -> str:
+    """Convert internal agent name to display name"""
+    return AGENT_NAME_MAPPING.get(agent_name, agent_name.replace("_", " ").title())
 
 
 def calculate_proportion_confidence_interval(successes: int, total: int, confidence: float = 0.95) -> Tuple[float, float]:
@@ -178,14 +201,15 @@ class GameAnalyzer:
         self.graphs_dir = self.base_dir / "analysis_graphs"
         self.graphs_dir.mkdir(exist_ok=True)
         
-        # Configure matplotlib for better output
-        plt.rcParams['figure.figsize'] = (12, 8)
-        plt.rcParams['font.size'] = 10
-        plt.rcParams['axes.titlesize'] = 14
-        plt.rcParams['axes.labelsize'] = 12
-        plt.rcParams['xtick.labelsize'] = 10
-        plt.rcParams['ytick.labelsize'] = 10
-        plt.rcParams['legend.fontsize'] = 10
+        # Configure matplotlib for better output using font size variables
+        plt.rcParams['figure.figsize'] = (16, 12)
+        plt.rcParams['font.size'] = FONT_SIZE_TICK
+        plt.rcParams['axes.titlesize'] = FONT_SIZE_TITLE
+        plt.rcParams['axes.labelsize'] = FONT_SIZE_LABEL
+        plt.rcParams['xtick.labelsize'] = FONT_SIZE_TICK
+        plt.rcParams['ytick.labelsize'] = FONT_SIZE_TICK
+        plt.rcParams['legend.fontsize'] = FONT_SIZE_LEGEND
+        plt.rcParams['figure.titlesize'] = FONT_SIZE_LARGE_TITLE
     
     def load_all_games(self) -> bool:
         """Load all games from the directory structure"""
@@ -386,57 +410,75 @@ class GameAnalyzer:
     
     def _create_win_rate_comparison(self):
         """Create win rate comparison chart with confidence intervals"""
-        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 8))
+        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(20, 12))
         
         # Mr. X win rates
         if self.statistics.win_rates.get('mr_x'):
             mr_x_data = self.statistics.win_rates['mr_x']
-            agents = list(mr_x_data.keys())
+            agents = [get_display_name(agent) for agent in mr_x_data.keys()]
             win_rates = [data['win_rate'] for data in mr_x_data.values()]
             games = [data['games'] for data in mr_x_data.values()]
             
-            # Calculate error bars for confidence intervals
+            # Get confidence intervals
             ci_data = [data.get('win_rate_ci', (0, 0)) for data in mr_x_data.values()]
+            
+            # Create boxplot-style visualization with error bars
+            x_pos = range(len(agents))
+            bars1 = ax1.bar(x_pos, win_rates, color=sns.color_palette("Set2", len(agents)),
+                           alpha=0.7, edgecolor='black', linewidth=1.5)
+            
+            # Add confidence interval error bars
             lower_errors = [max(0, rate - ci[0]) for rate, ci in zip(win_rates, ci_data)]
             upper_errors = [min(100 - rate, ci[1] - rate) for rate, ci in zip(win_rates, ci_data)]
+            ax1.errorbar(x_pos, win_rates, yerr=[lower_errors, upper_errors], 
+                        fmt='none', capsize=8, capthick=2, ecolor='black', elinewidth=2)
             
-            bars1 = ax1.bar(agents, win_rates, color=sns.color_palette("Set2", len(agents)),
-                           yerr=[lower_errors, upper_errors], capsize=5, ecolor='black')
-            ax1.set_title('Mr. X Win Rates by Agent Type (95% CI)', fontsize=14, pad=20)
-            ax1.set_ylabel('Win Rate (%)')
+            ax1.set_title('Mr. X Win Rates by Agent Type (95% CI)', fontsize=FONT_SIZE_TITLE, pad=30, fontweight='bold')
+            ax1.set_ylabel('Win Rate (%)', fontsize=FONT_SIZE_LABEL)
             ax1.set_ylim(0, 100)
+            ax1.set_xticks(x_pos)
+            ax1.set_xticklabels(agents, fontsize=FONT_SIZE_TICK)
+            ax1.tick_params(axis='y', labelsize=FONT_SIZE_TICK)
             
             # Add value labels with confidence intervals
-            for i, (bar, rate, game_count, ci) in enumerate(zip(bars1, win_rates, games, ci_data)):
-                height = bar.get_height()
-                ax1.text(bar.get_x() + bar.get_width()/2., height + upper_errors[i] + 2,
+            for i, (rate, game_count, ci) in enumerate(zip(win_rates, games, ci_data)):
+                ax1.text(i, rate + upper_errors[i] + 3,
                         f'{rate:.1f}%\n[{ci[0]:.1f}%, {ci[1]:.1f}%]\n({game_count} games)',
-                        ha='center', va='bottom', fontsize=9)
+                        ha='center', va='bottom', fontsize=FONT_SIZE_ANNOTATION, fontweight='bold')
         
         # Detective win rates
         if self.statistics.win_rates.get('detective'):
             detective_data = self.statistics.win_rates['detective']
-            agents = list(detective_data.keys())
+            agents = [get_display_name(agent) for agent in detective_data.keys()]
             win_rates = [data['win_rate'] for data in detective_data.values()]
             games = [data['games'] for data in detective_data.values()]
             
-            # Calculate error bars for confidence intervals
+            # Get confidence intervals
             ci_data = [data.get('win_rate_ci', (0, 0)) for data in detective_data.values()]
+            
+            # Create boxplot-style visualization with error bars
+            x_pos = range(len(agents))
+            bars2 = ax2.bar(x_pos, win_rates, color=sns.color_palette("Set1", len(agents)),
+                           alpha=0.7, edgecolor='black', linewidth=1.5)
+            
+            # Add confidence interval error bars
             lower_errors = [max(0, rate - ci[0]) for rate, ci in zip(win_rates, ci_data)]
             upper_errors = [min(100 - rate, ci[1] - rate) for rate, ci in zip(win_rates, ci_data)]
+            ax2.errorbar(x_pos, win_rates, yerr=[lower_errors, upper_errors], 
+                        fmt='none', capsize=8, capthick=2, ecolor='black', elinewidth=2)
             
-            bars2 = ax2.bar(agents, win_rates, color=sns.color_palette("Set1", len(agents)),
-                           yerr=[lower_errors, upper_errors], capsize=5, ecolor='black')
-            ax2.set_title('Detective Win Rates by Agent Type (95% CI)', fontsize=14, pad=20)
-            ax2.set_ylabel('Win Rate (%)')
+            ax2.set_title('Detective Win Rates by Agent Type (95% CI)', fontsize=FONT_SIZE_TITLE, pad=30, fontweight='bold')
+            ax2.set_ylabel('Win Rate (%)', fontsize=FONT_SIZE_LABEL)
             ax2.set_ylim(0, 100)
+            ax2.set_xticks(x_pos)
+            ax2.set_xticklabels(agents, fontsize=FONT_SIZE_TICK)
+            ax2.tick_params(axis='y', labelsize=FONT_SIZE_TICK)
             
             # Add value labels with confidence intervals
-            for i, (bar, rate, game_count, ci) in enumerate(zip(bars2, win_rates, games, ci_data)):
-                height = bar.get_height()
-                ax2.text(bar.get_x() + bar.get_width()/2., height + upper_errors[i] + 2,
+            for i, (rate, game_count, ci) in enumerate(zip(win_rates, games, ci_data)):
+                ax2.text(i, rate + upper_errors[i] + 3,
                         f'{rate:.1f}%\n[{ci[0]:.1f}%, {ci[1]:.1f}%]\n({game_count} games)',
-                        ha='center', va='bottom', fontsize=9)
+                        ha='center', va='bottom', fontsize=FONT_SIZE_ANNOTATION, fontweight='bold')
         
         plt.tight_layout()
         plt.savefig(self.graphs_dir / "win_rates_by_agent.jpg", dpi=300, bbox_inches='tight')
@@ -448,49 +490,55 @@ class GameAnalyzer:
         if not self.statistics.game_lengths:
             return
         
-        fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(16, 12))
+        fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(20, 16))
         
         # Box plot of game lengths by combination
         combinations = list(self.statistics.game_lengths.keys())
+        display_combinations = [f"{get_display_name(combo.split('_vs_')[0])}\nvs\n{get_display_name(combo.split('_vs_')[1])}" 
+                              if "_vs_" in combo else combo for combo in combinations]
         lengths_data = [self.statistics.game_lengths[combo] for combo in combinations]
         
         if lengths_data:
-            box_plot = ax1.boxplot(lengths_data, labels=combinations, patch_artist=True)
+            box_plot = ax1.boxplot(lengths_data, labels=display_combinations, patch_artist=True)
             colors = sns.color_palette("Set3", len(combinations))
             for patch, color in zip(box_plot['boxes'], colors):
                 patch.set_facecolor(color)
             
-            ax1.set_title('Game Length Distribution by Agent Combination')
-            ax1.set_ylabel('Game Length (turns)')
-            ax1.tick_params(axis='x', rotation=45)
+            ax1.set_title('Game Length Distribution by Agent Combination', fontsize=FONT_SIZE_TITLE, fontweight='bold', pad=25)
+            ax1.set_ylabel('Game Length (turns)', fontsize=FONT_SIZE_LABEL)
+            ax1.tick_params(axis='x', labelsize=FONT_SIZE_TICK-1)
+            ax1.tick_params(axis='y', labelsize=FONT_SIZE_TICK)
         
         # Histogram of all game lengths
         all_lengths = [length for lengths in lengths_data for length in lengths]
         if all_lengths:
             ax2.hist(all_lengths, bins=15, alpha=0.7, color='skyblue', edgecolor='black')
-            ax2.set_title('Overall Game Length Distribution')
-            ax2.set_xlabel('Game Length (turns)')
-            ax2.set_ylabel('Number of Games')
-            ax2.axvline(np.mean(all_lengths), color='red', linestyle='--', 
+            ax2.set_title('Overall Game Length Distribution', fontsize=FONT_SIZE_TITLE, fontweight='bold', pad=25)
+            ax2.set_xlabel('Game Length (turns)', fontsize=FONT_SIZE_LABEL)
+            ax2.set_ylabel('Number of Games', fontsize=FONT_SIZE_LABEL)
+            ax2.axvline(np.mean(all_lengths), color='red', linestyle='--', linewidth=2,
                        label=f'Mean: {np.mean(all_lengths):.1f}')
-            ax2.legend()
+            ax2.legend(fontsize=FONT_SIZE_LEGEND)
+            ax2.tick_params(axis='x', labelsize=FONT_SIZE_TICK)
+            ax2.tick_params(axis='y', labelsize=FONT_SIZE_TICK)
         
         # Average game length by combination
         avg_lengths = [np.mean(lengths) if lengths else 0 for lengths in lengths_data]
         if avg_lengths:
             bars = ax3.bar(range(len(combinations)), avg_lengths, 
                           color=sns.color_palette("viridis", len(combinations)))
-            ax3.set_title('Average Game Length by Agent Combination')
-            ax3.set_xlabel('Agent Combination')
-            ax3.set_ylabel('Average Game Length (turns)')
+            ax3.set_title('Average Game Length by Agent Combination', fontsize=FONT_SIZE_TITLE, fontweight='bold', pad=25)
+            ax3.set_xlabel('Agent Combination', fontsize=FONT_SIZE_LABEL)
+            ax3.set_ylabel('Average Game Length (turns)', fontsize=FONT_SIZE_LABEL)
             ax3.set_xticks(range(len(combinations)))
-            ax3.set_xticklabels(combinations, rotation=45, ha='right')
+            ax3.set_xticklabels(display_combinations, fontsize=FONT_SIZE_TICK-1)
+            ax3.tick_params(axis='y', labelsize=FONT_SIZE_TICK)
             
             # Add value labels
             for bar, avg_len in zip(bars, avg_lengths):
                 height = bar.get_height()
                 ax3.text(bar.get_x() + bar.get_width()/2., height + 0.5,
-                        f'{avg_len:.1f}', ha='center', va='bottom')
+                        f'{avg_len:.1f}', ha='center', va='bottom', fontsize=FONT_SIZE_ANNOTATION, fontweight='bold')
         
         # Game completion rates
         completion_rates = [
@@ -502,18 +550,19 @@ class GameAnalyzer:
         if completion_rates:
             bars = ax4.bar(range(len(combinations)), completion_rates,
                           color=sns.color_palette("plasma", len(combinations)))
-            ax4.set_title('Game Completion Rate by Agent Combination')
-            ax4.set_xlabel('Agent Combination')
-            ax4.set_ylabel('Completion Rate (%)')
+            ax4.set_title('Game Completion Rate by Agent Combination', fontsize=FONT_SIZE_TITLE, fontweight='bold', pad=25)
+            ax4.set_xlabel('Agent Combination', fontsize=FONT_SIZE_LABEL)
+            ax4.set_ylabel('Completion Rate (%)', fontsize=FONT_SIZE_LABEL)
             ax4.set_xticks(range(len(combinations)))
-            ax4.set_xticklabels(combinations, rotation=45, ha='right')
+            ax4.set_xticklabels(display_combinations, fontsize=FONT_SIZE_TICK-1)
             ax4.set_ylim(0, 100)
+            ax4.tick_params(axis='y', labelsize=FONT_SIZE_TICK)
             
             # Add value labels
             for bar, rate in zip(bars, completion_rates):
                 height = bar.get_height()
                 ax4.text(bar.get_x() + bar.get_width()/2., height + 1,
-                        f'{rate:.1f}%', ha='center', va='bottom')
+                        f'{rate:.1f}%', ha='center', va='bottom', fontsize=FONT_SIZE_ANNOTATION, fontweight='bold')
         
         plt.tight_layout()
         plt.savefig(self.graphs_dir / "game_length_analysis.jpg", dpi=300, bbox_inches='tight')
@@ -530,38 +579,43 @@ class GameAnalyzer:
         if not combinations:
             return
         
-        fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(16, 12))
-        fig.suptitle('Execution Time Analysis by Agent Combination', fontsize=16, fontweight='bold')
+        display_combinations = [f"{get_display_name(combo.split('_vs_')[0])}\nvs\n{get_display_name(combo.split('_vs_')[1])}" 
+                              if "_vs_" in combo else combo for combo in combinations]
+        
+        fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(20, 16))
+        fig.suptitle('Execution Time Analysis by Agent Combination', fontsize=FONT_SIZE_LARGE_TITLE, fontweight='bold', y=0.98)
         
         # Box plot of execution times
         execution_data = [self.statistics.execution_times[combo] for combo in combinations]
-        bp = ax1.boxplot(execution_data, labels=combinations, patch_artist=True)
+        bp = ax1.boxplot(execution_data, labels=display_combinations, patch_artist=True)
         
         # Color the boxes
         colors = sns.color_palette("viridis", len(combinations))
         for patch, color in zip(bp['boxes'], colors):
             patch.set_facecolor(color)
         
-        ax1.set_title('Execution Time Distribution')
-        ax1.set_xlabel('Agent Combination')
-        ax1.set_ylabel('Execution Time (seconds)')
-        ax1.tick_params(axis='x', rotation=45)
+        ax1.set_title('Execution Time Distribution', fontsize=FONT_SIZE_TITLE, fontweight='bold', pad=25)
+        ax1.set_xlabel('Agent Combination', fontsize=FONT_SIZE_LABEL)
+        ax1.set_ylabel('Execution Time (seconds)', fontsize=FONT_SIZE_LABEL)
+        ax1.tick_params(axis='x', labelsize=FONT_SIZE_TICK-1)
+        ax1.tick_params(axis='y', labelsize=FONT_SIZE_TICK)
         
         # Average execution times bar chart
         avg_times = [np.mean(self.statistics.execution_times[combo]) for combo in combinations]
         bars = ax2.bar(range(len(combinations)), avg_times,
                       color=sns.color_palette("plasma", len(combinations)))
-        ax2.set_title('Average Execution Time by Agent Combination')
-        ax2.set_xlabel('Agent Combination')
-        ax2.set_ylabel('Average Time (seconds)')
+        ax2.set_title('Average Execution Time by Agent Combination', fontsize=FONT_SIZE_TITLE, fontweight='bold', pad=25)
+        ax2.set_xlabel('Agent Combination', fontsize=FONT_SIZE_LABEL)
+        ax2.set_ylabel('Average Time (seconds)', fontsize=FONT_SIZE_LABEL)
         ax2.set_xticks(range(len(combinations)))
-        ax2.set_xticklabels(combinations, rotation=45, ha='right')
+        ax2.set_xticklabels(display_combinations, fontsize=FONT_SIZE_TICK-1)
+        ax2.tick_params(axis='y', labelsize=FONT_SIZE_TICK)
         
         # Add value labels
         for bar, avg_time in zip(bars, avg_times):
             height = bar.get_height()
             ax2.text(bar.get_x() + bar.get_width()/2., height + height*0.01,
-                    f'{avg_time:.2f}s', ha='center', va='bottom')
+                    f'{avg_time:.2f}s', ha='center', va='bottom', fontsize=FONT_SIZE_ANNOTATION, fontweight='bold')
         
         # Execution time vs game length scatter plot
         all_exec_times = []
@@ -581,17 +635,19 @@ class GameAnalyzer:
                 colors_scatter.extend([colors[i]] * min_len)
         
         if all_exec_times and all_game_lengths:
-            scatter = ax3.scatter(all_game_lengths, all_exec_times, c=colors_scatter, alpha=0.6)
-            ax3.set_title('Execution Time vs Game Length')
-            ax3.set_xlabel('Game Length (turns)')
-            ax3.set_ylabel('Execution Time (seconds)')
+            scatter = ax3.scatter(all_game_lengths, all_exec_times, c=colors_scatter, alpha=0.6, s=50)
+            ax3.set_title('Execution Time vs Game Length', fontsize=FONT_SIZE_TITLE, fontweight='bold', pad=25)
+            ax3.set_xlabel('Game Length (turns)', fontsize=FONT_SIZE_LABEL)
+            ax3.set_ylabel('Execution Time (seconds)', fontsize=FONT_SIZE_LABEL)
+            ax3.tick_params(axis='x', labelsize=FONT_SIZE_TICK)
+            ax3.tick_params(axis='y', labelsize=FONT_SIZE_TICK)
             
             # Add trend line
             if len(all_game_lengths) > 1:
                 z = np.polyfit(all_game_lengths, all_exec_times, 1)
                 p = np.poly1d(z)
                 ax3.plot(sorted(all_game_lengths), p(sorted(all_game_lengths)), 
-                        "r--", alpha=0.8, linewidth=1)
+                        "r--", alpha=0.8, linewidth=2)
         
         # Games per minute calculation
         games_per_min = []
@@ -605,17 +661,18 @@ class GameAnalyzer:
         
         bars = ax4.bar(range(len(combinations)), games_per_min,
                       color=sns.color_palette("cool", len(combinations)))
-        ax4.set_title('Theoretical Games per Minute')
-        ax4.set_xlabel('Agent Combination')
-        ax4.set_ylabel('Games per Minute')
+        ax4.set_title('Theoretical Games per Minute', fontsize=FONT_SIZE_TITLE, fontweight='bold', pad=25)
+        ax4.set_xlabel('Agent Combination', fontsize=FONT_SIZE_LABEL)
+        ax4.set_ylabel('Games per Minute', fontsize=FONT_SIZE_LABEL)
         ax4.set_xticks(range(len(combinations)))
-        ax4.set_xticklabels(combinations, rotation=45, ha='right')
+        ax4.set_xticklabels(display_combinations, fontsize=FONT_SIZE_TICK-1)
+        ax4.tick_params(axis='y', labelsize=FONT_SIZE_TICK)
         
         # Add value labels
         for bar, gpm in zip(bars, games_per_min):
             height = bar.get_height()
             ax4.text(bar.get_x() + bar.get_width()/2., height + height*0.01,
-                    f'{gpm:.1f}', ha='center', va='bottom')
+                    f'{gpm:.1f}', ha='center', va='bottom', fontsize=FONT_SIZE_ANNOTATION, fontweight='bold')
         
         plt.tight_layout()
         plt.savefig(self.graphs_dir / "execution_time_analysis.jpg", dpi=300, bbox_inches='tight')
@@ -643,8 +700,12 @@ class GameAnalyzer:
         if not mr_x_agents or not detective_agents:
             return
         
+        # Convert to display names
+        mr_x_display = [get_display_name(agent) for agent in mr_x_agents]
+        detective_display = [get_display_name(agent) for agent in detective_agents]
+        
         # Create performance matrices
-        fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(16, 12))
+        fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(24, 20))
         
         # Mr. X win rate matrix
         mr_x_matrix = np.zeros((len(mr_x_agents), len(detective_agents)))
@@ -664,35 +725,47 @@ class GameAnalyzer:
         
         # Mr. X win rate heatmap
         sns.heatmap(mr_x_matrix, annot=True, fmt='.1f', 
-                   xticklabels=detective_agents, yticklabels=mr_x_agents,
-                   cmap='Reds', ax=ax1, cbar_kws={'label': 'Win Rate (%)'})
-        ax1.set_title('Mr. X Win Rate Matrix')
-        ax1.set_xlabel('Detective Agent')
-        ax1.set_ylabel('Mr. X Agent')
+                   xticklabels=detective_display, yticklabels=mr_x_display,
+                   cmap='Reds', ax=ax1, cbar_kws={'label': 'Win Rate (%)'}, 
+                   annot_kws={'fontsize': FONT_SIZE_HEATMAP_ANNOT, 'fontweight': 'bold'})
+        ax1.set_title('Mr. X Win Rate Matrix', fontsize=FONT_SIZE_TITLE, fontweight='bold', pad=20)
+        ax1.set_xlabel('Detective Agent', fontsize=FONT_SIZE_LABEL)
+        ax1.set_ylabel('Mr. X Agent', fontsize=FONT_SIZE_LABEL)
+        ax1.tick_params(axis='x', labelsize=FONT_SIZE_TICK)
+        ax1.tick_params(axis='y', labelsize=FONT_SIZE_TICK)
         
         # Detective win rate heatmap
         sns.heatmap(detective_matrix, annot=True, fmt='.1f',
-                   xticklabels=detective_agents, yticklabels=mr_x_agents,
-                   cmap='Blues', ax=ax2, cbar_kws={'label': 'Win Rate (%)'})
-        ax2.set_title('Detective Win Rate Matrix')
-        ax2.set_xlabel('Detective Agent')
-        ax2.set_ylabel('Mr. X Agent')
+                   xticklabels=detective_display, yticklabels=mr_x_display,
+                   cmap='Blues', ax=ax2, cbar_kws={'label': 'Win Rate (%)'}, 
+                   annot_kws={'fontsize': FONT_SIZE_HEATMAP_ANNOT, 'fontweight': 'bold'})
+        ax2.set_title('Detective Win Rate Matrix', fontsize=FONT_SIZE_TITLE, fontweight='bold', pad=20)
+        ax2.set_xlabel('Detective Agent', fontsize=FONT_SIZE_LABEL)
+        ax2.set_ylabel('Mr. X Agent', fontsize=FONT_SIZE_LABEL)
+        ax2.tick_params(axis='x', labelsize=FONT_SIZE_TICK)
+        ax2.tick_params(axis='y', labelsize=FONT_SIZE_TICK)
         
         # Game count heatmap
         sns.heatmap(game_count_matrix, annot=True, fmt='.0f',
-                   xticklabels=detective_agents, yticklabels=mr_x_agents,
-                   cmap='Greens', ax=ax3, cbar_kws={'label': 'Number of Games'})
-        ax3.set_title('Number of Games Matrix')
-        ax3.set_xlabel('Detective Agent')
-        ax3.set_ylabel('Mr. X Agent')
+                   xticklabels=detective_display, yticklabels=mr_x_display,
+                   cmap='Greens', ax=ax3, cbar_kws={'label': 'Number of Games'}, 
+                   annot_kws={'fontsize': FONT_SIZE_HEATMAP_ANNOT, 'fontweight': 'bold'})
+        ax3.set_title('Number of Games Matrix', fontsize=FONT_SIZE_TITLE, fontweight='bold', pad=20)
+        ax3.set_xlabel('Detective Agent', fontsize=FONT_SIZE_LABEL)
+        ax3.set_ylabel('Mr. X Agent', fontsize=FONT_SIZE_LABEL)
+        ax3.tick_params(axis='x', labelsize=FONT_SIZE_TICK)
+        ax3.tick_params(axis='y', labelsize=FONT_SIZE_TICK)
         
         # Average game length heatmap
         sns.heatmap(avg_length_matrix, annot=True, fmt='.1f',
-                   xticklabels=detective_agents, yticklabels=mr_x_agents,
-                   cmap='Purples', ax=ax4, cbar_kws={'label': 'Average Turns'})
-        ax4.set_title('Average Game Length Matrix')
-        ax4.set_xlabel('Detective Agent')
-        ax4.set_ylabel('Mr. X Agent')
+                   xticklabels=detective_display, yticklabels=mr_x_display,
+                   cmap='Purples', ax=ax4, cbar_kws={'label': 'Average Turns'}, 
+                   annot_kws={'fontsize': FONT_SIZE_HEATMAP_ANNOT, 'fontweight': 'bold'})
+        ax4.set_title('Average Game Length Matrix', fontsize=FONT_SIZE_TITLE, fontweight='bold', pad=20)
+        ax4.set_xlabel('Detective Agent', fontsize=FONT_SIZE_LABEL)
+        ax4.set_ylabel('Mr. X Agent', fontsize=FONT_SIZE_LABEL)
+        ax4.tick_params(axis='x', labelsize=FONT_SIZE_TICK)
+        ax4.tick_params(axis='y', labelsize=FONT_SIZE_TICK)
         
         plt.tight_layout()
         plt.savefig(self.graphs_dir / "agent_performance_matrix.jpg", dpi=300, bbox_inches='tight')
@@ -704,25 +777,29 @@ class GameAnalyzer:
         if not self.statistics.temporal_data:
             return
         
-        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 6))
+        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(20, 10))
         
         # Games over time
         dates = sorted(self.statistics.temporal_data.keys())
         counts = [self.statistics.temporal_data[date] for date in dates]
         
-        ax1.plot(dates, counts, marker='o', linewidth=2, markersize=6)
-        ax1.set_title('Games Played Over Time')
-        ax1.set_xlabel('Date')
-        ax1.set_ylabel('Number of Games')
-        ax1.tick_params(axis='x', rotation=45)
+        ax1.plot(dates, counts, marker='o', linewidth=3, markersize=8, color='steelblue')
+        ax1.set_title('Games Played Over Time', fontsize=FONT_SIZE_TITLE, fontweight='bold')
+        ax1.set_xlabel('Date', fontsize=FONT_SIZE_LABEL)
+        ax1.set_ylabel('Number of Games', fontsize=FONT_SIZE_LABEL)
+        ax1.tick_params(axis='x', rotation=45, labelsize=FONT_SIZE_TICK)
+        ax1.tick_params(axis='y', labelsize=FONT_SIZE_TICK)
+        ax1.grid(True, alpha=0.3)
         
         # Cumulative games
         cumulative = np.cumsum(counts)
-        ax2.plot(dates, cumulative, marker='s', linewidth=2, markersize=6, color='green')
-        ax2.set_title('Cumulative Games Played')
-        ax2.set_xlabel('Date')
-        ax2.set_ylabel('Cumulative Games')
-        ax2.tick_params(axis='x', rotation=45)
+        ax2.plot(dates, cumulative, marker='s', linewidth=3, markersize=8, color='darkgreen')
+        ax2.set_title('Cumulative Games Played', fontsize=FONT_SIZE_TITLE, fontweight='bold')
+        ax2.set_xlabel('Date', fontsize=FONT_SIZE_LABEL)
+        ax2.set_ylabel('Cumulative Games', fontsize=FONT_SIZE_LABEL)
+        ax2.tick_params(axis='x', rotation=45, labelsize=FONT_SIZE_TICK)
+        ax2.tick_params(axis='y', labelsize=FONT_SIZE_TICK)
+        ax2.grid(True, alpha=0.3)
         
         plt.tight_layout()
         plt.savefig(self.graphs_dir / "temporal_analysis.jpg", dpi=300, bbox_inches='tight')
@@ -735,10 +812,10 @@ class GameAnalyzer:
         if not summary:
             return
         
-        fig = plt.figure(figsize=(24, 15))
+        fig = plt.figure(figsize=(30, 22))
         
         # Create a grid layout with more space for the new chart
-        gs = fig.add_gridspec(3, 6, hspace=0.3, wspace=0.3)
+        gs = fig.add_gridspec(3, 6, hspace=0.35, wspace=0.35)
         
         # Overall statistics (top left)
         ax1 = fig.add_subplot(gs[0, :2])
@@ -770,7 +847,7 @@ GAME METRICS
 Average Game Length: {summary['average_game_length']:.1f} turns
   [95% CI: {length_ci[0]:.1f}-{length_ci[1]:.1f}]
         """
-        ax1.text(0.05, 0.95, stats_text, transform=ax1.transAxes, fontsize=11,
+        ax1.text(0.05, 0.95, stats_text, transform=ax1.transAxes, fontsize=FONT_SIZE_TEXT_STATS,
                 verticalalignment='top', fontfamily='monospace',
                 bbox=dict(boxstyle='round', facecolor='lightblue', alpha=0.8))
         ax1.axis('off')
@@ -787,8 +864,17 @@ Average Game Length: {summary['average_game_length']:.1f} turns
                 labels.append('Incomplete')
                 colors.append('lightgray')
             
-            ax2.pie(sizes, labels=labels, colors=colors, autopct='%1.1f%%', startangle=90)
-            ax2.set_title('Game Outcomes Distribution', pad=20)
+            wedges, texts, autotexts = ax2.pie(sizes, labels=labels, colors=colors, autopct='%1.1f%%', startangle=90)
+            ax2.set_title('Game Outcomes Distribution', pad=20, fontsize=FONT_SIZE_TITLE, fontweight='bold')
+            
+            # Improve text readability
+            for text in texts:
+                text.set_fontsize(FONT_SIZE_PIE_LABEL)
+                text.set_fontweight('bold')
+            for autotext in autotexts:
+                autotext.set_color('black')
+                autotext.set_fontweight('bold')
+                autotext.set_fontsize(FONT_SIZE_PIE_PERCENT)
         
         # Agent Strength Distribution (top right) - NEW PIE CHART
         ax6 = fig.add_subplot(gs[0, 4:])
@@ -801,22 +887,28 @@ Average Game Length: {summary['average_game_length']:.1f} turns
             filtered_data = [(agent, wins) for agent, wins in zip(agents, total_wins) if wins > 0]
             if filtered_data:
                 agents, total_wins = zip(*filtered_data)
+                display_agents = [get_display_name(agent) for agent in agents]
                 colors_strength = sns.color_palette("Set3", len(agents))
                 
-                wedges, texts, autotexts = ax6.pie(total_wins, labels=agents, colors=colors_strength, 
+                wedges, texts, autotexts = ax6.pie(total_wins, labels=display_agents, colors=colors_strength, 
                                                   autopct='%1.1f%%', startangle=90)
-                ax6.set_title('Agent Strength Distribution\n(Total Wins Across All Roles)', pad=20)
+                ax6.set_title('Agent Strength Distribution\n(Total Wins Across All Roles)', pad=20, fontsize=FONT_SIZE_TITLE, fontweight='bold')
                 
                 # Improve text readability
+                for text in texts:
+                    text.set_fontsize(FONT_SIZE_PIE_LABEL-1)
+                    text.set_fontweight('bold')
                 for autotext in autotexts:
                     autotext.set_color('black')
                     autotext.set_fontweight('bold')
-                    autotext.set_fontsize(9)
+                    autotext.set_fontsize(FONT_SIZE_PIE_PERCENT)
         
         # Agent combination performance (middle)
         if self.statistics.agent_combinations:
             ax3 = fig.add_subplot(gs[1, :])
             combinations = list(self.statistics.agent_combinations.keys())[:10]  # Top 10
+            display_combinations = [f"{get_display_name(combo.split('_vs_')[0])}\nvs\n{get_display_name(combo.split('_vs_')[1])}" 
+                                  if "_vs_" in combo else combo for combo in combinations]
             detective_rates = [self.statistics.agent_combinations[combo]['detective_win_rate'] 
                              for combo in combinations]
             mr_x_rates = [self.statistics.agent_combinations[combo]['mr_x_win_rate'] 
@@ -830,13 +922,14 @@ Average Game Length: {summary['average_game_length']:.1f} turns
             bars2 = ax3.bar(x + width/2, mr_x_rates, width, label='Mr. X Win Rate', 
                            color='lightskyblue', alpha=0.8)
             
-            ax3.set_title('Win Rates by Agent Combination')
-            ax3.set_xlabel('Agent Combination')
-            ax3.set_ylabel('Win Rate (%)')
+            ax3.set_title('Win Rates by Agent Combination', fontsize=FONT_SIZE_TITLE, fontweight='bold', pad=25)
+            ax3.set_xlabel('Agent Combination', fontsize=FONT_SIZE_LABEL)
+            ax3.set_ylabel('Win Rate (%)', fontsize=FONT_SIZE_LABEL)
             ax3.set_xticks(x)
-            ax3.set_xticklabels(combinations, rotation=45, ha='right')
-            ax3.legend()
+            ax3.set_xticklabels(display_combinations, fontsize=FONT_SIZE_TICK-1)
+            ax3.legend(fontsize=FONT_SIZE_LEGEND)
             ax3.set_ylim(0, 100)
+            ax3.tick_params(axis='y', labelsize=FONT_SIZE_TICK)
         
         # Game length distribution (bottom left)
         if self.statistics.game_lengths:
@@ -845,20 +938,24 @@ Average Game Length: {summary['average_game_length']:.1f} turns
                           for length in lengths]
             if all_lengths:
                 ax4.hist(all_lengths, bins=20, alpha=0.7, color='mediumseagreen', edgecolor='black')
-                ax4.set_title('Game Length Distribution')
-                ax4.set_xlabel('Game Length (turns)')
-                ax4.set_ylabel('Frequency')
-                ax4.axvline(np.mean(all_lengths), color='red', linestyle='--', 
+                ax4.set_title('Game Length Distribution', fontsize=FONT_SIZE_TITLE, fontweight='bold', pad=25)
+                ax4.set_xlabel('Game Length (turns)', fontsize=FONT_SIZE_LABEL)
+                ax4.set_ylabel('Frequency', fontsize=FONT_SIZE_LABEL)
+                ax4.axvline(np.mean(all_lengths), color='red', linestyle='--', linewidth=2,
                            label=f'Mean: {np.mean(all_lengths):.1f}')
-                ax4.legend()
+                ax4.legend(fontsize=FONT_SIZE_LEGEND)
+                ax4.tick_params(axis='x', labelsize=FONT_SIZE_TICK)
+                ax4.tick_params(axis='y', labelsize=FONT_SIZE_TICK)
         
         # Agent performance summary (bottom right)
         ax5 = fig.add_subplot(gs[2, 3:])
         if self.statistics.win_rates.get('mr_x') and self.statistics.win_rates.get('detective'):
             mr_x_agents = list(self.statistics.win_rates['mr_x'].keys())
+            mr_x_display = [get_display_name(agent) for agent in mr_x_agents]
             mr_x_rates = [self.statistics.win_rates['mr_x'][agent]['win_rate'] for agent in mr_x_agents]
             
             detective_agents = list(self.statistics.win_rates['detective'].keys())
+            detective_display = [get_display_name(agent) for agent in detective_agents]
             detective_rates = [self.statistics.win_rates['detective'][agent]['win_rate'] 
                              for agent in detective_agents]
             
@@ -868,14 +965,15 @@ Average Game Length: {summary['average_game_length']:.1f} turns
             bars1 = ax5.bar(x1, mr_x_rates, color='lightskyblue', alpha=0.8, label='Mr. X Agents')
             bars2 = ax5.bar(x2, detective_rates, color='lightcoral', alpha=0.8, label='Detective Agents')
             
-            ax5.set_title('Agent Type Performance')
-            ax5.set_ylabel('Win Rate (%)')
+            ax5.set_title('Agent Type Performance', fontsize=FONT_SIZE_TITLE, fontweight='bold', pad=25)
+            ax5.set_ylabel('Win Rate (%)', fontsize=FONT_SIZE_LABEL)
             ax5.set_xticks(list(x1) + list(x2))
-            ax5.set_xticklabels(mr_x_agents + detective_agents, rotation=45, ha='right')
-            ax5.legend()
+            ax5.set_xticklabels(mr_x_display + detective_display, fontsize=FONT_SIZE_TICK-1)
+            ax5.legend(fontsize=FONT_SIZE_LEGEND)
             ax5.set_ylim(0, 100)
+            ax5.tick_params(axis='y', labelsize=FONT_SIZE_TICK)
         
-        plt.suptitle('Scotland Yard Game Analysis Dashboard', fontsize=16, y=0.98)
+        plt.suptitle('Scotland Yard Game Analysis Dashboard', fontsize=FONT_SIZE_LARGE_TITLE, y=0.98, fontweight='bold')
         plt.savefig(self.graphs_dir / "comprehensive_dashboard.jpg", dpi=300, bbox_inches='tight')
         plt.close()
         print("   📊 Generated: comprehensive_dashboard.jpg")
@@ -953,7 +1051,14 @@ Average Game Length: {summary['average_game_length']:.1f} turns
                 f.write("AGENT COMBINATION PERFORMANCE\n")
                 f.write("-" * 32 + "\n")
                 for combo, stats in sorted(self.statistics.agent_combinations.items()):
-                    f.write(f"{combo}:\n")
+                    # Convert to display names for the report
+                    if "_vs_" in combo:
+                        mr_x_agent, detective_agent = combo.split("_vs_")
+                        display_combo = f"{get_display_name(mr_x_agent)} vs {get_display_name(detective_agent)}"
+                    else:
+                        display_combo = combo
+                    
+                    f.write(f"{display_combo}:\n")
                     f.write(f"  Games: {stats['games']:,}\n")
                     
                     detective_wr = stats['detective_win_rate']
@@ -1001,7 +1106,8 @@ Average Game Length: {summary['average_game_length']:.1f} turns
                 sorted_agents = sorted(agent_strength.items(), 
                                      key=lambda x: x[1]['total_wins'], reverse=True)
                 for agent, stats in sorted_agents:
-                    f.write(f"{agent}:\n")
+                    display_agent = get_display_name(agent)
+                    f.write(f"{display_agent}:\n")
                     f.write(f"  Total Wins: {stats['total_wins']:,}\n")
                     f.write(f"  Total Games: {stats['total_games']:,}\n")
                     f.write(f"  Overall Win Rate: {stats['win_rate']:.1f}%\n")

@@ -21,7 +21,7 @@ current_dir = Path(__file__).parent
 project_root = current_dir.parent if current_dir.name == "ScotlandYardRL" else current_dir
 sys.path.insert(0, str(project_root))
 
-from ScotlandYard.ui.video_exporter import export_video_from_command_line
+from ShadowChase.ui.video_exporter import export_video_from_command_line
 
 
 def main():

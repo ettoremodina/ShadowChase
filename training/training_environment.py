@@ -9,13 +9,13 @@ import time
 from typing import Dict, List, Any, Tuple
 
 from dataclasses import dataclass
-from ScotlandYard.core.game import Player
+from ShadowChase.core.game import Player
 from game_controls.game_utils import create_and_initialize_game, execute_single_turn
 from game_controls.game_logic import GameController
 from game_controls.display_utils import GameDisplay, VerbosityLevel
 
-from ScotlandYard.services.game_loader import GameLoader
-from ScotlandYard.services.game_service import GameService
+from ShadowChase.services.game_loader import GameLoader
+from ShadowChase.services.game_service import GameService
 from agents.heuristics import GameHeuristics
 from agents import AgentType
 

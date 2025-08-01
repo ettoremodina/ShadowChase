@@ -34,7 +34,7 @@ if str(current_dir) not in sys.path:
 from game_controls.game_utils import play_multiple_games
 from game_controls.display_utils import VerbosityLevel
 from agents import AgentType
-from ScotlandYard.services.cache_system import enable_cache, disable_cache, is_cache_enabled, get_global_cache
+from ShadowChase.services.cache_system import enable_cache, disable_cache, is_cache_enabled, get_global_cache
 
 
 class RandomAgentCacheTest:

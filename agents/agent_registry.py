@@ -7,7 +7,7 @@ It allows easy selection and instantiation of agents for both terminal and UI in
 
 from typing import Dict, Tuple, List, Type, Callable
 from enum import Enum
-from ScotlandYard.core.game import Player
+from ShadowChase.core.game import Player
 from .base_agent import MrXAgent, MultiDetectiveAgent, DetectiveAgent
 from .random_agent import RandomMrXAgent, RandomMultiDetectiveAgent
 from .heuristic_agent import HeuristicMrXAgent, HeuristicMultiDetectiveAgent

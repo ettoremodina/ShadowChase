@@ -8,7 +8,7 @@ import random
 import numpy as np
 from collections import deque, namedtuple
 from typing import List, Tuple, Optional, Set, Dict
-from ScotlandYard.core.game import TransportType
+from ShadowChase.core.game import TransportType
 
 
 # Define experience tuple

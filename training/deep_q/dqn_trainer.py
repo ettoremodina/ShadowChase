@@ -15,11 +15,11 @@ import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
 
-from ScotlandYard.core.game import ScotlandYardGame
+from ShadowChase.core.game import ScotlandYardGame
 from training.base_trainer import BaseTrainer, TrainingResult
 from training.feature_extractor_simple import GameFeatureExtractor, FeatureConfig
 from training.training_environment import TrainingEnvironment
-from ScotlandYard.core.game import TransportType
+from ShadowChase.core.game import TransportType
 
 from .dqn_model import create_dqn_model
 from .replay_buffer import create_replay_buffer
@@ -41,7 +41,8 @@ class DQNTrainer(BaseTrainer):
     def __init__(self, 
                  player_role: str = "mr_x",  # "mr_x" or "detectives"
                  config_path: str = "training/configs/dqn_config.json",
-                 save_dir: str = "training_results"):
+                 save_dir: str = "training_results",
+                 device=None):
         """
         Initialize DQN trainer.
         
@@ -49,6 +50,7 @@ class DQNTrainer(BaseTrainer):
             player_role: Which player the agent will control ("mr_x" or "detectives")
             config_path: Path to DQN configuration file
             save_dir: Directory to save training results
+            device: PyTorch device to use (if None, will auto-detect)
         """
         super().__init__("dqn", save_dir)
     
@@ -72,8 +74,10 @@ class DQNTrainer(BaseTrainer):
         self.min_replay_size = training_params.get('min_replay_buffer_size', 100)
         
         # Set device
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        # self.device = "cpu"  # Force CPU fsor now
+        if device is None:
+            self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        else:
+            self.device = device
         print(f"Using device: {self.device}")
         
         # Initialize feature extractor

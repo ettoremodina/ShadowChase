@@ -6,8 +6,8 @@ import time
 from datetime import datetime
 import argparse
 from typing import Tuple, Optional
-from ScotlandYard.core.game import Player, ScotlandYardGame
-from ScotlandYard.services.game_service import GameService
+from ShadowChase.core.game import Player, ScotlandYardGame
+from ShadowChase.services.game_service import GameService
 from game_controls.display_utils import GameDisplay, VerbosityLevel, display_game_start_info, display_game_over
 from game_controls.game_logic import GameController, GameSetup
 from tqdm import tqdm
@@ -68,7 +68,7 @@ def save_game_session(game: ScotlandYardGame, play_mode: str, map_size: str,
                      mr_x_agent_type=None, detective_agent_type=None, save_dir: str = "fritto_misto", execution_time: float = None) -> Optional[str]:
     """Save a completed game session with metadata"""
     try:
-        from ScotlandYard.services.game_loader import GameLoader
+        from ShadowChase.services.game_loader import GameLoader
         game_loader = GameLoader(save_dir)
         game_service = GameService(game_loader)
         

@@ -7,7 +7,7 @@ specifically distance calculations between Mr. X and detectives.
 
 import networkx as nx
 from typing import List, Dict, Optional, Set, Tuple
-from ScotlandYard.core.game import ScotlandYardGame, GameState, Player
+from ShadowChase.core.game import ScotlandYardGame, GameState, Player
 import random
 
 class GameHeuristics:

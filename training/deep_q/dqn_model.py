@@ -41,7 +41,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
 from typing import Dict, List, Tuple, Set
-from ScotlandYard.core.game import TransportType
+from ShadowChase.core.game import TransportType
 
 
 class DQNModel(nn.Module):

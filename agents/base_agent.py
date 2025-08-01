@@ -7,7 +7,7 @@ All agents must inherit from these base classes and implement the required metho
 
 from abc import ABC, abstractmethod
 from typing import List, Tuple, Optional, Set
-from ScotlandYard.core.game import ScotlandYardGame, Player, TransportType
+from ShadowChase.core.game import ScotlandYardGame, Player, TransportType
 
 
 class Agent(ABC):

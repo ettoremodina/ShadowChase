@@ -4,9 +4,9 @@ Handles move validation, AI moves, and game flow.
 """
 import random
 from typing import List, Tuple, Optional
-from ScotlandYard.core.game import ScotlandYardGame, Player, TicketType, TransportType
+from ShadowChase.core.game import ScotlandYardGame, Player, TicketType, TransportType
 from .display_utils import GameDisplay, format_transport_input
-from ScotlandYard.services.board_loader import load_board_graph_from_csv
+from ShadowChase.services.board_loader import load_board_graph_from_csv
 from agents import AgentType, AgentSelector, get_agent_registry
 
 
@@ -301,7 +301,7 @@ class GameSetup:
     @staticmethod
     def create_test_game(num_detectives: int = 2) -> ScotlandYardGame:
         """Create a test Scotland Yard game (small map)"""
-        from ScotlandYard.examples.example_games import create_test_scotland_yard_game
+        from ShadowChase.examples.example_games import create_test_scotland_yard_game
         return create_test_scotland_yard_game(num_detectives)
     
     @staticmethod
@@ -309,17 +309,17 @@ class GameSetup:
         """Create a full Scotland Yard game (full map)"""
         # Try to use extracted board first, fall back to CSV
         try:
-            from ScotlandYard.examples.example_games import create_extracted_board_game
+            from ShadowChase.examples.example_games import create_extracted_board_game
             return create_extracted_board_game(num_detectives)
         except:
             # Fall back to original CSV-based game
-            from ScotlandYard.examples.example_games import create_scotlandYard_game
+            from ShadowChase.examples.example_games import create_scotlandYard_game
             return create_scotlandYard_game(num_detectives)
     
     @staticmethod
     def create_extracted_board_game(num_detectives: int = 3) -> ScotlandYardGame:
         """Create a Scotland Yard game using extracted board data"""
-        from ScotlandYard.examples.example_games import create_extracted_board_game
+        from ShadowChase.examples.example_games import create_extracted_board_game
         return create_extracted_board_game(num_detectives)
     
     @staticmethod

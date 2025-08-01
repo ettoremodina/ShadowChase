@@ -7,7 +7,7 @@ These can be used for testing and as baseline implementations.
 
 import random
 from typing import List, Tuple, Optional, Set
-from ScotlandYard.core.game import ScotlandYardGame, Player, TransportType, TicketType
+from ShadowChase.core.game import ScotlandYardGame, Player, TransportType, TicketType
 from .base_agent import DetectiveAgent, MrXAgent, MultiDetectiveAgent
 
 class RandomMrXAgent(MrXAgent):

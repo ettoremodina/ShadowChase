@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 from training.training_environment import TrainingEnvironment
 from agents.dqn_agent import DQNMrXAgent, DQNMultiDetectiveAgent
 import argparse
-from ScotlandYard.core.game import TransportType
+from ShadowChase.core.game import TransportType
 from training.deep_q.dqn_trainer import DQNTrainer
 from agents import AgentType, get_agent_registry
 
@@ -73,15 +73,23 @@ def plot_training_metrics(trainer, save_path="training_results/training_metrics.
     plt.close('all')
 
 
-def train_with_monitoring(player_role="mr_x", num_episodes=5000, plotting_every=1000):
+def train_with_monitoring(player_role="mr_x", num_episodes=5000, plotting_every=1000, device=None):
     """Train DQN with enhanced monitoring and diagnostics."""
     print(f"🚀 Starting enhanced DQN training for {player_role}")
     print("=" * 60)
     
+    # Set device if not provided
+    if device is None:
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        # device = "cpu"  # Uncomment to force CPU
+    
+    print(f"🖥️  Using device: {device}")
+    
     # Create trainer
     trainer = DQNTrainer(
         player_role=player_role,
-        config_path="training/configs/dqn_config.json"
+        config_path="training/configs/dqn_config.json",
+        device=device
     )
     
     # Override the training loop to add monitoring
@@ -124,21 +132,23 @@ def train_with_monitoring(player_role="mr_x", num_episodes=5000, plotting_every=
     return result, trainer
 
 
-def evaluate_trained_agent(model_path, player_role, num_games=100):
+def evaluate_trained_agent(model_path, player_role, num_games=100, device=None):
     """Evaluate a trained agent against random opponents."""
     print(f"\n🎯 Evaluating trained {player_role} agent...")
     
-
+    # Set device if not provided
+    if device is None:
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     
     env = TrainingEnvironment("test", 2, 24)
     registry = get_agent_registry()
     
     # Create trained agent
     if player_role == "mr_x":
-        trained_agent = DQNMrXAgent(model_path=model_path, epsilon=0.0)  # No exploration
+        trained_agent = DQNMrXAgent(model_path=model_path, epsilon=0.0, device=device)  # No exploration
         opponent = registry.create_multi_detective_agent(AgentType.RANDOM, 2)
     else:
-        trained_agent = DQNMultiDetectiveAgent(2, model_path=model_path, epsilon=0.0)
+        trained_agent = DQNMultiDetectiveAgent(2, model_path=model_path, epsilon=0.0, device=device)
         opponent = registry.create_mr_x_agent(AgentType.RANDOM)
     
     # Run evaluation games
@@ -186,22 +196,42 @@ def main():
             print("Error: --model_path required for evaluation")
             return
         
-        evaluate_trained_agent(args.model_path, args.role)
+        # Set device choice for evaluation
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        # device = "cpu"  # Uncomment to force CPU
+        print(f"🖥️  Using device: {device}")
+        
+        evaluate_trained_agent(args.model_path, args.role, device=device)
     else:
         # Training
         plotting_every = args.episodes // 3
-        result, trainer = train_with_monitoring(args.role, args.episodes, plotting_every)
+        
+        # Set device choice here
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        # device = "cpu"  # Uncomment to force CPU
+        print(f"🖥️  Using device: {device}")
+        
+        result, trainer = train_with_monitoring(args.role, args.episodes, plotting_every, device)
 
         # Quick evaluation
         print("\n" + "="*60)
-        evaluate_trained_agent(result.model_path, args.role, num_games=50)
+        evaluate_trained_agent(result.model_path, args.role, num_games=50, device=device)
 
 
 if __name__ == "__main__":
     # For now, just run Mr. X training
     print("Starting DQN training with improved monitoring...")
-    result, trainer = train_with_monitoring("detectives", 300, plotting_every=100)
-    result, trainer = train_with_monitoring("mr_x",  300, plotting_every=100)
     
-    # Evaluate the trained agent
-    # evaluate_trained_agent(result.model_path, "detectives", num_games=30)
+    # Set device choice here
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    # device = "cpu"  # Uncomment to force CPU
+    print(f"🖥️  Using device: {device}")
+    
+    # detective_result, detective_trainer = train_with_monitoring("detectives", 9000, plotting_every=100, device=device)
+    mr_x_result, mr_x_trainer = train_with_monitoring("mr_x", 9000, plotting_every=3000, device=device)
+    
+    # # Evaluate the trained agents
+    # print("\n=== Detective Evaluation ===")
+    # evaluate_trained_agent(detective_result.model_path, "detectives", num_games=30, device=device)
+    # print("\n=== Mr. X Evaluation ===") 
+    # evaluate_trained_agent(mr_x_result.model_path, "mr_x", num_games=30, device=device)

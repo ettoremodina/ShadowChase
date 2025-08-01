@@ -8,9 +8,9 @@ current_dir = os.path.dirname(os.path.abspath(__file__))
 if current_dir not in sys.path:
     sys.path.insert(0, current_dir)
 
-from ScotlandYard.ui.game_visualizer import GameVisualizer
-from ScotlandYard.core.game import Game, Player, ScotlandYardGame, TicketType, TransportType
-from ScotlandYard.examples.example_games import *
+from ShadowChase.ui.game_visualizer import GameVisualizer
+from ShadowChase.core.game import Game, Player, ScotlandYardGame, TicketType, TransportType
+from ShadowChase.examples.example_games import *
 
 def print_game_state(game):
     """Print current game state"""
@@ -253,7 +253,7 @@ def demo_scotland_yard_visualizer():
 def demo_test_scotland_yard():
     """Demonstrate test Scotland Yard game with small graph"""
     print("Test Scotland Yard Game Demo (10 nodes)")
-    from ScotlandYard.examples.example_games import create_test_scotland_yard_game
+    from ShadowChase.examples.example_games import create_test_scotland_yard_game
     
     game = create_test_scotland_yard_game(2)
     
@@ -280,7 +280,7 @@ def demo_test_scotland_yard():
 def demo_simple_test_scotland_yard():
     """Demonstrate simple test Scotland Yard game"""
     print("Simple Test Scotland Yard Game Demo")
-    from ScotlandYard.examples.example_games import create_simple_test_scotland_yard_game
+    from ShadowChase.examples.example_games import create_simple_test_scotland_yard_game
     
     game = create_simple_test_scotland_yard_game(num_detectives=2, show_MrX=True, use_tickets=False)
     
@@ -338,44 +338,3 @@ def demo_extracted_board_game(num_detectives: int = 3, auto_init: bool = True):
 
 if __name__ == "__main__":
     demo_extracted_board_game(5)
-# Run tests
-# if __name__ == "__main__":
-#     print("Choose a demo:")
-#     print("1. Basic Game Test")
-#     print("2. Complete Game Test") 
-#     print("3. Scotland Yard Test")
-#     print("4. Path Graph Demo")
-#     print("5. Cycle Graph Demo")
-#     print("6. Grid Graph Demo")
-#     print("7. Simple Scotland Yard Demo")
-#     print("8. Full Scotland Yard Demo")
-#     print("9. Scotland Yard Visualizer")
-#     print("10. Test Scotland Yard (10 nodes)")
-#     print("11. Simple Test Scotland Yard (10 nodes)")
-    
-#     choice = input("Enter choice (1-11): ")
-    
-#     if choice == "1":
-#         test_basic_game()
-#     elif choice == "2":
-#         test_game_until_end()
-#     elif choice == "3":
-#         test_scotland_yard_game()
-#     elif choice == "4":
-#         demo_path_game()
-#     elif choice == "5":
-#         demo_cycle_game()
-#     elif choice == "6":
-#         demo_grid_game()
-#     elif choice == "7":
-#         demo_simple_scotland_yard()
-#     elif choice == "8":
-#         demo_scotland_yard_game()
-#     elif choice == "9":
-#         demo_scotland_yard_visualizer()
-#     elif choice == "10":
-#         demo_test_scotland_yard()
-#     elif choice == "11":
-#         demo_simple_test_scotland_yard()
-#     else:
-#         print("Invalid choice")

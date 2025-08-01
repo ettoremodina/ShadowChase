@@ -7,7 +7,7 @@ Runs all agent combinations and generates analysis.
 import subprocess
 import os
 import sys
-from ScotlandYard.services.cache_system import (
+from ShadowChase.services.cache_system import (
     enable_cache, disable_cache, is_cache_enabled, get_global_cache,
     enable_namespace_cache, disable_namespace_cache, is_namespace_cache_enabled,
     reset_namespace_cache_settings, get_cache_status, CacheNamespace
@@ -54,8 +54,8 @@ def main():
     # Import AgentSelector inside the function to avoid circular imports
     
     # Configuration
-    test_name = "debug" 
-    games_per_combo = 300
+    test_name = "FINAL_TEST" 
+    games_per_combo = 100
     num_detectives = 5
     map_size = "extracted"
     enable_cache()
@@ -67,8 +67,8 @@ def main():
 
     
     # Get agent types dynamically
-    # agent_types = [agent_name[0] for agent_name in AgentSelector.get_agent_choices_for_ui()]
-    agent_types = ["deep_q", "random"]
+    agent_types = [agent_name[0] for agent_name in AgentSelector.get_agent_choices_for_ui()]
+    # agent_types = ["deep_q", "random"]
     print(f"Testing agents: {agent_types}")
     print(f"Games per combination: {games_per_combo}")
     print(f"Test directory: {test_name}")

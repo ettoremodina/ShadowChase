@@ -25,7 +25,7 @@ from pathlib import Path
 project_root = Path(__file__).parent
 sys.path.insert(0, str(project_root))
 
-from ScotlandYard.core.game import Player
+from ShadowChase.core.game import Player
 # from agents.mcts_agent import MCTSMrXAgent, MCTSMultiDetectiveAgent
 # from agents.mcts_agent import MCTSAgent, MCTSNode
 
@@ -36,7 +36,7 @@ from agents.optimized_mcts_agent import OptimizedMCTSMrXAgent as MCTSMrXAgent
 from agents.optimized_mcts_agent import OptimizedMCTSMultiDetectiveAgent as MCTSMultiDetectiveAgent
 
 
-from ScotlandYard.examples.example_games import create_extracted_board_game
+from ShadowChase.examples.example_games import create_extracted_board_game
 
 class FunctionProfiler:
     """Custom profiler to track function calls, execution times, and memory usage."""
@@ -210,7 +210,7 @@ def patch_mcts_for_profiling():
     MCTSAgent.mcts_search = profiled_mcts_search
     
     # Patch game state operations
-    from ScotlandYard.core.game import ScotlandYardGame
+    from ShadowChase.core.game import ScotlandYardGame
     original_get_valid_moves = ScotlandYardGame.get_valid_moves
     original_make_move = ScotlandYardGame.make_move
     original_is_game_over = ScotlandYardGame.is_game_over

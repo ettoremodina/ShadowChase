@@ -31,10 +31,10 @@ import time
 import random
 import hashlib
 
-from ScotlandYard.core.game import ScotlandYardGame, Player, TransportType
+from ShadowChase.core.game import ScotlandYardGame, Player, TransportType
 from .base_agent import MrXAgent, MultiDetectiveAgent, DetectiveAgent
 from .mcts_agent import load_mcts_config
-from ScotlandYard.services.cache_system import get_global_cache, CacheNamespace
+from ShadowChase.services.cache_system import get_global_cache, CacheNamespace
 
 
 class GameStateHash(NamedTuple):

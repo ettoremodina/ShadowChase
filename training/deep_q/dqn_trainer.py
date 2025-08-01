@@ -106,8 +106,11 @@ class DQNTrainer(BaseTrainer):
         # Update config with actual feature size
         self.config['feature_extraction']['input_size'] = feature_size
         
-        # Set action size - all agents use (destination, transport)
-        action_size = 2  # (destination, transport)
+        # Set action size based on player role
+        if self.player_role == "mr_x":
+            action_size = 3  # (destination, transport, use_double_move)
+        else:  # detectives
+            action_size = 2  # (destination, transport)
         
         self.config['network_parameters']['action_size'] = action_size
         print(f"Action size for {self.player_role}: {action_size}")
@@ -329,7 +332,7 @@ class DQNTrainer(BaseTrainer):
         
         # Convert to tensors (efficiently)
         states = torch.FloatTensor(np.array([exp.state for exp in experiences])).to(self.device)
-        actions = [exp.action for exp in experiences]  # (dest, transport) pairs
+        actions = [exp.action for exp in experiences]  # Variable tuple sizes based on player role
         rewards = torch.FloatTensor(np.array([exp.reward for exp in experiences])).to(self.device)
         next_states = torch.FloatTensor(np.array([exp.next_state for exp in experiences])).to(self.device)
         dones = torch.BoolTensor(np.array([exp.done for exp in experiences])).to(self.device)
@@ -393,9 +396,14 @@ class DQNTrainer(BaseTrainer):
                     dest = np.random.randint(1, 200)
                     transport = np.random.choice(list(TransportType))
                     
-                    # All agents use (destination, transport) actions
-                    action = (dest, transport)
-                    
+                    if self.player_role == "mr_x":
+                        # Mr. X uses (destination, transport, use_double_move)
+                        use_double_move = np.random.choice([True, False])
+                        action = (dest, transport, use_double_move)
+                    else:
+                        # All agents use (destination, transport) actions
+                        action = (dest, transport)
+
                     with torch.no_grad():
                         q_val = self.main_network.query_batch_actions(state.unsqueeze(0), [action])
                         q_values.append(q_val.item())

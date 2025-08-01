@@ -219,7 +219,7 @@ class DQNMrXAgent(MrXAgent, DQNAgentMixin):
         
         return distance_reward + survival_bonus + danger_penalty
     
-    def choose_move(self, game: ScotlandYardGame) -> Optional[Tuple[int, TransportType]]:
+    def choose_move(self, game: ScotlandYardGame) -> Optional[Tuple[int, TransportType, bool]]:
         """
         Choose a move using the trained DQN model.
         
@@ -227,71 +227,82 @@ class DQNMrXAgent(MrXAgent, DQNAgentMixin):
             game: Current game state
             
         Returns:
-            Tuple of (destination, transport) or None
+            Tuple of (destination, transport, use_double_move) or None
         """
         # Fallback to random if model not loaded
         if self.model is None or self.feature_extractor is None:
             return self._random_move(game)
         
-        try:
-            # Extract features from current state
-            current_state_features = self.feature_extractor.extract_features(game, self.player)
-            features_tensor = torch.FloatTensor(current_state_features).unsqueeze(0).to(self.device)
+        # try:
+        # Extract features from current state
+        current_state_features = self.feature_extractor.extract_features(game, self.player)
+        features_tensor = torch.FloatTensor(current_state_features).unsqueeze(0).to(self.device)
+        
+        # Get valid moves
+        valid_moves = game.get_valid_moves(Player.MRX)
+        if not valid_moves:
+            return (None, None, False)  # No valid moves
+        
+        # Check if double move is available
+        can_use_double_move = game.can_use_double_move()
+        
+        # Store previous state if we have one (for experience collection)
+        if self.training_mode and hasattr(self, '_previous_state'):
+            # We have a previous state, so we can create an experience
             
-            # Get valid moves
-            valid_moves = game.get_valid_moves(Player.MRX)
-            if not valid_moves:
-                return (None, None, False)  # No valid moves
+            # Calculate step reward with better shaping
+            step_reward = self._calculate_step_reward(game)
             
-            # Store previous state if we have one (for experience collection)
-            if self.training_mode and hasattr(self, '_previous_state'):
-                # We have a previous state, so we can create an experience
-                
-                # Calculate step reward with better shaping
-                step_reward = self._calculate_step_reward(game)
-                
-                # Check if game ended
-                done = game.is_game_over()
-                
-                # Get current valid moves for next_valid_moves
+            # Check if game ended
+            done = game.is_game_over()
+            
+            # Get current valid moves for next_valid_moves
+            # Convert 2-tuples to 3-tuples for Mr. X
+            if hasattr(self.model, 'action_size') and self.model.action_size == 3:
+                # Convert valid moves to 3-tuples
+                valid_moves_3d = set()
+                for dest, transport in valid_moves:
+                    valid_moves_3d.add((dest, transport, False))  # Default no double move
+                    if can_use_double_move:
+                        valid_moves_3d.add((dest, transport, True))   # With double move if available
+                next_valid_moves = valid_moves_3d
+            else:
+                next_valid_moves = valid_moves
+            
+            # Store experience in replay buffer
+            self.trainer.replay_buffer.push(
+                state=self._previous_state,
+                action=self._previous_action,
+                reward=step_reward,
+                next_state=current_state_features,
+                done=done,
+                next_valid_moves=next_valid_moves
+            )
 
-                
-                # Store experience in replay buffer
-                self.trainer.replay_buffer.push(
-                    state=self._previous_state,
-                    action=self._previous_action,
-                    reward=step_reward,
-                    next_state=current_state_features,
-                    done=done,
-                    next_valid_moves=valid_moves
-                )
+        
+        # Select action using epsilon-greedy
+        # Use trainer's epsilon if in training mode, otherwise use agent's epsilon
+        current_epsilon = self.trainer.current_epsilon if self.training_mode else self.epsilon
+        
+        with torch.no_grad():
+            action_result = self.model.select_action(
+                features_tensor, 
+                valid_moves, 
+                epsilon=current_epsilon,
+                can_use_double_move=can_use_double_move
+            )
+        
+        dest, transport, use_double_move = action_result
 
+        # Store current state and action for next experience
+        if self.training_mode:
+            self._previous_state = current_state_features
+            self._previous_action = (dest, transport, use_double_move)
+        
+        return (dest, transport, use_double_move)
             
-            # Select action using epsilon-greedy
-            # Use trainer's epsilon if in training mode, otherwise use agent's epsilon
-            current_epsilon = self.trainer.current_epsilon if self.training_mode else self.epsilon
-            
-            with torch.no_grad():
-                action_result = self.model.select_action(
-                    features_tensor, 
-                    valid_moves, 
-                    epsilon=current_epsilon
-                )
-            
-            dest, transport = action_result
-            
-            # Store current state and action for next experience
-            if self.training_mode:
-                self._previous_state = current_state_features
-                self._previous_action = (dest, transport)
-            
-            return (dest, transport, False)
-            
-        except Exception as e:
-            print(f"Error in DQN move selection: {e}")
-            return self._random_move(game)
     
-    def _random_move(self, game: ScotlandYardGame) -> Optional[Tuple[int, TransportType]]:
+    def _random_move(self, game: ScotlandYardGame) -> Optional[Tuple[int, TransportType, bool]]:
         """Fallback random move selection."""
         valid_moves = game.get_valid_moves(Player.MRX)
         if not valid_moves:
@@ -300,7 +311,11 @@ class DQNMrXAgent(MrXAgent, DQNAgentMixin):
         chosen_move = np.random.choice(len(valid_moves))
         dest, transport = list(valid_moves)[chosen_move]
         
-        return (dest, transport, False)
+        # Randomly decide on double move if available
+        can_use_double_move = game.can_use_double_move()
+        use_double_move = can_use_double_move and np.random.random() < 0.2  # 20% chance to use double move
+        
+        return (dest, transport, use_double_move)
 
 
 class DQNDetectiveAgent(DetectiveAgent, DQNAgentMixin):

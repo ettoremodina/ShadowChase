@@ -200,8 +200,8 @@ def main():
 if __name__ == "__main__":
     # For now, just run Mr. X training
     print("Starting DQN training with improved monitoring...")
-    result, trainer = train_with_monitoring("detectives", 6000, plotting_every=2000)
-    # result, trainer = train_with_monitoring("mr_x", 15000, plotting_every=3000)
+    result, trainer = train_with_monitoring("detectives", 300, plotting_every=100)
+    result, trainer = train_with_monitoring("mr_x",  300, plotting_every=100)
     
     # Evaluate the trained agent
     # evaluate_trained_agent(result.model_path, "detectives", num_games=30)

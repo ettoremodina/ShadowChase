@@ -2,8 +2,23 @@
 Deep Q-Network model for Scotland Yard using action querying.
 
 This module implements a DQN that takes [state, action] pairs as input and outputs
-a single Q-value. This approach efficiently handles variable action spaces without
-requiring fixed-size output layers or action masking.
+a single Q-value. This approach efficiently handles variable action spaces wi    def query_batch_actions(self,
+                           states_batch: torch.Tensor,
+                           actions_batch: List[Tuple]) -> torch.Tensor:
+        
+        Query Q-values for a batch of state-action pairs efficiently.
+        
+        Args:
+            states_batch: Batch of state features [batch_size, state_size]
+            actions_batch: List of actions - format depends on action_size:
+                          - For detectives: [(dest, transport), ...]
+                          - For Mr. X: [(dest, transport, use_double_move), ...]
+            
+        Returns:
+            Q-values for each state-action pair [batch_size]
+       
+        if len(actions_batch) == 0:
+            return torch.empty(0, device=states_batch.device)g fixed-size output layers or action masking.
 
 Key features:
 - Action querying: model takes [state, action] concatenated input
@@ -97,49 +112,70 @@ class DQNModel(nn.Module):
                 nn.init.xavier_uniform_(module.weight)
                 nn.init.constant_(module.bias, 0)
     
-    def encode_action(self, destination: int, transport: TransportType) -> torch.Tensor:
+    def encode_action(self, destination: int, transport: TransportType, use_double_move: bool = False) -> torch.Tensor:
         """
         Encode an action as a feature vector.
         
         Args:
             destination: Destination node ID
             transport: Transport type
+            use_double_move: Whether to use double move (only for Mr. X)
             
         Returns:
-            Action encoding tensor [2] = [destination_normalized, transport_type_normalized]
+            Action encoding tensor [action_size] = [destination_normalized, transport_type_normalized, (use_double_move)]
         """
         # Normalize using class constants
         dest_normalized = destination / self.MAX_NODE_ID
         transport_normalized = transport.value / self.NUM_TRANSPORT_TYPES
         
-        return torch.tensor([dest_normalized, transport_normalized], dtype=torch.float32)
+        if self.action_size == 3:  # Mr. X model
+            double_move_normalized = float(use_double_move)
+            return torch.tensor([dest_normalized, transport_normalized, double_move_normalized], dtype=torch.float32)
+        else:  # Detective model (action_size == 2)
+            return torch.tensor([dest_normalized, transport_normalized], dtype=torch.float32)
     
-    def encode_actions_batch(self, actions: List[Tuple[int, TransportType]], device: torch.device = None) -> torch.Tensor:
+    def encode_actions_batch(self, actions: List[Tuple], device: torch.device = None) -> torch.Tensor:
         """
         Encode multiple actions as feature vectors in parallel (vectorized).
         
         This is much faster than calling encode_action() in a loop for batch operations.
         
         Args:
-            actions: List of (destination, transport) tuples
+            actions: List of action tuples - either (destination, transport) for detectives 
+                    or (destination, transport, use_double_move) for Mr. X
             device: Device to create tensor on
             
         Returns:
-            Action encoding tensor [batch_size, 2] = [destinations_normalized, transport_types_normalized]
+            Action encoding tensor [batch_size, action_size]
         """
         if not actions:
-            return torch.empty((0, 2), dtype=torch.float32, device=device)
+            return torch.empty((0, self.action_size), dtype=torch.float32, device=device)
         
-        # Extract destinations and transport types
-        destinations = [dest for dest, _ in actions]
-        transports = [transport.value for _, transport in actions]
+        if self.action_size == 3:  # Mr. X model - expect 3-tuples
+            # Extract destinations, transport types, and double move flags
+            destinations = [dest for dest, _, _ in actions]
+            transports = [transport.value for _, transport, _ in actions]
+            double_moves = [float(use_double) for _, _, use_double in actions]
+            
+            # Vectorized normalization using class constants
+            dest_normalized = torch.tensor(destinations, dtype=torch.float32, device=device) / self.MAX_NODE_ID
+            transport_normalized = torch.tensor(transports, dtype=torch.float32, device=device) / self.NUM_TRANSPORT_TYPES
+            double_move_normalized = torch.tensor(double_moves, dtype=torch.float32, device=device)
+            
+            # Stack into [batch_size, 3] tensor
+            return torch.stack([dest_normalized, transport_normalized, double_move_normalized], dim=1)
         
-        # Vectorized normalization using class constants
-        dest_normalized = torch.tensor(destinations, dtype=torch.float32, device=device) / self.MAX_NODE_ID
-        transport_normalized = torch.tensor(transports, dtype=torch.float32, device=device) / self.NUM_TRANSPORT_TYPES
-        
-        # Stack into [batch_size, 2] tensor
-        return torch.stack([dest_normalized, transport_normalized], dim=1)
+        else:  # Detective model (action_size == 2) - expect 2-tuples
+            # Extract destinations and transport types
+            destinations = [dest for dest, _ in actions]
+            transports = [transport.value for _, transport in actions]
+            
+            # Vectorized normalization using class constants
+            dest_normalized = torch.tensor(destinations, dtype=torch.float32, device=device) / self.MAX_NODE_ID
+            transport_normalized = torch.tensor(transports, dtype=torch.float32, device=device) / self.NUM_TRANSPORT_TYPES
+            
+            # Stack into [batch_size, 2] tensor
+            return torch.stack([dest_normalized, transport_normalized], dim=1)
     
     @torch.no_grad()
     def eval_mode(self):
@@ -194,7 +230,10 @@ class DQNModel(nn.Module):
             state_features = state_features.squeeze(0)
         
         # Encode action
-        action_encoding = self.encode_action(destination, transport)
+        if self.action_size == 3:  # Mr. X model
+            action_encoding = self.encode_action(destination, transport, False)  # Default no double move for single query
+        else:  # Detective model
+            action_encoding = self.encode_action(destination, transport)
         action_encoding = action_encoding.to(state_features.device)
         
         # Concatenate state and action
@@ -207,13 +246,15 @@ class DQNModel(nn.Module):
     
     def query_batch_actions(self,
                            states_batch: torch.Tensor,
-                           actions_batch: List[Tuple[int, TransportType]]) -> torch.Tensor:
+                           actions_batch: List[Tuple]) -> torch.Tensor:
         """
         Query Q-values for a batch of state-action pairs efficiently.
         
         Args:
             states_batch: Batch of state features [batch_size, state_size]
-            actions_batch: List of actions, one per state [(dest, transport), ...]
+            actions_batch: List of actions - format depends on action_size:
+                          - For detectives: [(dest, transport), ...]
+                          - For Mr. X: [(dest, transport, use_double_move), ...]
             
         Returns:
             Q-values for each state-action pair [batch_size]
@@ -240,13 +281,15 @@ class DQNModel(nn.Module):
 
     def query_batch_max_q_values(self,
                                  states_batch: torch.Tensor,
-                                 valid_moves_batch: List[Set[Tuple[int, TransportType]]]) -> torch.Tensor:
+                                 valid_moves_batch: List[Set[Tuple]]) -> torch.Tensor:
         """
         Efficiently query maximum Q-values for a batch of states, each with their own valid moves.
         
         Args:
             states_batch: [batch_size, state_size]
-            valid_moves_batch: list of sets of (dest, transport)
+            valid_moves_batch: list of sets of action tuples - format depends on action_size:
+                              - For detectives: sets of (dest, transport)
+                              - For Mr. X: sets of (dest, transport, use_double_move)
         Returns:
             max_q_values: [batch_size]
         """
@@ -259,17 +302,27 @@ class DQNModel(nn.Module):
         for i, (state, valid_moves) in enumerate(zip(states_batch, valid_moves_batch)):
             if not valid_moves:
                 continue
-            for dest, transport in valid_moves:
-                all_state_action_pairs.append((i, dest, transport))
+            for action_tuple in valid_moves:
+                if self.action_size == 3:  # Mr. X model - expect 3-tuples
+                    dest, transport, use_double_move = action_tuple
+                    all_state_action_pairs.append((i, dest, transport, use_double_move))
+                else:  # Detective model - expect 2-tuples
+                    dest, transport = action_tuple
+                    all_state_action_pairs.append((i, dest, transport))
         
         if not all_state_action_pairs:
             return torch.zeros(batch_size, device=device)
         
         # Prepare tensors and encode actions in parallel
-        state_idx_tensor = torch.tensor([i for i, _, _ in all_state_action_pairs], dtype=torch.long, device=device)
+        if self.action_size == 3:  # Mr. X model
+            state_idx_tensor = torch.tensor([i for i, _, _, _ in all_state_action_pairs], dtype=torch.long, device=device)
+            # Extract actions and encode them vectorized (much faster!)
+            actions_to_encode = [(dest, transport, use_double_move) for i, dest, transport, use_double_move in all_state_action_pairs]
+        else:  # Detective model
+            state_idx_tensor = torch.tensor([i for i, _, _ in all_state_action_pairs], dtype=torch.long, device=device)
+            # Extract actions and encode them vectorized (much faster!)
+            actions_to_encode = [(dest, transport) for i, dest, transport in all_state_action_pairs]
         
-        # Extract actions and encode them vectorized (much faster!)
-        actions_to_encode = [(dest, transport) for i, dest, transport in all_state_action_pairs]
         actions_tensor = self.encode_actions_batch(actions_to_encode, device=device)
         
         # Gather states
@@ -292,13 +345,15 @@ class DQNModel(nn.Module):
 
     def query_multiple_actions(self,
                               state_features: torch.Tensor,
-                              valid_moves: Set[Tuple[int, TransportType]]) -> Tuple[torch.Tensor, List[Tuple[int, TransportType]]]:
+                              valid_moves: Set[Tuple]) -> Tuple[torch.Tensor, List[Tuple]]:
         """
         Query Q-values for multiple actions from the same state.
         
         Args:
             state_features: State feature vector [state_size] or [1, state_size]
-            valid_moves: Set of valid (destination, transport) pairs
+            valid_moves: Set of valid action tuples - format depends on action_size:
+                        - For detectives: (dest, transport)
+                        - For Mr. X: (dest, transport, use_double_move)
             
         Returns:
             Tuple of (q_values [num_actions], actions_list)
@@ -332,23 +387,57 @@ class DQNModel(nn.Module):
     
     def select_action(self, 
                      state_features: torch.Tensor, 
-                     valid_moves: Set[Tuple[int, TransportType]], 
-                     epsilon: float = 0.0) -> Tuple[int, TransportType]:
+                     valid_moves: Set[Tuple], 
+                     epsilon: float = 0.0,
+                     can_use_double_move: bool = False) -> Tuple:
         """
         Select an action using epsilon-greedy policy with action querying.
         
         Args:
             state_features: Single state feature vector [state_size] or [1, state_size]
-            valid_moves: Set of valid (destination, transport) pairs
+            valid_moves: Set of valid action tuples - format depends on action_size:
+                        - For detectives: (dest, transport)
+                        - For Mr. X: (dest, transport, use_double_move)
             epsilon: Exploration rate
+            can_use_double_move: Whether double move is available (only for Mr. X)
             
         Returns:
-            Selected action tuple (destination, transport)
+            Selected action tuple - format depends on action_size:
+            - For detectives: (destination, transport)
+            - For Mr. X: (destination, transport, use_double_move)
         """
         valid_moves_list = list(valid_moves)
         
         if not valid_moves_list:
             raise ValueError("No valid moves provided")
+        
+        # For Mr. X models, expand moves with double move options if available
+        if self.action_size == 3 and can_use_double_move:
+            # Add double move variants for each valid move
+            expanded_moves = set()  # Start with empty set, don't include original moves
+            for move_tuple in valid_moves:
+                if len(move_tuple) == 2:  # Convert 2-tuple to 3-tuple
+                    dest, transport = move_tuple
+                    expanded_moves.add((dest, transport, False))  # No double move
+                    expanded_moves.add((dest, transport, True))   # With double move
+                elif len(move_tuple) == 3:  # Already 3-tuple
+                    dest, transport, _ = move_tuple
+                    expanded_moves.add((dest, transport, False))  # No double move
+                    expanded_moves.add((dest, transport, True))   # With double move
+            valid_moves = expanded_moves
+            valid_moves_list = list(valid_moves)
+        elif self.action_size == 3:
+            # Mr. X model but can't use double move - ensure all moves have use_double_move=False
+            expanded_moves = set()
+            for move_tuple in valid_moves:
+                if len(move_tuple) == 2:  # Convert 2-tuple to 3-tuple
+                    dest, transport = move_tuple
+                    expanded_moves.add((dest, transport, False))
+                elif len(move_tuple) == 3:  # Already 3-tuple
+                    dest, transport, _ = move_tuple
+                    expanded_moves.add((dest, transport, False))  # Force no double move
+            valid_moves = expanded_moves
+            valid_moves_list = list(valid_moves)
         
         if np.random.random() < epsilon:
             # Random action from valid moves

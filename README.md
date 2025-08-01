@@ -38,8 +38,8 @@ MrX Chase is an asymmetric pursuit-evasion game with inperfect information, insp
 
 ### Installation
 ```bash
-git clone https://github.com/ettoremodina/ScotlandYardSolver.git
-cd ScotlandYardSolver
+git clone https://github.com/ettoremodina/ShadowChase.git
+cd ShadowChase
 pip install -r requirements.txt
 ```
 
@@ -237,16 +237,17 @@ If you use this project in your research or academic work, please cite it as:
   author = {Modina, Ettore},
   title = {MrX Chase: AI Agent Training \& Evaluation Platform},
   year = {2025},
-  url = {https://github.com/ettoremodina/ScotlandYardSolver},
+  url = {https://github.com/ettoremodina/ShadowChase},
   note = {Educational implementation inspired by Scotland Yard for reinforcement learning and game theory research}
 }
 ```
 
 ### APA Style
-Modina, E. (2025). *MrX Chase: AI Agent Training & Evaluation Platform* [Computer software]. https://github.com/ettoremodina/ScotlandYardSolver
+Modina, E. (2025). *MrX Chase: AI Agent Training & Evaluation Platform* [Computer software]. https://github.com/ettoremodina/ShadowChase
 
 ### IEEE Style
-E. Modina, "MrX Chase: AI Agent Training & Evaluation Platform," 2025. [Online]. Available: https://github.com/ettoremodina/ScotlandYardSolver
+E. Modina, "MrX Chase: AI Agent Training & Evaluation Platform," 2025. [Online]. Available: https://github.com/ettoremodina/ShadowChase
+
 
 ---
 

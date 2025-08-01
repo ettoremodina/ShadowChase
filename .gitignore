@@ -148,4 +148,4 @@ board_progress.json.backup
 *.pkl.backup
 
 # Copyrighted game assets - do not distribute
-data/board_.png
+data/board.png

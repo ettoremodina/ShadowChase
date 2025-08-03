@@ -184,13 +184,9 @@ class GameVideoExporter(BaseVisualizer):
                 node_colors.append('blue')
                 node_sizes.append(node_size)
             elif node == state.MrX_position:
-                # Show Mr. X if visible, otherwise hide
-                if hasattr(state, 'mr_x_visible') and state.mr_x_visible:
-                    node_colors.append('red')
-                    node_sizes.append(node_size)
-                else:
-                    node_colors.append('lightgray')
-                    node_sizes.append(node_size * 0.8)
+                node_colors.append('red')
+                node_sizes.append(node_size)
+              
             else:
                 node_colors.append('lightgray')
                 node_sizes.append(node_size * 0.8)
@@ -563,12 +559,7 @@ def show_video_export_dialog(parent, loader: GameLoader):
                     with open(game_file_path, 'rb') as f:
                         game_data = pickle.load(f)
                     
-                    # Handle different game storage formats
-                    if hasattr(game_data, 'game_history'):
-                        # Direct game object
-                        game = game_data
-                        game_id = Path(game_file_path).stem
-                    elif hasattr(game_data, 'game_config'):
+                    if hasattr(game_data, 'game_config'):
                         # GameRecord object
                         game = loader._reconstruct_game_from_record(game_data)
                         game_id = game_data.game_id

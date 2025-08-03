@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Simple agent testing script for Scotland Yard.
+Simple agent testing script for Shadow Chase.
 Runs all agent combinations and generates analysis.
 """
 
@@ -44,7 +44,7 @@ def analyze_games(test_name):
     """Analyze the games played in the test"""
     print(f"\nAnalyzing games in {test_name}...")
     try:
-        subprocess.run([sys.executable, "ScotlandYard/services/analyze_games.py", test_name], check=True)
+        subprocess.run([sys.executable, "ShadowChase/services/analyze_games.py", test_name], check=True)
         print(f"✓ Analysis complete: {test_name}/analysis_graphs/")
     except subprocess.CalledProcessError:
         print("✗ Analysis failed")
@@ -54,8 +54,8 @@ def main():
     # Import AgentSelector inside the function to avoid circular imports
     
     # Configuration
-    test_name = "FINAL_TEST" 
-    games_per_combo = 100
+    test_name = "video_exporting_test" 
+    games_per_combo = 10
     num_detectives = 5
     map_size = "extracted"
     enable_cache()
@@ -73,13 +73,17 @@ def main():
     print(f"Games per combination: {games_per_combo}")
     print(f"Test directory: {test_name}")
 
-    # play_combination(test_name, "deep_q", "random", games_per_combo, map_size, num_detectives, 24)
+    play_combination(test_name, "random", "random", games_per_combo, map_size, num_detectives, 24)
 
 
     # RUN ALL COMBINATIONS
-    for mr_x in agent_types:
-        for detective in agent_types:
-            play_combination(test_name, mr_x, detective, games_per_combo, map_size, num_detectives, 24)
+    run_all_combinations = False
+    
+    if run_all_combinations:
+        for mr_x in agent_types:
+            for detective in agent_types:
+                if mr_x != detective:
+                    play_combination(test_name, mr_x, detective, games_per_combo, map_size, num_detectives, 24)
 
 
 

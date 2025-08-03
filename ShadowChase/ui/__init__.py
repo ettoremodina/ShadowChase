@@ -1,7 +1,7 @@
 """
 UI Package for detectives and MrXs Game
 
-Provides a modern, clean GUI for Scotland Yard game with proper separation of concerns.
+Provides a modern, clean GUI for Shadow Chase game with proper separation of concerns.
 """
 
 # Import components only when they're actually used to avoid circular imports

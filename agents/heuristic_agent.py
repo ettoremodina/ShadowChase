@@ -1,5 +1,5 @@
 """
-Heuristic-based agent implementations for Scotland Yard game.
+Heuristic-based agent implementations for Shadow Chase game.
 
 This module contains AI agents that use heuristic calculations to make strategic moves.
 Detectives try to minimize distance to Mr. X's last known position, while Mr. X tries to 
@@ -8,7 +8,7 @@ maximize distance from the closest detective.
 
 import random
 from typing import List, Tuple, Optional
-from ShadowChase.core.game import ScotlandYardGame, Player, TransportType, TicketType
+from ShadowChase.core.game import ShadowChaseGame, Player, TransportType, TicketType
 from .base_agent import DetectiveAgent, MrXAgent, MultiDetectiveAgent
 from .heuristics import GameHeuristics
 
@@ -20,7 +20,7 @@ class HeuristicMrXAgent(MrXAgent):
         super().__init__()
         self.heuristics = None
     
-    def choose_move(self, game: ScotlandYardGame) -> Optional[Tuple[int, TransportType, bool]]:
+    def choose_move(self, game: ShadowChaseGame) -> Optional[Tuple[int, TransportType, bool]]:
         """Make a move that maximizes distance from closest detective"""
         if self.heuristics is None:
             self.heuristics = GameHeuristics(game)
@@ -70,7 +70,7 @@ class HeuristicMrXAgent(MrXAgent):
         
         return (destination, transport, use_double)
     
-    def should_use_double_move(self, game: ScotlandYardGame) -> bool:
+    def should_use_double_move(self, game: ShadowChaseGame) -> bool:
         """Use double move strategically when detectives are close"""
         if not self.can_use_double_move(game):
             return False
@@ -82,7 +82,7 @@ class HeuristicMrXAgent(MrXAgent):
         min_distance = self.heuristics.get_minimum_distance_to_mr_x()
         return min_distance >= 0 and min_distance <= 3
     
-    def _should_use_black_ticket(self, game: ScotlandYardGame, required_transport: TransportType) -> bool:
+    def _should_use_black_ticket(self, game: ShadowChaseGame, required_transport: TransportType) -> bool:
         """Use black ticket when detectives are close or we're low on regular tickets"""
         tickets = self.get_available_tickets(game)
         
@@ -108,7 +108,7 @@ class HeuristicMultiDetectiveAgent(MultiDetectiveAgent):
         super().__init__(num_detectives)
         self.heuristics = None
     
-    def choose_all_moves(self, game: ScotlandYardGame) -> List[Tuple[int, TransportType]]:
+    def choose_all_moves(self, game: ShadowChaseGame) -> List[Tuple[int, TransportType]]:
         """Make moves for all detectives to minimize distance to Mr. X's last known position"""
         if self.heuristics is None:
             self.heuristics = GameHeuristics(game)

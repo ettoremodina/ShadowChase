@@ -1,5 +1,5 @@
 """
-Epsilon-Greedy MCTS (Monte Carlo Tree Search) agents for Scotland Yard with heuristic-guided simulations.
+Epsilon-Greedy MCTS (Monte Carlo Tree Search) agents for Shadow Chase with heuristic-guided simulations.
 
 This module provides MCTS-based agents that combine tree search with epsilon-greedy playouts
 using heuristics for smarter move selection during simulations. This approach significantly
@@ -30,7 +30,7 @@ import time
 import random
 import hashlib
 
-from ShadowChase.core.game import ScotlandYardGame, Player, TransportType
+from ShadowChase.core.game import ShadowChaseGame, Player, TransportType
 from .base_agent import MrXAgent, MultiDetectiveAgent, DetectiveAgent
 from .mcts_agent import load_mcts_config
 from .heuristics import GameHeuristics
@@ -72,7 +72,7 @@ class GameStateCache:
         self._cache: Dict[str, CachedNodeResult] = {}
         self._access_order: List[str] = []
     
-    def _create_state_hash(self, game_state: ScotlandYardGame) -> str:
+    def _create_state_hash(self, game_state: ShadowChaseGame) -> str:
         """Create a hash string for the game state."""
         state = game_state.game_state
         
@@ -92,7 +92,7 @@ class GameStateCache:
         hash_str = str(hash_data)
         return hashlib.md5(hash_str.encode()).hexdigest()
     
-    def get(self, game_state: ScotlandYardGame) -> Optional[CachedNodeResult]:
+    def get(self, game_state: ShadowChaseGame) -> Optional[CachedNodeResult]:
         """Get cached result for a game state."""
         state_hash = self._create_state_hash(game_state)
         
@@ -113,7 +113,7 @@ class GameStateCache:
         
         return None
     
-    def put(self, game_state: ScotlandYardGame, wins: int, visits: int, best_move: Optional[Tuple]):
+    def put(self, game_state: ShadowChaseGame, wins: int, visits: int, best_move: Optional[Tuple]):
         """Store a result in the cache."""
         state_hash = self._create_state_hash(game_state)
         
@@ -174,7 +174,7 @@ class EpsilonGreedyMCTSNode:
     instead of purely random ones.
     """
     
-    def __init__(self, game_state: ScotlandYardGame, move: Optional[Tuple] = None, 
+    def __init__(self, game_state: ShadowChaseGame, move: Optional[Tuple] = None, 
                  parent: Optional['EpsilonGreedyMCTSNode'] = None, max_depth: int = 20, 
                  cache: Optional[GameStateCache] = None):
         """
@@ -201,13 +201,13 @@ class EpsilonGreedyMCTSNode:
         # Try to load from cache
         self._load_from_cache()
     
-    def _efficient_copy_game(self, game: ScotlandYardGame) -> ScotlandYardGame:
+    def _efficient_copy_game(self, game: ShadowChaseGame) -> ShadowChaseGame:
         """
         Create an efficient copy of the game state for MCTS simulations.
         This avoids the heavy deepcopy operation by only copying essential data.
         """
         # Create a new game instance with the same graph (shared reference is fine)
-        new_game = ScotlandYardGame(game.graph, game.num_detectives)
+        new_game = ShadowChaseGame(game.graph, game.num_detectives)
         
         # Copy essential state data efficiently
         if game.game_state is not None:
@@ -425,7 +425,7 @@ class EpsilonGreedyMCTSNode:
         else:
             return ("timeout", None)
     
-    def _choose_mr_x_heuristic_move(self, game_state: ScotlandYardGame, valid_moves: List[Tuple], 
+    def _choose_mr_x_heuristic_move(self, game_state: ShadowChaseGame, valid_moves: List[Tuple], 
                                    heuristics: GameHeuristics, possible_mr_x_locations: set) -> Tuple[int, TransportType]:
         """
         Choose Mr. X's best move using heuristics:
@@ -661,7 +661,7 @@ class EpsilonGreedyMCTSAgent:
         self.current_epsilon = self.epsilon
         self.epsilon_step_count = 0
     
-    def mcts_search(self, game_state: ScotlandYardGame, perspective: Player, 
+    def mcts_search(self, game_state: ShadowChaseGame, perspective: Player, 
                    root_detective_id: Optional[int] = None, 
                    coalition_reduction_factor_r: float = 0.0) -> Optional[Tuple]:
         """
@@ -905,7 +905,7 @@ class EpsilonGreedyMCTSMrXAgent(MrXAgent, EpsilonGreedyMCTSAgent):
         EpsilonGreedyMCTSAgent.__init__(self, simulation_time, max_iterations, exploration_constant, 
                                        epsilon, config_path, cache_size, cache_max_age)
     
-    def choose_move(self, game: ScotlandYardGame) -> Optional[Tuple[int, TransportType, bool]]:
+    def choose_move(self, game: ShadowChaseGame) -> Optional[Tuple[int, TransportType, bool]]:
         """Choose move using epsilon-greedy MCTS with heuristic-guided simulations."""
         return self.mcts_search(game, Player.MRX)
 
@@ -927,7 +927,7 @@ class EpsilonGreedyMCTSDetectiveAgent(DetectiveAgent, EpsilonGreedyMCTSAgent):
         EpsilonGreedyMCTSAgent.__init__(self, simulation_time, max_iterations, exploration_constant, 
                                        epsilon, config_path, cache_size, cache_max_age)
     
-    def choose_move(self, game: ScotlandYardGame, 
+    def choose_move(self, game: ShadowChaseGame, 
                    root_detective_id: Optional[int] = None, 
                    coalition_reduction_factor_r: float = 0.0) -> Optional[Tuple[int, TransportType]]:
         """Choose move using epsilon-greedy MCTS with heuristic-guided simulations and coalition reduction."""
@@ -983,7 +983,7 @@ class EpsilonGreedyMCTSMultiDetectiveAgent(MultiDetectiveAgent):
             'cache_max_age': cache_max_age
         }
     
-    def choose_all_moves(self, game: ScotlandYardGame) -> List[Tuple[int, TransportType]]:
+    def choose_all_moves(self, game: ShadowChaseGame) -> List[Tuple[int, TransportType]]:
         """Make epsilon-greedy MCTS moves for all detectives with coalition reduction."""
         detective_moves = []
         pending_moves = []

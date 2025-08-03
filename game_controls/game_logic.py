@@ -1,10 +1,10 @@
 """
-Game logic utilities for simple terminal-based Scotland Yard gameplay.
+Game logic utilities for simple terminal-based Shadow Chase gameplay.
 Handles move validation, AI moves, and game flow.
 """
 import random
 from typing import List, Tuple, Optional
-from ShadowChase.core.game import ScotlandYardGame, Player, TicketType, TransportType
+from ShadowChase.core.game import ShadowChaseGame, Player, TicketType, TransportType
 from .display_utils import GameDisplay, format_transport_input
 from ShadowChase.services.board_loader import load_board_graph_from_csv
 from agents import AgentType, AgentSelector, get_agent_registry
@@ -13,7 +13,7 @@ from agents import AgentType, AgentSelector, get_agent_registry
 class GameController:
     """Handles game logic and flow"""
     
-    def __init__(self, game: ScotlandYardGame, display: GameDisplay, 
+    def __init__(self, game: ShadowChaseGame, display: GameDisplay, 
                  mr_x_agent_type: AgentType = AgentType.RANDOM, 
                  detective_agent_type: AgentType = AgentType.RANDOM):
         self.game = game
@@ -40,7 +40,7 @@ class GameController:
             print(f"\n--- Detective {i+1} (Position {detective_pos}) ---")
             
             # Check if detective can move with pending moves consideration
-            if isinstance(self.game, ScotlandYardGame):
+            if isinstance(self.game, ShadowChaseGame):
                 available_moves = self.game.get_valid_moves(Player.DETECTIVES, detective_pos, pending_moves=detective_moves)
             else:
                 available_moves = self.game.get_valid_moves(Player.DETECTIVES, detective_pos)
@@ -299,39 +299,39 @@ class GameSetup:
     """Handles game initialization with predefined scenarios"""
     
     @staticmethod
-    def create_test_game(num_detectives: int = 2) -> ScotlandYardGame:
-        """Create a test Scotland Yard game (small map)"""
-        from ShadowChase.examples.example_games import create_test_scotland_yard_game
-        return create_test_scotland_yard_game(num_detectives)
+    def create_test_game(num_detectives: int = 2) -> ShadowChaseGame:
+        """Create a test Shadow Chase game (small map)"""
+        from ShadowChase.examples.example_games import create_test_shadow_chase_game
+        return create_test_shadow_chase_game(num_detectives)
     
     @staticmethod
-    def create_full_game(num_detectives: int = 3) -> ScotlandYardGame:
-        """Create a full Scotland Yard game (full map)"""
+    def create_full_game(num_detectives: int = 3) -> ShadowChaseGame:
+        """Create a full Shadow Chase game (full map)"""
         # Try to use extracted board first, fall back to CSV
         try:
             from ShadowChase.examples.example_games import create_extracted_board_game
             return create_extracted_board_game(num_detectives)
         except:
             # Fall back to original CSV-based game
-            from ShadowChase.examples.example_games import create_scotlandYard_game
-            return create_scotlandYard_game(num_detectives)
+            from ShadowChase.examples.example_games import create_shadowChase_game
+            return create_shadowChase_game(num_detectives)
     
     @staticmethod
-    def create_extracted_board_game(num_detectives: int = 3) -> ScotlandYardGame:
-        """Create a Scotland Yard game using extracted board data"""
+    def create_extracted_board_game(num_detectives: int = 3) -> ShadowChaseGame:
+        """Create a Shadow Chase game using extracted board data"""
         from ShadowChase.examples.example_games import create_extracted_board_game
         return create_extracted_board_game(num_detectives)
     
     @staticmethod
-    def initialize_test_positions(game: ScotlandYardGame) -> None:
+    def initialize_test_positions(game: ShadowChaseGame) -> None:
         """Initialize with predefined test positions"""
         detective_positions = [1, 2]
         mr_x_position = 9
-        game.initialize_scotland_yard_game(detective_positions, mr_x_position)
+        game.initialize_shadow_chase_game(detective_positions, mr_x_position)
     
     
     @staticmethod
-    def initialize_extracted_board_positions(game: ScotlandYardGame, num_detectives: int) -> None:
+    def initialize_extracted_board_positions(game: ShadowChaseGame, num_detectives: int) -> None:
         """Initialize with positions suitable for the extracted board"""
         # Get available nodes from the game graph
         available_nodes = list(game.graph.nodes())
@@ -346,7 +346,7 @@ class GameSetup:
         detective_positions = sample[1:num_detectives+1]        
         mr_x_position = sample[0]  # First position is Mr. X
         
-        game.initialize_scotland_yard_game(detective_positions, mr_x_position)
+        game.initialize_shadow_chase_game(detective_positions, mr_x_position)
 
 
 def get_game_mode() -> Tuple[str, str, int, AgentType, AgentType]:

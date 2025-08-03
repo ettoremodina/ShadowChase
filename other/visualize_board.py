@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Simple Scotland Yard Board Visualizer
+Simple Shadow Chase Board Visualizer
 Reads board_progress.json and shows the graph with proper node positioning
 """
 
@@ -24,7 +24,7 @@ def load_board_data(progress_file="board_progress.json"):
     return nodes, edges
 
 def visualize_board(save_path=None):
-    """Create and display the Scotland Yard board visualization"""
+    """Create and display the Shadow Chase board visualization"""
     # Load data
     nodes, edges = load_board_data()
     print(f"Loaded {len(nodes)} nodes and {len(edges)} edges")
@@ -80,7 +80,7 @@ def visualize_board(save_path=None):
     # Set up plot
     ax.set_aspect('equal')
     ax.invert_yaxis()  # Match image coordinates
-    ax.set_title('Scotland Yard Board - Extracted Graph', 
+    ax.set_title('Shadow Chase Board - Extracted Graph', 
                 fontsize=16, fontweight='bold')
     ax.set_xticks([])
     ax.set_yticks([])

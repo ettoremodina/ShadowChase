@@ -1,7 +1,7 @@
 import tkinter as tk
 from tkinter import ttk
 import networkx as nx
-from ..core.game import  ScotlandYardGame
+from ..core.game import  ShadowChaseGame
 from ..services.game_loader import GameLoader
 from .ui_components import StyledButton, InfoDisplay
 from .base_visualizer import BaseVisualizer
@@ -12,7 +12,7 @@ NODE_SIZE = 300
 class GameReplayWindow(BaseVisualizer):
     """Window for replaying saved games step by step"""
     
-    def __init__(self, parent, game_id: str, game: ScotlandYardGame, loader: GameLoader):
+    def __init__(self, parent, game_id: str, game: ShadowChaseGame, loader: GameLoader):
         super().__init__(game)
         self.parent = parent
         self.game_id = game_id
@@ -312,9 +312,9 @@ class GameReplayWindow(BaseVisualizer):
         info_text += f"📊 Turn Count: {state.turn_count}\n"
         info_text += f"👮 detective Positions: {state.detective_positions}\n"
         
-        # is_scotland_yard = isinstance(self.game, ScotlandYardGame)
-        is_scotland_yard = True
-        if is_scotland_yard or hasattr(state, 'mr_x_visible'):
+        # is_shadow_chase = isinstance(self.game, ShadowChaseGame)
+        is_shadow_chase = True
+        if is_shadow_chase or hasattr(state, 'mr_x_visible'):
             if hasattr(state, 'mr_x_visible') and not state.mr_x_visible:
                 info_text += f"🎭 Mr. X Position: HIDDEN\n"
             else:

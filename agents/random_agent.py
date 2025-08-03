@@ -1,5 +1,5 @@
 """
-Random agent implementations for Scotland Yard game.
+Random agent implementations for Shadow Chase game.
 
 This module contains basic random agents that make random valid moves.
 These can be used for testing and as baseline implementations.
@@ -7,13 +7,13 @@ These can be used for testing and as baseline implementations.
 
 import random
 from typing import List, Tuple, Optional, Set
-from ShadowChase.core.game import ScotlandYardGame, Player, TransportType, TicketType
+from ShadowChase.core.game import ShadowChaseGame, Player, TransportType, TicketType
 from .base_agent import DetectiveAgent, MrXAgent, MultiDetectiveAgent
 
 class RandomMrXAgent(MrXAgent):
     """Mr. X agent that makes random valid moves"""
     
-    def choose_move(self, game: ScotlandYardGame) -> Optional[Tuple[int, TransportType, bool]]:
+    def choose_move(self, game: ShadowChaseGame) -> Optional[Tuple[int, TransportType, bool]]:
         """Make a random valid move for Mr. X"""
         valid_moves = list(game.get_valid_moves(Player.MRX))
         
@@ -34,12 +34,12 @@ class RandomMrXAgent(MrXAgent):
             transport = TransportType.BLACK
         return (destination, transport, use_double)
     
-    def should_use_double_move(self, game: ScotlandYardGame) -> bool:
+    def should_use_double_move(self, game: ShadowChaseGame) -> bool:
         """Randomly decide to use double move (30% chance)"""
         return (self.can_use_double_move(game) and 
                 random.random() < 0.3)
     
-    def _should_use_black_ticket(self, game: ScotlandYardGame, required_transport: TransportType) -> bool:
+    def _should_use_black_ticket(self, game: ShadowChaseGame, required_transport: TransportType) -> bool:
         """Decide whether to use black ticket instead of required transport"""
         tickets = self.get_available_tickets(game)
         
@@ -54,7 +54,7 @@ class RandomMrXAgent(MrXAgent):
 class RandomMultiDetectiveAgent(MultiDetectiveAgent):
     """Agent that controls all detectives with random moves"""
     
-    def choose_all_moves(self, game: ScotlandYardGame) -> List[Tuple[int, TransportType]]:
+    def choose_all_moves(self, game: ShadowChaseGame) -> List[Tuple[int, TransportType]]:
         """Make random moves for all detectives"""
         detective_moves = []
         pending_moves = []

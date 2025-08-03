@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Persistent Cache System for Scotland Yard RL
+Persistent Cache System for Shadow Chase RL
 
 A high-performance, persistent caching system that can be shared across:
 - Game methods (get_valid_moves, is_game_over, etc.)

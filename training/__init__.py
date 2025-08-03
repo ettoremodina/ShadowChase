@@ -1,5 +1,5 @@
 """
-Training package for Scotland Yard advanced AI agents.
+Training package for Shadow Chase advanced AI agents.
 
 This package contains infrastructure for training sophisticated agents using
 Monte Carlo Tree Search (MCTS) and Deep Q-Learning approaches.

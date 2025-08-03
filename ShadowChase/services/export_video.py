@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Command line tool to export Scotland Yard game replays as videos.
+Command line tool to export Shadow Chase game replays as videos.
 
 Usage:
     python export_video.py <game_file> [options]
@@ -18,7 +18,7 @@ from pathlib import Path
 
 # Add the parent directory to Python path to import modules
 current_dir = Path(__file__).parent
-project_root = current_dir.parent if current_dir.name == "ScotlandYardRL" else current_dir
+project_root = current_dir.parent if current_dir.name == "ShadowChaseRL" else current_dir
 sys.path.insert(0, str(project_root))
 
 from ShadowChase.ui.video_exporter import export_video_from_command_line
@@ -26,7 +26,7 @@ from ShadowChase.ui.video_exporter import export_video_from_command_line
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Export Scotland Yard game replays as MP4 videos",
+        description="Export Shadow Chase game replays as MP4 videos",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:

@@ -1,4 +1,4 @@
-# ScotlandYard/storage/game_loader.py
+# ShadowChase/storage/game_loader.py
 import os
 import json
 import pickle
@@ -6,7 +6,7 @@ import uuid
 from datetime import datetime
 from typing import Dict, List, Optional
 import networkx as nx
-from ..core.game import Game, GameState, ScotlandYardGame
+from ..core.game import Game, GameState, ShadowChaseGame
 
 class GameRecord:
     """Represents a saved game record"""
@@ -45,7 +45,7 @@ class GameLoader:
         for directory in directories:
             os.makedirs(directory, exist_ok=True)
     
-    def save_game(self, game: ScotlandYardGame, game_id: str = None, 
+    def save_game(self, game: ShadowChaseGame, game_id: str = None, 
                   additional_metadata: Dict = None) -> str:
         """Save a complete game with organized file structure"""
         
@@ -62,7 +62,7 @@ class GameLoader:
             'total_turns': game.game_state.turn_count if game.game_state else 0,
             'winner': game.get_winner().value if game.get_winner() else None,
             'game_completed': game.is_game_over(),
-            'has_ticket_system': isinstance(game, ScotlandYardGame)
+            'has_ticket_system': isinstance(game, ShadowChaseGame)
         }
         
         # Add additional metadata (including game mode)
@@ -89,7 +89,7 @@ class GameLoader:
         
         return game_id
     
-    def load_game(self, game_id: str) -> Optional[ScotlandYardGame]:
+    def load_game(self, game_id: str) -> Optional[ShadowChaseGame]:
         """Load a game by ID"""
         record = self.load_game_record(game_id)
         if not record:
@@ -346,7 +346,7 @@ class GameLoader:
         graph = nx.node_link_graph(record.game_config['graph_data'], edges='links')
         
         # Create game with basic configuration
-        game = ScotlandYardGame(graph, record.game_config['num_detectives'])
+        game = ShadowChaseGame(graph, record.game_config['num_detectives'])
         
         # Restore game history
         if record.game_history:

@@ -1,5 +1,5 @@
 """
-DQN agents for Scotland Yard.
+DQN agents for Shadow Chase.
 
 These agents use trained Deep Q-Networks for action selection.
 They can be loaded from saved models and used in games.
@@ -14,7 +14,7 @@ import numpy as np
 import torch
 
 
-from ShadowChase.core.game import ScotlandYardGame, Player, TransportType
+from ShadowChase.core.game import ShadowChaseGame, Player, TransportType
 from training.feature_extractor_simple import GameFeatureExtractor, FeatureConfig
 from training.deep_q.dqn_model import create_dqn_model
 from agents.heuristics import GameHeuristics
@@ -132,7 +132,7 @@ class DQNAgentMixin:
         
         return None
 
-    def finalize_episode(self, game: ScotlandYardGame, final_reward: float):
+    def finalize_episode(self, game: ShadowChaseGame, final_reward: float):
         """Store the final experience for the episode with the actual reward."""
         if self.training_mode and hasattr(self, '_previous_state'):
             # Extract current final state features
@@ -205,7 +205,7 @@ class DQNMrXAgent(MrXAgent, DQNAgentMixin):
                 print("Agent will use random moves until a model is loaded.")
     
 
-    def _calculate_step_reward(self, game: ScotlandYardGame) -> float:
+    def _calculate_step_reward(self, game: ShadowChaseGame) -> float:
         """Calculate step-wise reward for Mr. X to encourage good behavior."""
         
         heuristics = GameHeuristics(game)
@@ -226,7 +226,7 @@ class DQNMrXAgent(MrXAgent, DQNAgentMixin):
         
         return distance_reward + survival_bonus + danger_penalty
     
-    def choose_move(self, game: ScotlandYardGame) -> Optional[Tuple[int, TransportType, bool]]:
+    def choose_move(self, game: ShadowChaseGame) -> Optional[Tuple[int, TransportType, bool]]:
         """
         Choose a move using the trained DQN model.
         
@@ -309,7 +309,7 @@ class DQNMrXAgent(MrXAgent, DQNAgentMixin):
         return (dest, transport, use_double_move)
             
     
-    def _random_move(self, game: ScotlandYardGame) -> Optional[Tuple[int, TransportType, bool]]:
+    def _random_move(self, game: ShadowChaseGame) -> Optional[Tuple[int, TransportType, bool]]:
         """Fallback random move selection."""
         valid_moves = game.get_valid_moves(Player.MRX)
         if not valid_moves:
@@ -382,7 +382,7 @@ class DQNDetectiveAgent(DetectiveAgent, DQNAgentMixin):
         if self.training_mode and self.trainer:
             self.trainer.replay_buffer.push(state, action, reward, next_state, done, next_valid_moves)
     
-    def choose_move(self, game: ScotlandYardGame, pending_moves) -> Optional[Tuple[int, TransportType]]:
+    def choose_move(self, game: ShadowChaseGame, pending_moves) -> Optional[Tuple[int, TransportType]]:
         """Choose move for this detective using DQN."""
         if self.model is None or self.feature_extractor is None:
             return self._random_move(game)
@@ -441,7 +441,7 @@ class DQNDetectiveAgent(DetectiveAgent, DQNAgentMixin):
             print(f"Error in DQN detective move selection: {e}")
             return self._random_move(game)
         
-    def _calculate_step_reward(self, game: ScotlandYardGame) -> float:
+    def _calculate_step_reward(self, game: ShadowChaseGame) -> float:
         """Calculate step-wise reward for detective to encourage good behavior."""        
         heuristics = GameHeuristics(game)
         
@@ -489,7 +489,7 @@ class DQNDetectiveAgent(DetectiveAgent, DQNAgentMixin):
         return distance_reward + step_penalty + proximity_bonus
     
     
-    def _random_move(self, game: ScotlandYardGame) -> Optional[Tuple[int, TransportType]]:
+    def _random_move(self, game: ShadowChaseGame) -> Optional[Tuple[int, TransportType]]:
         """Fallback random move."""
         position = self.get_current_position(game)
         valid_moves = game.get_valid_moves(Player.DETECTIVES, position)
@@ -523,7 +523,7 @@ class DQNMultiDetectiveAgent(MultiDetectiveAgent):
             for i in range(num_detectives)
         ]
     
-    def choose_all_moves(self, game: ScotlandYardGame) -> List[Tuple[int, TransportType]]:
+    def choose_all_moves(self, game: ShadowChaseGame) -> List[Tuple[int, TransportType]]:
         """
         Choose moves for all detectives.
         
@@ -547,7 +547,7 @@ class DQNMultiDetectiveAgent(MultiDetectiveAgent):
             pending_moves.append(move)
         return moves
 
-    def finalize_episode(self, game: ScotlandYardGame, final_reward: float):
+    def finalize_episode(self, game: ShadowChaseGame, final_reward: float):
         """Finalize episode for all detective agents."""
         for agent in self.detective_agents:
             agent.finalize_episode(game, final_reward)

@@ -1,7 +1,7 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
 from .ui_components import StyledButton, InfoDisplay
-from ..core.game import Player, ScotlandYardGame, TicketType
+from ..core.game import Player, ShadowChaseGame, TicketType
 
 class GameControls:
     """Handles game control UI and logic"""
@@ -185,7 +185,7 @@ class GameControls:
         # Update button visibility first
         self.update_button_visibility()
         
-        is_scotland_yard = isinstance(self.visualizer.game, ScotlandYardGame)
+        is_shadow_chase = isinstance(self.visualizer.game, ShadowChaseGame)
         current_player = self.visualizer.game.game_state.turn
         is_ai_turn = self.visualizer.is_current_player_ai()
         
@@ -193,7 +193,7 @@ class GameControls:
         
         if current_player == Player.DETECTIVES:
             player_type = "🤖 AI" if is_ai_turn else "👤 Human"
-            if is_scotland_yard:
+            if is_shadow_chase:
                 if not is_ai_turn and self.visualizer.current_detective_index < self.visualizer.game.num_detectives:
                     det_pos = self.visualizer.game.game_state.detective_positions[self.visualizer.current_detective_index]
                     turn_text = f"🕵️ DETECTIVE {self.visualizer.current_detective_index + 1}'S TURN ({player_type})\n"
@@ -219,7 +219,7 @@ class GameControls:
                         turn_text += "✅ All detectives selected - make move"
         else:
             player_type = "🤖 AI" if is_ai_turn else "👤 Human"
-            if is_scotland_yard:
+            if is_shadow_chase:
                 double_status = ""
                 if not is_ai_turn:
                     if self.double_move_requested:
@@ -249,7 +249,7 @@ class GameControls:
         if self.visualizer.setup_mode or not self.visualizer.game.game_state:
             return
         
-        is_scotland_yard = isinstance(self.visualizer.game, ScotlandYardGame)
+        is_shadow_chase = isinstance(self.visualizer.game, ShadowChaseGame)
         
         if not self.visualizer.current_player_moves:
             self.moves_display.set_text("❌ No available moves")
@@ -270,10 +270,10 @@ class GameControls:
                 else:
                     self.skip_button.config(state=tk.DISABLED)
 
-                player_name = f"Detective {self.visualizer.current_detective_index + 1}" if is_scotland_yard else f"detective {self.visualizer.current_detective_index + 1}"
+                player_name = f"Detective {self.visualizer.current_detective_index + 1}" if is_shadow_chase else f"detective {self.visualizer.current_detective_index + 1}"
                 moves_text += f"🎯 {player_name} from position {detective_pos}:\n"
                 for target_pos, transports in moves.items():
-                    if is_scotland_yard:
+                    if is_shadow_chase:
                         transport_names = []
                         for t in transports:
                             if t == 1: transport_names.append("🚕 Taxi")
@@ -288,10 +288,10 @@ class GameControls:
             self.update_mrx_controls()
             # MrX/Mr. X moves
             for source_pos, moves in self.visualizer.current_player_moves.items():
-                player_name = "🕵️‍♂️ Mr. X" if is_scotland_yard else "🏃 MrX"
+                player_name = "🕵️‍♂️ Mr. X" if is_shadow_chase else "🏃 MrX"
                 moves_text += f"🎯 {player_name} from position {source_pos}:\n"
                 for target_pos, transports in moves.items():
-                    if is_scotland_yard:
+                    if is_shadow_chase:
                         transport_names = []
                         for t in sorted(set(transports)):
                             if t == 1: transport_names.append("🚕 Taxi")
@@ -344,17 +344,17 @@ class GameControls:
             return
     
         try:
-            is_scotland_yard = isinstance(self.visualizer.game, ScotlandYardGame)
+            is_shadow_chase = isinstance(self.visualizer.game, ShadowChaseGame)
             success = False
     
             if self.visualizer.game.game_state.turn == Player.DETECTIVES:
-                if is_scotland_yard:
+                if is_shadow_chase:
                     success = self.visualizer.game.make_move(detective_moves=self.visualizer.detective_selections)
                 else:
                     success = self.visualizer.game.make_move(new_positions=self.visualizer.detective_selections)
             else:  # MrX's turn
-                if is_scotland_yard:
-                    # For Scotland Yard, check if this is a double move scenario
+                if is_shadow_chase:
+                    # For Shadow Chase, check if this is a double move scenario
                     if self.double_move_requested and not self.visualizer.game.game_state.double_move_active:
                         # Starting a double move - make first move
                         success = self.visualizer.game.make_move(mr_x_moves=self.mr_x_selections,

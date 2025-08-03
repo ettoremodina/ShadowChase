@@ -1,5 +1,5 @@
 """
-Video Export Module for Scotland Yard Game Replay
+Video Export Module for Shadow Chase Game Replay
 Creates MP4 videos from saved game states with configurable frame duration.
 """
 
@@ -11,7 +11,7 @@ from pathlib import Path
 from matplotlib.figure import Figure
 import networkx as nx
 from tkinter import messagebox, filedialog
-from ..core.game import ScotlandYardGame
+from ..core.game import ShadowChaseGame
 from ..services.game_loader import GameLoader
 from .base_visualizer import BaseVisualizer
 
@@ -19,13 +19,13 @@ from .base_visualizer import BaseVisualizer
 class GameVideoExporter(BaseVisualizer):
     """Exports game replays as MP4 videos"""
     
-    def __init__(self, game: ScotlandYardGame, game_id: str, output_path: str = None, 
+    def __init__(self, game: ShadowChaseGame, game_id: str, output_path: str = None, 
                  frame_duration: float = 1.0, fps: int = 1):
         """
         Initialize video exporter
         
         Args:
-            game: The ScotlandYardGame instance with game history
+            game: The ShadowChaseGame instance with game history
             game_id: Game identifier for video title
             output_path: Path where video will be saved (optional)
             frame_duration: Duration of each frame in seconds (default: 1.0)
@@ -165,7 +165,7 @@ class GameVideoExporter(BaseVisualizer):
         # Add transport legend
         self.draw_transport_legend()
         
-        self.ax.set_title(f"Scotland Yard Game - Step {step + 1}/{len(self.game.game_history)}", 
+        self.ax.set_title(f"Shadow Chase Game - Step {step + 1}/{len(self.game.game_history)}", 
                          fontsize=16, fontweight='bold', pad=20)
         self.ax.axis('off')
     
@@ -272,7 +272,7 @@ class GameVideoExporter(BaseVisualizer):
             ax.set_yticks([])
         
         # Add game ID and timestamp
-        self.fig.suptitle(f"Scotland Yard Game Replay - {self.game_id}", 
+        self.fig.suptitle(f"Shadow Chase Game Replay - {self.game_id}", 
                          fontsize=18, fontweight='bold')
     
     def export_video(self, progress_callback=None) -> str:
@@ -294,7 +294,7 @@ class GameVideoExporter(BaseVisualizer):
         # Setup output path
         if not self.output_path:
             timestamp = self.game_id.replace('game_', '')
-            self.output_path = f"scotland_yard_replay_{timestamp}.mp4"
+            self.output_path = f"shadow_chase_replay_{timestamp}.mp4"
         
         # Ensure output directory exists
         output_dir = Path(self.output_path).parent
@@ -406,7 +406,7 @@ class GameVideoExporter(BaseVisualizer):
             # Try different writers
             if 'ffmpeg' in animation.writers.list():
                 Writer = animation.writers['ffmpeg']
-                writer = Writer(fps=self.fps, metadata=dict(artist='Scotland Yard Game'), bitrate=1800)
+                writer = Writer(fps=self.fps, metadata=dict(artist='Shadow Chase Game'), bitrate=1800)
             elif 'pillow' in animation.writers.list():
                 Writer = animation.writers['pillow']
                 writer = Writer(fps=self.fps)
@@ -610,7 +610,7 @@ def show_video_export_dialog(parent, loader: GameLoader):
             
             if not output_path:
                 # Auto-generate output filename with .mp4 extension
-                output_path = f"scotland_yard_replay_{game_id}.mp4"
+                output_path = f"shadow_chase_replay_{game_id}.mp4"
             else:
                 # Ensure .mp4 extension
                 if not output_path.lower().endswith('.mp4'):
@@ -693,11 +693,11 @@ def export_video_from_command_line(game_file: str, output_file: str = None,
         game = loader._reconstruct_game_from_record(game_data)
         game_id = game_data.game_id
     else:
-        raise ValueError(f"File does not contain a valid Scotland Yard game: {type(game_data)}")
+        raise ValueError(f"File does not contain a valid Shadow Chase game: {type(game_data)}")
     
     # Setup output path with automatic .mp4 extension
     if not output_file:
-        output_file = f"scotland_yard_replay_{game_id}.mp4"
+        output_file = f"shadow_chase_replay_{game_id}.mp4"
     else:
         # Ensure .mp4 extension
         if not output_file.lower().endswith('.mp4'):

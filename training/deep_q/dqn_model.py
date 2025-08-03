@@ -1,5 +1,5 @@
 """
-Deep Q-Network model for Scotland Yard using action querying.
+Deep Q-Network model for Shadow Chase using action querying.
 
 This module implements a DQN that takes [state, action] pairs as input and outputs
 a single Q-value. This approach efficiently handles variable action spaces wi    def query_batch_actions(self,
@@ -46,7 +46,7 @@ from ShadowChase.core.game import TransportType
 
 class DQNModel(nn.Module):
     """
-    Deep Q-Network for Scotland Yard using action querying.
+    Deep Q-Network for Shadow Chase using action querying.
     
     This model takes [state, action] pairs as input and outputs a single Q-value.
     This approach handles variable action spaces efficiently without needing

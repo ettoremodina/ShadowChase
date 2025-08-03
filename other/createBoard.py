@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-Scotland Yard Board Creator
+Shadow Chase Board Creator
 
-Interactive tool to extract nodes and edges from a Scotland Yard board image.
+Interactive tool to extract nodes and edges from a Shadow Chase board image.
 Run with phase argument: python createBoard.py --phase [nodes|taxi|bus|underground|ferry]
 
 Phase-specific controls:
@@ -62,7 +62,7 @@ class Edge:
     node2: int
     transport_type: str
 
-class ScotlandYardBoardCreator:
+class ShadowChaseBoardCreator:
     def __init__(self, image_path: str, phase: Phase):
         self.image_path = image_path
         self.phase = phase
@@ -98,7 +98,7 @@ class ScotlandYardBoardCreator:
         # History for undo functionality
         self.history = []
         
-        self.window_name = f"Scotland Yard Board Creator - {phase.value.upper()} Phase"
+        self.window_name = f"Shadow Chase Board Creator - {phase.value.upper()} Phase"
         cv2.namedWindow(self.window_name, cv2.WINDOW_NORMAL)
         cv2.setMouseCallback(self.window_name, self.mouse_callback)
         
@@ -432,7 +432,7 @@ class ScotlandYardBoardCreator:
     
     def run(self):
         """Main application loop"""
-        print(f"Scotland Yard Board Creator - {self.phase.value.upper()} Phase")
+        print(f"Shadow Chase Board Creator - {self.phase.value.upper()} Phase")
         print("=" * 50)
         
         if self.phase == Phase.NODES:
@@ -491,7 +491,7 @@ class ScotlandYardBoardCreator:
         cv2.destroyAllWindows()
 
 def main():
-    parser = argparse.ArgumentParser(description='Scotland Yard Board Creator')
+    parser = argparse.ArgumentParser(description='Shadow Chase Board Creator')
     parser.add_argument('--phase', 
                         choices=['nodes', 'taxi', 'bus', 'underground', 'ferry'],
                         required=True,
@@ -515,7 +515,7 @@ def main():
         return
     
     try:
-        creator = ScotlandYardBoardCreator(image_path, phase)
+        creator = ShadowChaseBoardCreator(image_path, phase)
         creator.run()
     except Exception as e:
         print(f"Error: {e}")

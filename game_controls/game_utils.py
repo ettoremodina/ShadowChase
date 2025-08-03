@@ -1,12 +1,12 @@
 """
-Game utilities for Scotland Yard terminal gameplay.
+Game utilities for Shadow Chase terminal gameplay.
 Contains game configuration, saving, and batch execution functions.
 """
 import time
 from datetime import datetime
 import argparse
 from typing import Tuple, Optional
-from ShadowChase.core.game import Player, ScotlandYardGame
+from ShadowChase.core.game import Player, ShadowChaseGame
 from ShadowChase.services.game_service import GameService
 from game_controls.display_utils import GameDisplay, VerbosityLevel, display_game_start_info, display_game_over
 from game_controls.game_logic import GameController, GameSetup
@@ -17,7 +17,7 @@ from agents import AgentType
 
 def parse_arguments():
     """Parse command line arguments"""
-    parser = argparse.ArgumentParser(description='Scotland Yard Terminal Game')
+    parser = argparse.ArgumentParser(description='Shadow Chase Terminal Game')
     from agents import AgentSelector, AgentType
     agent_types = [agent_name[0] for agent_name in AgentSelector.get_agent_choices_for_ui()]
 
@@ -51,7 +51,7 @@ def get_game_configuration() -> Tuple[str, str, int, int, AgentType, AgentType]:
         return "test", "ai_vs_ai", 2, VerbosityLevel.MOVES, AgentType.RANDOM, AgentType.RANDOM
 
 
-def create_and_initialize_game(map_size: str, num_detectives: int) -> ScotlandYardGame:
+def create_and_initialize_game(map_size: str, num_detectives: int) -> ShadowChaseGame:
     """Create and initialize a game based on parameters"""
     if map_size == "test":
         game = GameSetup.create_test_game(num_detectives)
@@ -63,7 +63,7 @@ def create_and_initialize_game(map_size: str, num_detectives: int) -> ScotlandYa
     return game
 
 
-def save_game_session(game: ScotlandYardGame, play_mode: str, map_size: str, 
+def save_game_session(game: ShadowChaseGame, play_mode: str, map_size: str, 
                      num_detectives: int, turn_count: int, display: GameDisplay,
                      mr_x_agent_type=None, detective_agent_type=None, save_dir: str = "fritto_misto", execution_time: float = None) -> Optional[str]:
     """Save a completed game session with metadata"""
@@ -89,7 +89,7 @@ def save_game_session(game: ScotlandYardGame, play_mode: str, map_size: str,
         return None
 
 
-def save_game_automatically(game: ScotlandYardGame, play_mode: str, map_size: str,
+def save_game_automatically(game: ShadowChaseGame, play_mode: str, map_size: str,
                           num_detectives: int, turn_count: int, display: GameDisplay,
                           mr_x_agent_type=None, detective_agent_type=None, save_dir: str = "fritto_misto", execution_time: float = None) -> Optional[str]:
     """Save game without user confirmation"""
@@ -103,7 +103,7 @@ def save_game_automatically(game: ScotlandYardGame, play_mode: str, map_size: st
     return game_id
 
 
-def offer_save_option(game: ScotlandYardGame, play_mode: str, map_size: str, 
+def offer_save_option(game: ShadowChaseGame, play_mode: str, map_size: str, 
                      num_detectives: int, turn_count: int, display: GameDisplay,
                      mr_x_agent_type=None, detective_agent_type=None, save_dir: str = "fritto_misto"):
     """Offer the user option to save the game with confirmation"""
@@ -132,7 +132,7 @@ def offer_save_option(game: ScotlandYardGame, play_mode: str, map_size: str,
             print("Please enter 'y' for yes or 'n' for no.")
 
 
-def execute_single_turn(controller: GameController, game: ScotlandYardGame, 
+def execute_single_turn(controller: GameController, game: ShadowChaseGame, 
                        play_mode: str, display: GameDisplay) -> bool:
     """Execute a single game turn. Returns True if turn completed successfully, False if user quit"""
     current_player = game.game_state.turn

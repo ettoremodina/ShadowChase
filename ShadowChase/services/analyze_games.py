@@ -1,5 +1,5 @@
 """
-Game Statistics Analyzer for Scotland Yard
+Game Statistics Analyzer for Shadow Chase
 Specialized class for analyzing game results and generating comprehensive visualizations.
 """
 
@@ -23,10 +23,10 @@ AGENT_NAME_MAPPING = {
     "random": "Random Agent",
     "heuristic": "Heuristic Agent", 
     "optimized_mcts": "Optimized MCTS",
-    "epsilon_greedy_mcts": "ε-Greedy MCTS",
+    "epsilon_greedy_mcts": "eps-Greedy MCTS",
     "deep_q": "Deep Q-Network"
 }
-increase = 7
+increase = 2
 # Font size configuration variables for easy debugging and testing
 FONT_SIZE_LARGE_TITLE = 24   +increase       # Main titles and suptitles
 FONT_SIZE_TITLE = 20         +increase           # Plot titles
@@ -973,7 +973,7 @@ Average Game Length: {summary['average_game_length']:.1f} turns
             ax5.set_ylim(0, 100)
             ax5.tick_params(axis='y', labelsize=FONT_SIZE_TICK)
         
-        plt.suptitle('Scotland Yard Game Analysis Dashboard', fontsize=FONT_SIZE_LARGE_TITLE, y=0.98, fontweight='bold')
+        plt.suptitle('Shadow Chase Game Analysis Dashboard', fontsize=FONT_SIZE_LARGE_TITLE, y=0.98, fontweight='bold')
         plt.savefig(self.graphs_dir / "comprehensive_dashboard.jpg", dpi=300, bbox_inches='tight')
         plt.close()
         print("   📊 Generated: comprehensive_dashboard.jpg")
@@ -1007,7 +1007,7 @@ Average Game Length: {summary['average_game_length']:.1f} turns
         summary = self.statistics.get_summary()
         
         with open(report_file, 'w') as f:
-            f.write("SCOTLAND YARD GAME ANALYSIS REPORT\n")
+            f.write("SHADOW CHASE GAME ANALYSIS REPORT\n")
             f.write("=" * 50 + "\n\n")
             
             f.write(f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
@@ -1120,7 +1120,7 @@ Average Game Length: {summary['average_game_length']:.1f} turns
             for graph_file in sorted(graph_files):
                 f.write(f"- {graph_file.name}\n")
         
-        print(f"📝 Generated: {report_file.name}")
+        print(f"Generated: {report_file.name}")
 
 
 def main():
@@ -1138,7 +1138,7 @@ def main():
         print(f"❌ Directory not found: {test_dir}")
         return
     
-    print(f"🔍 SCOTLAND YARD GAME ANALYSIS")
+    print(f"🔍 SHADOW CHASE GAME ANALYSIS")
     print("=" * 40)
     print(f"📁 Analyzing directory: {test_dir}")
     

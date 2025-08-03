@@ -1,5 +1,5 @@
 """
-Training environment for Scotland Yard AI agents.
+Training environment for Shadow Chase AI agents.
 
 This module provides the TrainingEnvironment class for standardized
 game episode execution during training.
@@ -33,7 +33,7 @@ class GameResult:
 
 class TrainingEnvironment:
     """
-    Environment for training agents in Scotland Yard games.
+    Environment for training agents in Shadow Chase games.
     
     This class provides a standardized interface for running game episodes
     during training, with support for different agent types and configurations.

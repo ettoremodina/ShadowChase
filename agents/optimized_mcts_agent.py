@@ -1,8 +1,8 @@
 """
-Optimized MCTS (Monte Carlo Tree Search) agents for Scotland Yard with caching.
+Optimized MCTS (Monte Carlo Tree Search) agents for Shadow Chase with caching.
 
 This module provides optimized MCTS-based agents that use tree search with random simulations
-and a cache system to speed up the decision-making process in the Scotland Yard game.
+and a cache system to speed up the decision-making process in the Shadow Chase game.
 
 Key optimizations over the regular MCTS agent:
 1. **Cache System**: Stores previously computed node evaluations to avoid redundant calculations
@@ -31,7 +31,7 @@ import time
 import random
 import hashlib
 
-from ShadowChase.core.game import ScotlandYardGame, Player, TransportType
+from ShadowChase.core.game import ShadowChaseGame, Player, TransportType
 from .base_agent import MrXAgent, MultiDetectiveAgent, DetectiveAgent
 from .mcts_agent import load_mcts_config
 from ShadowChase.services.cache_system import get_global_cache, CacheNamespace
@@ -72,7 +72,7 @@ class GameStateCache:
         self._cache: Dict[str, CachedNodeResult] = {}
         self._access_order: List[str] = []
     
-    def _create_state_hash(self, game_state: ScotlandYardGame) -> str:
+    def _create_state_hash(self, game_state: ShadowChaseGame) -> str:
         """Create a hash string for the game state."""
         state = game_state.game_state
         
@@ -92,7 +92,7 @@ class GameStateCache:
         hash_str = str(hash_data)
         return hashlib.md5(hash_str.encode()).hexdigest()
     
-    def get(self, game_state: ScotlandYardGame) -> Optional[CachedNodeResult]:
+    def get(self, game_state: ShadowChaseGame) -> Optional[CachedNodeResult]:
         """Get cached result for a game state."""
         state_hash = self._create_state_hash(game_state)
         
@@ -113,7 +113,7 @@ class GameStateCache:
         
         return None
     
-    def put(self, game_state: ScotlandYardGame, wins: int, visits: int, best_move: Optional[Tuple]):
+    def put(self, game_state: ShadowChaseGame, wins: int, visits: int, best_move: Optional[Tuple]):
         """Store a result in the cache."""
         state_hash = self._create_state_hash(game_state)
         
@@ -173,7 +173,7 @@ class OptimizedMCTSNode:
     about wins/losses from this state.
     """
     
-    def __init__(self, game_state: ScotlandYardGame, move: Optional[Tuple] = None, 
+    def __init__(self, game_state: ShadowChaseGame, move: Optional[Tuple] = None, 
                  parent: Optional['OptimizedMCTSNode'] = None, max_depth: int = 20, 
                  cache: Optional[GameStateCache] = None):
         """
@@ -200,13 +200,13 @@ class OptimizedMCTSNode:
         # Try to load from cache
         self._load_from_cache()
     
-    def _efficient_copy_game(self, game: ScotlandYardGame) -> ScotlandYardGame:
+    def _efficient_copy_game(self, game: ShadowChaseGame) -> ShadowChaseGame:
         """
         Create an efficient copy of the game state for MCTS simulations.
         This avoids the heavy deepcopy operation by only copying essential data.
         """
         # Create a new game instance with the same graph (shared reference is fine)
-        new_game = ScotlandYardGame(game.graph, game.num_detectives)
+        new_game = ShadowChaseGame(game.graph, game.num_detectives)
         
         # Copy essential state data efficiently
         if game.game_state is not None:
@@ -458,7 +458,7 @@ class OptimizedMCTSAgent:
             'cache_hit_rate': 0.0
         }
     
-    def mcts_search(self, game_state: ScotlandYardGame, perspective: Player) -> Optional[Tuple]:
+    def mcts_search(self, game_state: ShadowChaseGame, perspective: Player) -> Optional[Tuple]:
         """
         Perform optimized MCTS search to find the best move.
         
@@ -661,7 +661,7 @@ class OptimizedMCTSMrXAgent(MrXAgent, OptimizedMCTSAgent):
         OptimizedMCTSAgent.__init__(self, simulation_time, max_iterations, exploration_constant, 
                                    config_path, cache_size, cache_max_age)
     
-    def choose_move(self, game: ScotlandYardGame) -> Optional[Tuple[int, TransportType, bool]]:
+    def choose_move(self, game: ShadowChaseGame) -> Optional[Tuple[int, TransportType, bool]]:
         """Choose move using optimized MCTS with caching."""
         return self.mcts_search(game, Player.MRX)
 
@@ -682,7 +682,7 @@ class OptimizedMCTSDetectiveAgent(DetectiveAgent, OptimizedMCTSAgent):
         OptimizedMCTSAgent.__init__(self, simulation_time, max_iterations, exploration_constant, 
                                    config_path, cache_size, cache_max_age)
     
-    def choose_move(self, game: ScotlandYardGame) -> Optional[Tuple[int, TransportType]]:
+    def choose_move(self, game: ShadowChaseGame) -> Optional[Tuple[int, TransportType]]:
         """Choose move using optimized MCTS with caching."""
         result = self.mcts_search(game, Player.DETECTIVES)
         if result and len(result) >= 2:
@@ -728,7 +728,7 @@ class OptimizedMCTSMultiDetectiveAgent(MultiDetectiveAgent):
             'cache_max_age': cache_max_age
         }
     
-    def choose_all_moves(self, game: ScotlandYardGame) -> List[Tuple[int, TransportType]]:
+    def choose_all_moves(self, game: ShadowChaseGame) -> List[Tuple[int, TransportType]]:
         """Make optimized MCTS moves for all detectives considering pending moves."""
         detective_moves = []
         pending_moves = []

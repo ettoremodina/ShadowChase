@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Board overlay calibration script for Scotland Yard game.
+Board overlay calibration script for Shadow Chase game.
 This script helps align the board image with the graph node positions.
 """
 

@@ -210,28 +210,28 @@ def patch_mcts_for_profiling():
     MCTSAgent.mcts_search = profiled_mcts_search
     
     # Patch game state operations
-    from ShadowChase.core.game import ScotlandYardGame
-    original_get_valid_moves = ScotlandYardGame.get_valid_moves
-    original_make_move = ScotlandYardGame.make_move
-    original_is_game_over = ScotlandYardGame.is_game_over
+    from ShadowChase.core.game import ShadowChaseGame
+    original_get_valid_moves = ShadowChaseGame.get_valid_moves
+    original_make_move = ShadowChaseGame.make_move
+    original_is_game_over = ShadowChaseGame.is_game_over
     
-    @function_profiler.profile_function("ScotlandYardGame.get_valid_moves")
+    @function_profiler.profile_function("ShadowChaseGame.get_valid_moves")
     def profiled_get_valid_moves(self, player, position=None, *args, **kwargs):
         if position is not None:
             game_analyzer.track_move_generation(player, position)
         return original_get_valid_moves(self, player, position, *args, **kwargs)
     
-    @function_profiler.profile_function("ScotlandYardGame.make_move")
+    @function_profiler.profile_function("ShadowChaseGame.make_move")
     def profiled_make_move(self, *args, **kwargs):
         return original_make_move(self, *args, **kwargs)
     
-    @function_profiler.profile_function("ScotlandYardGame.is_game_over")
+    @function_profiler.profile_function("ShadowChaseGame.is_game_over")
     def profiled_is_game_over(self, *args, **kwargs):
         return original_is_game_over(self, *args, **kwargs)
     
-    ScotlandYardGame.get_valid_moves = profiled_get_valid_moves
-    ScotlandYardGame.make_move = profiled_make_move
-    ScotlandYardGame.is_game_over = profiled_is_game_over
+    ShadowChaseGame.get_valid_moves = profiled_get_valid_moves
+    ShadowChaseGame.make_move = profiled_make_move
+    ShadowChaseGame.is_game_over = profiled_is_game_over
 
 
 def run_mcts_profiling_session(num_moves: int = 20, map_size: str = "extended") -> Dict[str, Any]:
@@ -252,7 +252,7 @@ def run_mcts_profiling_session(num_moves: int = 20, map_size: str = "extended") 
     # Profile the game session
     move_count = 0
     start_time = time.perf_counter()
-    game.initialize_scotland_yard_game(detective_positions, 91)
+    game.initialize_shadow_chase_game(detective_positions, 91)
     
     while not game.is_game_over() and move_count < num_moves:
         current_player = game.game_state.turn

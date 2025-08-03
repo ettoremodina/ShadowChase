@@ -1,9 +1,9 @@
 """
-Display utilities for simple terminal-based Scotland Yard gameplay.
+Display utilities for simple terminal-based Shadow Chase gameplay.
 Provides clean, customizable output formatting without graph visualization.
 """
 from typing import Dict, List, Tuple, Optional, Set
-from ShadowChase.core.game import ScotlandYardGame, Player, TicketType, TransportType
+from ShadowChase.core.game import ShadowChaseGame, Player, TicketType, TransportType
 from agents.heuristics import GameHeuristics
 
 
@@ -39,7 +39,7 @@ class GameDisplay:
             'hidden': '❓'
         }
     
-    def set_game(self, game: ScotlandYardGame):
+    def set_game(self, game: ShadowChaseGame):
         """Set the game instance and initialize heuristics if needed"""
         
         try:
@@ -63,7 +63,7 @@ class GameDisplay:
         print(f"  {title.upper()}")
         self.print_separator()
     
-    def print_game_state(self, game: ScotlandYardGame):
+    def print_game_state(self, game: ShadowChaseGame):
         """Print current game state based on verbosity level"""
         if not game.game_state:
             print("❌ Game not initialized")
@@ -96,7 +96,7 @@ class GameDisplay:
         
         print()
     
-    def _print_positions(self, game: ScotlandYardGame):
+    def _print_positions(self, game: ShadowChaseGame):
         """Print player positions"""
         state = game.game_state
         
@@ -112,7 +112,7 @@ class GameDisplay:
         else:
             print(f"  Position: Hidden {self.symbols['hidden']}")
     
-    def _print_tickets(self, game: ScotlandYardGame):
+    def _print_tickets(self, game: ShadowChaseGame):
         """Print ticket information"""
         print(f"\n🎫 TICKETS:")
         
@@ -131,7 +131,7 @@ class GameDisplay:
             icon = self.symbols.get(ticket_type.value, '🎫')
             print(f"    {icon} {ticket_type.value.capitalize()}: {count}")
     
-    def _print_move_history(self, game: ScotlandYardGame):
+    def _print_move_history(self, game: ShadowChaseGame):
         """Print recent move history"""
         if not hasattr(game.game_state, 'mr_x_moves_log'):
             return
@@ -147,10 +147,10 @@ class GameDisplay:
             icon = self.symbols.get(transport.name.lower(), '🎫')
             print(f"  Move {len(moves_log) - len(recent_moves) + i}: {icon} → Position {pos}")
     
-    def print_available_moves(self, game: ScotlandYardGame, player: Player, position: Optional[int] = None):
+    def print_available_moves(self, game: ShadowChaseGame, player: Player, position: Optional[int] = None):
         """Print available moves for a player"""
         if player == Player.DETECTIVES and position is not None:
-            if isinstance(game, ScotlandYardGame):
+            if isinstance(game, ShadowChaseGame):
                 moves = game.get_valid_moves(Player.DETECTIVES, position)
             else:
                 moves = game.get_valid_moves(Player.DETECTIVES, position)
@@ -160,8 +160,8 @@ class GameDisplay:
                 print("  ❌ No valid moves available!")
                 return moves
             
-            # Handle both Scotland Yard (tuples) and regular games (integers)
-            if isinstance(game, ScotlandYardGame):
+            # Handle both Shadow Chase (tuples) and regular games (integers)
+            if isinstance(game, ShadowChaseGame):
                 # Group moves by destination
                 move_dict = {}
                 for dest, transport in moves:
@@ -183,7 +183,7 @@ class GameDisplay:
                     print(f"  → Position {dest}")
         
         elif player == Player.MRX:
-            if isinstance(game, ScotlandYardGame):
+            if isinstance(game, ShadowChaseGame):
                 moves = game.get_valid_moves(Player.MRX)
             else:
                 moves = game.get_valid_moves(Player.MRX)
@@ -193,8 +193,8 @@ class GameDisplay:
                 print("  ❌ No valid moves available!")
                 return moves
             
-            # Handle both Scotland Yard (tuples) and regular games (integers)
-            if isinstance(game, ScotlandYardGame):
+            # Handle both Shadow Chase (tuples) and regular games (integers)
+            if isinstance(game, ShadowChaseGame):
                 # Group moves by destination
                 move_dict = {}
                 for dest, transport in moves:
@@ -251,7 +251,7 @@ class GameDisplay:
         print("  • Type 'help' for this message")
         print("  • Type 'quit' to exit")
     
-    def print_debug_info(self, game: ScotlandYardGame):
+    def print_debug_info(self, game: ShadowChaseGame):
         """Print debug information (verbosity level 4)"""
         if self.verbosity < VerbosityLevel.DEBUG:
             return
@@ -263,7 +263,7 @@ class GameDisplay:
         print(f"  Next reveal: {min([t for t in game.reveal_turns if t > state.MrX_turn_count], default='None')}")
         print(f"  Game history length (MrX turns): {state.MrX_turn_count}")
 
-    def _print_heuristic_analysis(self, game: ScotlandYardGame):
+    def _print_heuristic_analysis(self, game: ShadowChaseGame):
         """Print heuristic analysis (verbosity level 5)"""
         if not self.heuristics:
             try:
@@ -400,7 +400,7 @@ def display_game_start_info(display: GameDisplay, play_mode: str, map_size: str)
     if map_size == "test":
         display.print_info("Created test game (10 nodes)")
     else:
-        display.print_info("Created full Scotland Yard game (199 nodes)")
+        display.print_info("Created full Shadow Chase game (199 nodes)")
     
     display.print_info(f"Game mode: {mode_descriptions[play_mode]}")
     
@@ -409,7 +409,7 @@ def display_game_start_info(display: GameDisplay, play_mode: str, map_size: str)
         display.print_input_help()
 
 
-def display_game_over(game: ScotlandYardGame, display: GameDisplay, turn_count: int, max_turns: int):
+def display_game_over(game: ShadowChaseGame, display: GameDisplay, turn_count: int, max_turns: int):
     """Display game over information"""
     # display.clear_screen()
     display.print_title("GAME OVER")

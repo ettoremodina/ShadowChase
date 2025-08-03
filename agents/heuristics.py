@@ -1,5 +1,5 @@
 """
-Simple heuristic calculations for Scotland Yard game.
+Simple heuristic calculations for Shadow Chase game.
 
 This module provides basic heuristic functions for evaluating game positions,
 specifically distance calculations between Mr. X and detectives.
@@ -7,23 +7,23 @@ specifically distance calculations between Mr. X and detectives.
 
 import networkx as nx
 from typing import List, Dict, Optional, Set, Tuple
-from ShadowChase.core.game import ScotlandYardGame, GameState, Player
+from ShadowChase.core.game import ShadowChaseGame, GameState, Player
 import random
 
 class GameHeuristics:
     """
-    Simple heuristic calculator for Scotland Yard game positions.
+    Simple heuristic calculator for Shadow Chase game positions.
     
     This class provides basic distance calculations that can be used by AI agents
     to evaluate game positions and make strategic decisions.
     """
     
-    def __init__(self, game: ScotlandYardGame):
+    def __init__(self, game: ShadowChaseGame):
         """
         Initialize the heuristics calculator.
         
         Args:
-            game: The Scotland Yard game instance
+            game: The Shadow Chase game instance
         """
         self.game = game
         self.graph = game.graph
@@ -32,7 +32,7 @@ class GameHeuristics:
         # Pre-calculate shortest path distances for efficiency
         self._distance_cache = {}
         
-    def update_game_state(self, game: ScotlandYardGame):
+    def update_game_state(self, game: ShadowChaseGame):
         """
         Update the game state reference when the game advances.
         
@@ -500,6 +500,6 @@ class GameHeuristics:
         Clear the distance calculation cache.
         
         Call this if the graph structure changes (though it shouldn't
-        during a normal Scotland Yard game).
+        during a normal Shadow Chase game).
         """
         self._distance_cache.clear()

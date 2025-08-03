@@ -1,8 +1,8 @@
 """
-MCTS (Monte Carlo Tree Search) agents for Scotland Yard.
+MCTS (Monte Carlo Tree Search) agents for Shadow Chase.
 
 This module provides MCTS-based agents that use tree search with random simulations
-to make decisions in the Scotland Yard game.
+to make decisions in the Shadow Chase game.
 """
 
 import os
@@ -13,7 +13,7 @@ import random
 from pathlib import Path
 from typing import List, Optional, Dict, Any, Tuple
 
-from ShadowChase.core.game import ScotlandYardGame, Player, TransportType
+from ShadowChase.core.game import ShadowChaseGame, Player, TransportType
 from .base_agent import MrXAgent, MultiDetectiveAgent, DetectiveAgent
 
 
@@ -40,7 +40,7 @@ class MCTSNode:
     about wins/losses from this state.
     """
     
-    def __init__(self, game_state: ScotlandYardGame, move: Optional[Tuple] = None, parent: Optional['MCTSNode'] = None, max_depth: int = 20):
+    def __init__(self, game_state: ShadowChaseGame, move: Optional[Tuple] = None, parent: Optional['MCTSNode'] = None, max_depth: int = 20):
         """
         Initialize MCTS node.
         
@@ -263,7 +263,7 @@ class MCTSAgent:
             'avg_simulations_per_second': 0.0
         }
     
-    def mcts_search(self, game_state: ScotlandYardGame, perspective: Player) -> Optional[Tuple]:
+    def mcts_search(self, game_state: ShadowChaseGame, perspective: Player) -> Optional[Tuple]:
         """
         Perform MCTS search to find the best move.
         
@@ -373,7 +373,7 @@ class MCTSMrXAgent(MrXAgent, MCTSAgent):
         MrXAgent.__init__(self)
         MCTSAgent.__init__(self, simulation_time, max_iterations, exploration_constant, config_path)
     
-    def choose_move(self, game: ScotlandYardGame) -> Optional[Tuple[int, TransportType, bool]]:
+    def choose_move(self, game: ShadowChaseGame) -> Optional[Tuple[int, TransportType, bool]]:
         """Choose move using MCTS."""
         return self.mcts_search(game, Player.MRX)
 
@@ -391,7 +391,7 @@ class MCTSDetectiveAgent(DetectiveAgent, MCTSAgent):
         DetectiveAgent.__init__(self, detective_id)
         MCTSAgent.__init__(self, simulation_time, max_iterations, exploration_constant, config_path)
     
-    def choose_move(self, game: ScotlandYardGame) -> Optional[Tuple[int, TransportType]]:
+    def choose_move(self, game: ShadowChaseGame) -> Optional[Tuple[int, TransportType]]:
         """Choose move using MCTS."""
         result = self.mcts_search(game, Player.DETECTIVES)
         if result and len(result) >= 2:
@@ -428,7 +428,7 @@ class MCTSMultiDetectiveAgent(MultiDetectiveAgent):
             'config_path': config_path
         }
     
-    def choose_all_moves(self, game: ScotlandYardGame) -> List[Tuple[int, TransportType]]:
+    def choose_all_moves(self, game: ShadowChaseGame) -> List[Tuple[int, TransportType]]:
         """Make MCTS moves for all detectives considering pending moves."""
         detective_moves = []
         pending_moves = []

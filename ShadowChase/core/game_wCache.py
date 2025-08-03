@@ -8,7 +8,7 @@ from ShadowChase.services.cache_system import get_global_cache, CacheNamespace
 
 class Player(Enum):
     DETECTIVES = "detectives"
-    MRX = "mr_x"  # Added for Scotland Yard
+    MRX = "mr_x"  # Added for Shadow Chase
 
 class TransportType(Enum):
     TAXI = 1
@@ -43,7 +43,7 @@ class GameState:
         self.turn = turn
         self.MrX_turn_count = MrX_turn_count
         self.turn_count = turn_count
-        # Scotland Yard specific
+        # Shadow Chase specific
         self.detective_tickets = detective_tickets or {}
         self.mr_x_tickets = mr_x_tickets or {}
         self.mr_x_visible = mr_x_visible
@@ -164,8 +164,8 @@ class DistanceKWinCondition(WinCondition):
     def is_game_over(self, game_state: GameState) -> bool:
         return self.is_detectives_win(game_state)
 
-class ScotlandYardMovement(MovementRule):
-    """Movement rule for Scotland Yard game with transport types"""
+class ShadowChaseMovement(MovementRule):
+    """Movement rule for Shadow Chase game with transport types"""
     
     def get_valid_moves(self, graph: nx.Graph, position: int, 
                        game_state: GameState) -> Set[Tuple[int, TransportType]]:
@@ -201,13 +201,13 @@ class ScotlandYardMovement(MovementRule):
     def can_stay(self) -> bool:
         return False
 
-class ScotlandYardWinCondition(WinCondition):
-    """Scotland Yard specific win conditions"""
+class ShadowChaseWinCondition(WinCondition):
+    """Shadow Chase specific win conditions"""
     
     def __init__(self, graph: nx.Graph, max_turns: int = 24):
         self.graph = graph
         self.max_turns = max_turns
-        self.movement_rule = ScotlandYardMovement()
+        self.movement_rule = ShadowChaseMovement()
     
     def is_detectives_win(self, game_state: GameState) -> bool:
         # Detectives win if any detective is on Mr. X's position
@@ -505,22 +505,22 @@ class GameMethodCache:
 
 
     
-class ScotlandYardGame(Game):
-    """Scotland Yard variant of the game with persistent high-performance caching"""
+class ShadowChaseGame(Game):
+    """Shadow Chase variant of the game with persistent high-performance caching"""
     
     def __init__(self, graph: nx.Graph, num_detectives: int = 3, cache_size: int = 5e7):
         super().__init__(graph, num_detectives, 
-                        ScotlandYardMovement(), ScotlandYardMovement(),
-                        ScotlandYardWinCondition(graph))
+                        ShadowChaseMovement(), ShadowChaseMovement(),
+                        ShadowChaseWinCondition(graph))
         self.reveal_turns = {3, 8, 13, 18, 24}
         
         # Use both in-memory and persistent caching
         self.cache = GameMethodCache(cache_size)  # Fast in-memory cache
         self.persistent_cache = get_global_cache()  # Persistent cross-game cache
         
-    def initialize_scotland_yard_game(self, detective_positions: List[int], 
+    def initialize_shadow_chase_game(self, detective_positions: List[int], 
                                     mr_x_position: int):
-        """Initialize Scotland Yard game with tickets"""
+        """Initialize Shadow Chase game with tickets"""
         # Initialize detective tickets
         detective_tickets = {}
         for i in range(len(detective_positions)):
@@ -728,7 +728,7 @@ class ScotlandYardGame(Game):
                   mr_x_moves: List[Tuple[int, TransportType]] = None, 
                   use_double_move: bool = False) -> bool:
         """
-        Make a move in Scotland Yard. Simplified double move handling.
+        Make a move in Shadow Chase. Simplified double move handling.
         """
         if self.game_state is None:
             raise ValueError("Game not initialized")

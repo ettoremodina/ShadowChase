@@ -4,7 +4,7 @@ import networkx as nx
 import os
 import pickle
 import matplotlib.pyplot as plt
-from ..core.game import Game, Player, ScotlandYardGame, TicketType, TransportType
+from ..core.game import Game, Player, ShadowChaseGame, TicketType, TransportType
 from ..services.game_loader import GameLoader
 from ..services.game_service import GameService
 from .ui_components import ScrollableFrame, StyledButton, InfoDisplay
@@ -34,7 +34,7 @@ class GameVisualizer(BaseVisualizer):
         self.game_service = GameService(self.loader)
         self.solver = None
         self.root = tk.Tk()
-        self.root.title("Scotland Yard Game")
+        self.root.title("Shadow Chase Game")
         self.root.geometry(f"{self.root.winfo_screenwidth()}x{self.root.winfo_screenheight()}")
         self.root.configure(bg="#f8f9fa")
         
@@ -85,7 +85,7 @@ class GameVisualizer(BaseVisualizer):
         if not HEURISTICS_AVAILABLE:
             return
             
-        if isinstance(self.game, ScotlandYardGame) and self.game.game_state:
+        if isinstance(self.game, ShadowChaseGame) and self.game.game_state:
             try:
                 self.heuristics = GameHeuristics(self.game)
             except Exception as e:
@@ -145,7 +145,7 @@ class GameVisualizer(BaseVisualizer):
             self.scrollable_controls.scrollable_frame)
         self.moves_display.pack(fill=tk.X, pady=(0, 10))
         
-        # Create ticket table display for Scotland Yard games but don't pack it yet
+        # Create ticket table display for Shadow Chase games but don't pack it yet
         self.tickets_table_display = InfoDisplay(self.scrollable_controls.scrollable_frame,
                                                 "🎫 Ticket Table", height=10)
         # Don't pack it here - let update_ui_visibility() control when it appears
@@ -223,8 +223,8 @@ class GameVisualizer(BaseVisualizer):
             info_text += f"📊 Turn count: {state_info['turn_count']}\n"
             info_text += f"👮 detective positions: {state_info['detective_positions']}\n"
             
-            is_scotland_yard = isinstance(self.game, ScotlandYardGame)
-            if is_scotland_yard:
+            is_shadow_chase = isinstance(self.game, ShadowChaseGame)
+            if is_shadow_chase:
                 if self.game.game_state.mr_x_visible:
                     info_text += f"🕵️‍♂️ Mr. X position: {state_info['MrX_position']} (VISIBLE)\n"
                 else:
@@ -243,8 +243,8 @@ class GameVisualizer(BaseVisualizer):
         
         self.info_display.set_text(info_text)
         
-        # Update ticket table for Scotland Yard games
-        if isinstance(self.game, ScotlandYardGame) and self.game.game_state:
+        # Update ticket table for Shadow Chase games
+        if isinstance(self.game, ShadowChaseGame) and self.game.game_state:
             self.update_tickets_display_table(self.tickets_table_display)
         
         # Update other displays
@@ -331,9 +331,9 @@ class GameVisualizer(BaseVisualizer):
                 
             print(f"📦 Loaded object type: {type(game_record)}")
             
-            # If it's already a ScotlandYardGame object, return it directly
-            if isinstance(game_record, ScotlandYardGame):
-                print("✅ Found ScotlandYardGame object directly")
+            # If it's already a ShadowChaseGame object, return it directly
+            if isinstance(game_record, ShadowChaseGame):
+                print("✅ Found ShadowChaseGame object directly")
                 return game_record
                 
             # If it's a GameRecord, reconstruct the game from it
@@ -398,7 +398,7 @@ class GameVisualizer(BaseVisualizer):
         except Exception as e:
             messagebox.showerror("Error", f"Failed to show video export dialog: {str(e)}")
 
-    def open_game_replay(self, game_id: str, game: ScotlandYardGame):
+    def open_game_replay(self, game_id: str, game: ShadowChaseGame):
         """Open the game replay window"""
         try:
             replay_window = GameReplayWindow(self.root, game_id, game, self.loader)
@@ -441,7 +441,7 @@ class GameVisualizer(BaseVisualizer):
         if not self.game.game_state or self.game.is_game_over():
             return
     
-        is_scotland_yard = isinstance(self.game, ScotlandYardGame)
+        is_shadow_chase = isinstance(self.game, ShadowChaseGame)
         current_player = self.game.game_state.turn
     
         if current_player == Player.DETECTIVES:
@@ -451,15 +451,15 @@ class GameVisualizer(BaseVisualizer):
                 detective_pos = self.game.game_state.detective_positions[self.current_detective_index]
                 self.active_player_positions = [detective_pos]
                 
-                # The get_valid_moves method in ScotlandYardGame already filters by tickets and occupied positions.
-                if is_scotland_yard:
+                # The get_valid_moves method in ShadowChaseGame already filters by tickets and occupied positions.
+                if is_shadow_chase:
                     valid_moves = self.game.get_valid_moves(Player.DETECTIVES, detective_pos, pending_moves=self.detective_selections)
                 else:
                     valid_moves = self.game.get_valid_moves(Player.DETECTIVES, detective_pos)
                 
                 self.current_player_moves[detective_pos] = {}
                 for move in valid_moves:
-                    if is_scotland_yard:
+                    if is_shadow_chase:
                         dest, transport = move
                         if dest not in self.current_player_moves[detective_pos]:
                             self.current_player_moves[detective_pos][dest] = []
@@ -480,7 +480,7 @@ class GameVisualizer(BaseVisualizer):
             self.current_player_moves[MrX_pos] = {}
             mr_x_tickets = self.game.get_mr_x_tickets()
             for move in valid_moves:
-                if is_scotland_yard:
+                if is_shadow_chase:
                     dest, transport = move
                     
                     # Initialize destination if not exists
@@ -515,11 +515,11 @@ class GameVisualizer(BaseVisualizer):
             messagebox.showwarning("Invalid Move", f"Position {node} is not a valid move for the current player.")
             return
     
-        is_scotland_yard = isinstance(self.game, ScotlandYardGame)
+        is_shadow_chase = isinstance(self.game, ShadowChaseGame)
         current_player = self.game.game_state.turn
     
         if current_player == Player.DETECTIVES:
-            if is_scotland_yard:
+            if is_shadow_chase:
                 # Get available moves for this detective (already filtered by tickets)
                 detective_pos = self.game.game_state.detective_positions[self.current_detective_index]
                 valid_moves = self.game.get_valid_moves(Player.DETECTIVES, detective_pos, pending_moves=self.detective_selections)
@@ -558,7 +558,7 @@ class GameVisualizer(BaseVisualizer):
                 self.game_controls.move_button.config(state=tk.NORMAL)
         
         else:  # MrX's turn
-            if is_scotland_yard:
+            if is_shadow_chase:
                 # Get available moves for Mr. X (already filtered by tickets)
                 valid_moves = self.game.get_valid_moves(Player.MRX, source_pos)
                 
@@ -624,18 +624,18 @@ class GameVisualizer(BaseVisualizer):
                 self.setup_ai_agents()
                 self.agents_initialized = True
             
-            # Show Mr. X controls only when it's Mr. X's turn in Scotland Yard
-            is_scotland_yard = isinstance(self.game, ScotlandYardGame)
+            # Show Mr. X controls only when it's Mr. X's turn in Shadow Chase
+            is_shadow_chase = isinstance(self.game, ShadowChaseGame)
             is_mrx_turn = (self.game.game_state and 
                           self.game.game_state.turn == Player.MRX)
             
-            if is_scotland_yard and is_mrx_turn and self.is_current_player_human():
+            if is_shadow_chase and is_mrx_turn and self.is_current_player_human():
                 self.mrx_section.pack(fill=tk.X, pady=(0, 10))
             else:
                 self.mrx_section.pack_forget()
             
-            # Show only ticket table for Scotland Yard games
-            if is_scotland_yard:
+            # Show only ticket table for Shadow Chase games
+            if is_shadow_chase:
                 if hasattr(self, 'tickets_table_display'):
                     self.tickets_table_display.pack(fill=tk.X, pady=(0, 10))
             else:
@@ -721,7 +721,7 @@ class GameVisualizer(BaseVisualizer):
                                   linewidth=2, linestyle='--', alpha=0.8)
                 self.ax.add_patch(circle)
 
-        self.ax.set_title("Scotland Yard Game", fontsize=14, fontweight='bold')
+        self.ax.set_title("Shadow Chase Game", fontsize=14, fontweight='bold')
 
         # Use base class method for legend - only show when edges are visible
         if show_edges:
@@ -843,8 +843,8 @@ class GameVisualizer(BaseVisualizer):
                         node_colors.append('blue')
                         node_sizes.append(NODE_SIZE)
                     elif node == self.game.game_state.MrX_position:
-                        is_scotland_yard = isinstance(self.game, ScotlandYardGame)
-                        if not is_scotland_yard or self.game.game_state.mr_x_visible:
+                        is_shadow_chase = isinstance(self.game, ShadowChaseGame)
+                        if not is_shadow_chase or self.game.game_state.mr_x_visible:
                             node_colors.append('red')
                             node_sizes.append(NODE_SIZE)
                         else:
@@ -890,8 +890,8 @@ class GameVisualizer(BaseVisualizer):
                         node_colors.append('blue')
                         node_sizes.append(NODE_SIZE)
                     elif node == self.game.game_state.MrX_position:
-                        is_scotland_yard = isinstance(self.game, ScotlandYardGame)
-                        if not is_scotland_yard or self.game.game_state.mr_x_visible:
+                        is_shadow_chase = isinstance(self.game, ShadowChaseGame)
+                        if not is_shadow_chase or self.game.game_state.mr_x_visible:
                             node_colors.append('red')
                             node_sizes.append(NODE_SIZE)
                         else:
@@ -911,7 +911,7 @@ class GameVisualizer(BaseVisualizer):
         # Only draw shadows if heuristics are enabled and available
         if not (self.setup_controls.get_heuristics_enabled() and 
                 HEURISTICS_AVAILABLE and 
-                isinstance(self.game, ScotlandYardGame) and 
+                isinstance(self.game, ShadowChaseGame) and 
                 self.game.game_state and
                 not self.setup_mode):
             return
@@ -971,17 +971,17 @@ class GameVisualizer(BaseVisualizer):
         elif self.game_mode == "human_det_vs_ai_mrx":
             # Human plays as detectives, AI plays as Mr. X
             self.detective_agent = None
-            self.mr_x_agent = registry.create_mr_x_agent(self.mr_x_agent_type) if isinstance(self.game, ScotlandYardGame) else None
+            self.mr_x_agent = registry.create_mr_x_agent(self.mr_x_agent_type) if isinstance(self.game, ShadowChaseGame) else None
         elif self.game_mode == "ai_det_vs_human_mrx":
             # AI plays as detectives, Human plays as Mr. X
-            if isinstance(self.game, ScotlandYardGame):
+            if isinstance(self.game, ShadowChaseGame):
                 self.detective_agent = registry.create_multi_detective_agent(self.detective_agent_type, self.game.num_detectives)
             else:
                 self.detective_agent = None
             self.mr_x_agent = None
         elif self.game_mode == "ai_vs_ai":
             # AI plays both sides
-            if isinstance(self.game, ScotlandYardGame):
+            if isinstance(self.game, ShadowChaseGame):
                 self.detective_agent = registry.create_multi_detective_agent(self.detective_agent_type, self.game.num_detectives)
                 self.mr_x_agent = registry.create_mr_x_agent(self.mr_x_agent_type)
             else:

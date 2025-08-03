@@ -1,7 +1,7 @@
 """
 Deep Q-Learning (DQN) training module.
 
-This module contains DQN-specific training algorithms and agents for Scotland Yard.
+This module contains DQN-specific training algorithms and agents for Shadow Chase.
 """
 
 # Core DQN components

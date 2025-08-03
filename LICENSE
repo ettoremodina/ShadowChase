@@ -24,7 +24,7 @@ IMPORTANT DISCLAIMER:
 "Scotland Yard" is a trademark of Ravensburger AG. This software is an 
 independent implementation created for educational and research purposes only. 
 It is not affiliated with, endorsed by, or connected to Ravensburger AG or 
-the official Scotland Yard board game. No copyrighted materials, artwork, or assets from the original game are included in this project and must 
+the official Shadow Chase board game. No copyrighted materials, artwork, or assets from the original game are included in this project and must 
 not be used with this software for commercial purposes.
 
 This project is intended solely for:
@@ -32,5 +32,5 @@ This project is intended solely for:
 - Academic research in game theory and reinforcement learning
 - Personal learning and experimentation
 
-Commercial use of this software in connection with the Scotland Yard trademark
+Commercial use of this software in connection with the Shadow Chase trademark
 is prohibited without proper licensing from Ravensburger AG.

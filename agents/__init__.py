@@ -1,5 +1,5 @@
 """
-Agents package for Scotland Yard game.
+Agents package for Shadow Chase game.
 
 This package contains agent implementations for both detectives and Mr. X,
 including basic random agents and more sophisticated AI strategies.

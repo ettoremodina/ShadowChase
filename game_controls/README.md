@@ -1,12 +1,12 @@
-# Simple Play - Terminal Scotland Yard
+# Simple Play - Terminal Shadow Chase
 
-A clean, terminal-based implementation of Scotland Yard without GUI dependencies.
+A clean, terminal-based implementation of Shadow Chase without GUI dependencies.
 
 ## Quick Start
 
 ### Interactive Single Game
 ```bash
-cd ScotlandYardRL
+cd ShadowChaseRL
 python simple_play/simple_game.py
 ```
 
@@ -41,7 +41,7 @@ python simple_play/batch_cli.py compare
 
 ### Map Options
 - **Test Map**: 10 nodes, good for learning and fast testing
-- **Full Map**: 199 nodes, complete Scotland Yard experience
+- **Full Map**: 199 nodes, complete Shadow Chase experience
 
 ### Batch Execution
 - Play multiple games automatically with AI vs AI
@@ -70,7 +70,7 @@ Options:
 
 ### Map Options
 - **test**: 10-node test map for learning and quick testing
-- **full**: Complete 199-node Scotland Yard board (CSV-based)
+- **full**: Complete 199-node Shadow Chase board (CSV-based)
 - **extracted**: Your custom extracted board from `board_progress.json`
 
 ### Using the Extracted Board
@@ -130,12 +130,12 @@ simple_play/
 ## Example Game Flow
 
 ```
-🕵️ SCOTLAND YARD - SIMPLE TERMINAL GAME 🕵️‍♂️
+🕵️ SHADOW CHASE - SIMPLE TERMINAL GAME 🕵️‍♂️
 ============================================================
 
 📍 Choose map size:
 1. Test map (10 nodes) - Good for learning
-2. Full map (199 nodes) - Complete Scotland Yard
+2. Full map (199 nodes) - Complete Shadow Chase
 Map size (1-2): 1
 
 🎭 Choose play mode:
@@ -201,10 +201,10 @@ simple_play/
 
 ## Integration
 
-The simple play system integrates with the existing Scotland Yard codebase:
+The simple play system integrates with the existing Shadow Chase codebase:
 
-- Uses `ScotlandYard.core.game.ScotlandYardGame` for game logic
-- Uses `ScotlandYard.examples.example_games` for game creation
+- Uses `ShadowChase.core.game.ShadowChaseGame` for game logic
+- Uses `ShadowChase.examples.example_games` for game creation
 - Compatible with existing AI solvers (uses random moves for now)
 
 ## Customization
@@ -220,4 +220,4 @@ Add new play modes in `game_logic.py` by extending the `get_game_mode` function.
 
 ---
 
-**Note**: This is a simplified interface focused on clean terminal gameplay. For full graphical visualization, use the existing GUI system in `ScotlandYard.ui.game_visualizer`.
+**Note**: This is a simplified interface focused on clean terminal gameplay. For full graphical visualization, use the existing GUI system in `ShadowChase.ui.game_visualizer`.

@@ -1,7 +1,7 @@
 """
-Simple Scotland Yard Terminal Game
+Simple Shadow Chase Terminal Game
 
-A clean, terminal-based implementation of Scotland Yard without GUI.
+A clean, terminal-based implementation of Shadow Chase without GUI.
 Choose between human and AI players, multiple difficulty levels, and customizable display.
 
 Usage: 
@@ -29,7 +29,7 @@ from agents import AgentType, AgentSelector
 
 def main():
     """Main entry point"""
-    print("🕵️ SCOTLAND YARD - SIMPLE TERMINAL GAME 🕵️‍♂️")
+    print("🕵️ SHADOW CHASE - SIMPLE TERMINAL GAME 🕵️‍♂️")
     print("=" * 60)
     
     args = parse_arguments()
@@ -74,7 +74,7 @@ def main():
             )
             
             if completed:
-                print("\nThanks for playing Scotland Yard! 🎮")
+                print("\nThanks for playing Shadow Chase! 🎮")
             else:
                 print("\n👋 Game ended early. Thanks for playing!")
                 

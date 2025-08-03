@@ -1,5 +1,5 @@
 """
-Feature extraction for Scotland Yard game states.
+Feature extraction for Shadow Chase game states.
 
 This module converts game states into feature vectors that can be used by
 machine learning algorithms like MCTS and Deep Q-Learning.
@@ -8,7 +8,7 @@ import numpy as np
 from typing import List, Optional
 from dataclasses import dataclass
 
-from ShadowChase.core.game import ScotlandYardGame, Player, TicketType
+from ShadowChase.core.game import ShadowChaseGame, Player, TicketType
 
 
 from agents.heuristics import GameHeuristics
@@ -29,7 +29,7 @@ class FeatureConfig:
 
 class GameFeatureExtractor:
     """
-    Extracts numerical feature vectors from Scotland Yard game states.
+    Extracts numerical feature vectors from Shadow Chase game states.
     
     This class converts complex game states into fixed-size numerical vectors
     that can be used as input to machine learning algorithms.
@@ -46,12 +46,12 @@ class GameFeatureExtractor:
         self.heuristics = None
         self._feature_size = 0
         
-    def get_feature_size(self, game: ScotlandYardGame, player: Player = Player.MRX) -> int:
+    def get_feature_size(self, game: ShadowChaseGame, player: Player = Player.MRX) -> int:
         """
         Get the size of the feature vector for this game.
         
         Args:
-            game: Scotland Yard game instance
+            game: Shadow Chase game instance
             
         Returns:
             Size of the feature vector
@@ -62,12 +62,12 @@ class GameFeatureExtractor:
             _ = self.extract_features(game, player)  # Use any player to initialize
         return self._feature_size
     
-    def extract_features(self, game: ScotlandYardGame, player: Player) -> np.ndarray:
+    def extract_features(self, game: ShadowChaseGame, player: Player) -> np.ndarray:
         """
         Extract feature vector from the current game state.
         
         Args:
-            game: Scotland Yard game instance
+            game: Shadow Chase game instance
             player: Player perspective (MrX for Mr. X, detectives for detectives)
             
         Returns:
@@ -114,18 +114,18 @@ class GameFeatureExtractor:
             self._feature_size += feature_size
         return np.array(features, dtype=np.float32)
     
-    def _extract_game_phase_features(self, game: ScotlandYardGame) -> List[float]:
+    def _extract_game_phase_features(self, game: ShadowChaseGame) -> List[float]:
         """Extract features related to game phase and timing."""
         features = []
         
         # Current turn normalized
-        max_turns = 24  # Standard Scotland Yard game length
+        max_turns = 24  # Standard Shadow Chase game length
         current_turn = game.game_state.MrX_turn_count if hasattr(game.game_state, 'MrX_turn_count') else 0
         features.append(min(current_turn / max_turns, 1.0))
         
         return features, len(features)
     
-    def _extract_board_state_features(self, game: ScotlandYardGame, player: Player) -> List[float]:
+    def _extract_board_state_features(self, game: ShadowChaseGame, player: Player) -> List[float]:
         """Extract features representing board positions."""
         features = [0.0] * self.config.max_nodes
         
@@ -147,7 +147,7 @@ class GameFeatureExtractor:
         
         return features, len(features)
     
-    def _extract_distance_features(self, game: ScotlandYardGame, player: Player) -> List[float]:
+    def _extract_distance_features(self, game: ShadowChaseGame, player: Player) -> List[float]:
         """Extract distance-based features."""
         features = []
         
@@ -172,7 +172,7 @@ class GameFeatureExtractor:
         
         return features, len(features)
     
-    def _extract_ticket_features(self, game: ScotlandYardGame, player: Player) -> List[float]:
+    def _extract_ticket_features(self, game: ShadowChaseGame, player: Player) -> List[float]:
         """Extract ticket-based features."""
         features = []
         
@@ -197,7 +197,7 @@ class GameFeatureExtractor:
         
         return features, len(features)  
     
-    def _extract_connectivity_features(self, game: ScotlandYardGame, player: Player) -> List[float]:
+    def _extract_connectivity_features(self, game: ShadowChaseGame, player: Player) -> List[float]:
         """Extract transport connectivity features."""
         features = []
         
@@ -276,7 +276,7 @@ class GameFeatureExtractor:
         
         return features, len(features)
     
-    def _extract_possible_positions_features(self, game: ScotlandYardGame, player: Player) -> List[float]:
+    def _extract_possible_positions_features(self, game: ShadowChaseGame, player: Player) -> List[float]:
         """Extract features related to possible Mr. X positions."""
         features = []
         

@@ -1,5 +1,5 @@
 """
-Transport selection dialog for Scotland Yard game.
+Transport selection dialog for Shadow Chase game.
 Allows users to choose between multiple transport types when moving between nodes.
 """
 

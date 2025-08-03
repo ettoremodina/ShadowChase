@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Optimized board graph loader for Scotland Yard game.
+Optimized board graph loader for Shadow Chase game.
 Loads graph data from pre-generated CSV files for fast loading.
 """
 
@@ -8,12 +8,12 @@ import json
 import csv
 import networkx as nx
 from typing import Dict, Tuple
-from ShadowChase.core.game import ScotlandYardGame, TransportType
+from ShadowChase.core.game import ShadowChaseGame, TransportType
 
 def load_board_graph_from_csv(nodes_file: str = "data/nodes.csv", 
                              edges_file: str = "data/edges.csv") -> Tuple[nx.MultiGraph, Dict[int, Tuple[float, float]]]:
     """
-    Load Scotland Yard graph and node positions from CSV files (FAST LOADING)
+    Load Shadow Chase graph and node positions from CSV files (FAST LOADING)
     
     Args:
         nodes_file: Path to nodes.csv file
@@ -52,9 +52,9 @@ def load_board_graph_from_csv(nodes_file: str = "data/nodes.csv",
 
 def create_extracted_board_game(num_detectives: int = 3, 
                                nodes_file: str = "data/nodes.csv",
-                               edges_file: str = "data/edges.csv") -> ScotlandYardGame:
+                               edges_file: str = "data/edges.csv") -> ShadowChaseGame:
     """
-    Create Scotland Yard game using pre-generated CSV data (FAST LOADING)
+    Create Shadow Chase game using pre-generated CSV data (FAST LOADING)
     
     Args:
         num_detectives: Number of detective players
@@ -62,10 +62,10 @@ def create_extracted_board_game(num_detectives: int = 3,
         edges_file: Path to edges.csv file
         
     Returns:
-        ScotlandYardGame: Game instance with loaded board
+        ShadowChaseGame: Game instance with loaded board
     """
     graph, node_positions = load_board_graph_from_csv(nodes_file, edges_file)
-    game = ScotlandYardGame(graph, num_detectives)
+    game = ShadowChaseGame(graph, num_detectives)
     
     # Store node positions for visualization
     game.node_positions = node_positions
@@ -155,7 +155,7 @@ def create_board_visualization_data(nodes_file: str = "data/nodes.csv",
 
 def load_board_graph_from_json(progress_file: str = "board_progress.json") -> Tuple[nx.MultiGraph, Dict[int, Tuple[float, float]]]:
     """
-    DEPRECATED: Load Scotland Yard graph from JSON (SLOW - use load_board_graph_from_csv instead)
+    DEPRECATED: Load Shadow Chase graph from JSON (SLOW - use load_board_graph_from_csv instead)
     
     This function is kept for backwards compatibility but is slower than CSV loading.
     Use load_board_graph_from_csv() for better performance.
@@ -254,7 +254,7 @@ if __name__ == "__main__":
         
         # Test game creation
         game = create_extracted_board_game(3)
-        print(f"✓ Created Scotland Yard game with {game.num_detectives} detectives")
+        print(f"✓ Created Shadow Chase game with {game.num_detectives} detectives")
         
         # Load metadata
         metadata = load_board_metadata()

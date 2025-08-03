@@ -1,7 +1,7 @@
 """
-Simple Play Package for Scotland Yard Terminal Game
+Simple Play Package for Shadow Chase Terminal Game
 
-This package provides a clean, terminal-based interface for playing Scotland Yard
+This package provides a clean, terminal-based interface for playing Shadow Chase
 without the GUI visualizer. It includes customizable display utilities, game logic
 controllers, and a simple main game script.
 

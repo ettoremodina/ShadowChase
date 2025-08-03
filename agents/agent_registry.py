@@ -1,5 +1,5 @@
 """
-Agent Registry for Scotland Yard game.
+Agent Registry for Shadow Chase game.
 
 This module provides a registry system for managing different AI agent implementations.
 It allows easy selection and instantiation of agents for both terminal and UI interfaces.

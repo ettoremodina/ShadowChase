@@ -5,7 +5,7 @@ This service handles all game persistence operations with consistent metadata.
 from datetime import datetime
 from typing import Dict
 from .game_loader import GameLoader
-from ..core.game import ScotlandYardGame
+from ..core.game import ShadowChaseGame
 
 
 class GameService:
@@ -14,7 +14,7 @@ class GameService:
     def __init__(self, loader: GameLoader = None):
         self.loader = loader or GameLoader()
     
-    def save_game(self, game: ScotlandYardGame, 
+    def save_game(self, game: ShadowChaseGame, 
                   game_mode: str = "unknown",
                   player_types: Dict[str, str] = None,
                   additional_metadata: Dict = None) -> str:
@@ -82,7 +82,7 @@ class GameService:
         
         return clean
     
-    def save_ui_game(self, game: ScotlandYardGame,
+    def save_ui_game(self, game: ShadowChaseGame,
                      game_mode: str,
                      detective_agent = None,
                      mr_x_agent = None,
@@ -117,7 +117,7 @@ class GameService:
         
         return self.save_game(game, game_mode, player_types, additional_metadata)
     
-    def save_terminal_game(self, game: ScotlandYardGame,
+    def save_terminal_game(self, game: ShadowChaseGame,
                           play_mode: str,
                           map_size: str,
                           num_detectives: int,

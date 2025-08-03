@@ -9,7 +9,7 @@ if current_dir not in sys.path:
     sys.path.insert(0, current_dir)
 
 from ShadowChase.ui.game_visualizer import GameVisualizer
-from ShadowChase.core.game import Game, Player, ScotlandYardGame, TicketType, TransportType
+from ShadowChase.core.game import Game, Player, ShadowChaseGame, TicketType, TransportType
 from ShadowChase.examples.example_games import *
 
 def print_game_state(game):
@@ -26,13 +26,13 @@ def show_valid_moves(game, player, position=None):
     """Show valid moves for a player"""
     if player == Player.DETECTIVES and position is not None:
         moves = game.get_valid_moves(Player.DETECTIVES, position)
-        if isinstance(game, ScotlandYardGame):
+        if isinstance(game, ShadowChaseGame):
             print(f"detective at {position} can move to: {[(dest, transport.name) for dest, transport in moves]}")
         else:
             print(f"detective at {position} can move to: {sorted(moves)}")
     elif player == Player.MRX:
         moves = game.get_valid_moves(Player.MRX)
-        if isinstance(game, ScotlandYardGame):
+        if isinstance(game, ShadowChaseGame):
             print(f"MrX can move to: {[(dest, transport.name) for dest, transport in moves]}")
         else:
             print(f"MrX can move to: {sorted(moves)}")
@@ -149,18 +149,18 @@ def test_game_until_end():
     else:
         print(f"\nGame stopped after {max_turns} turns (no winner yet)")
 
-def test_scotland_yard_game():
-    """Test Scotland Yard specific mechanics"""
-    print("\n\n=== TESTING SCOTLAND YARD GAME ===")
+def test_shadow_chase_game():
+    """Test Shadow Chase specific mechanics"""
+    print("\n\n=== TESTING SHADOW CHASE GAME ===")
     
-    # Create Scotland Yard game
-    game = create_scotlandYard_game(2)
+    # Create Shadow Chase game
+    game = create_shadowChase_game(2)
     
     # Initialize with specific positions
     detective_positions = [1, 13]
     mr_x_position = 100
     
-    game.initialize_scotland_yard_game(detective_positions, mr_x_position)
+    game.initialize_shadow_chase_game(detective_positions, mr_x_position)
     
     print(f"Game initialized:")
     print(f"Detectives at: {detective_positions}")
@@ -208,17 +208,17 @@ def demo_grid_game():
     visualizer = GameVisualizer(game)
     visualizer.run()
 
-def demo_scotland_yard_game():
-    """Demonstrate full Scotland Yard game"""
-    print("Scotland Yard Game Demo")
-    game = create_scotlandYard_game(3)
+def demo_shadow_chase_game():
+    """Demonstrate full Shadow Chase game"""
+    print("Shadow Chase Game Demo")
+    game = create_shadowChase_game(3)
     
     # Initialize with random positions
     nodes = list(game.graph.nodes())
     detective_positions = random.sample(nodes, 3)
     mr_x_position = random.choice([n for n in nodes if n not in detective_positions])
     
-    game.initialize_scotland_yard_game(detective_positions, mr_x_position)
+    game.initialize_shadow_chase_game(detective_positions, mr_x_position)
     
     print(f"Detectives at: {detective_positions}")
     print(f"Mr. X at: {mr_x_position} (hidden)")
@@ -231,10 +231,10 @@ def demo_scotland_yard_game():
     mr_x_tickets = game.get_mr_x_tickets()
     print(f"Mr. X: {mr_x_tickets}")
 
-def demo_simple_scotland_yard():
-    """Demonstrate simplified Scotland Yard game"""
-    print("Simple Scotland Yard Game Demo")
-    game = create_simple_scotland_yard_game(num_detectives=2, show_MrX=True, use_tickets=False)
+def demo_simple_shadow_chase():
+    """Demonstrate simplified Shadow Chase game"""
+    print("Simple Shadow Chase Game Demo")
+    game = create_simple_shadow_chase_game(num_detectives=2, show_MrX=True, use_tickets=False)
     
     # Use basic initialization
     game.initialize_game([1, 3], 100)
@@ -242,26 +242,26 @@ def demo_simple_scotland_yard():
     visualizer = GameVisualizer(game)
     visualizer.run()
 
-def demo_scotland_yard_visualizer():
-    """Demonstrate full Scotland Yard game with visualizer"""
-    print("Scotland Yard Game with Visualizer")
-    game = create_scotlandYard_game(3)
+def demo_shadow_chase_visualizer():
+    """Demonstrate full Shadow Chase game with visualizer"""
+    print("Shadow Chase Game with Visualizer")
+    game = create_shadowChase_game(3)
     
     visualizer = GameVisualizer(game)
     visualizer.run()
 
-def demo_test_scotland_yard():
-    """Demonstrate test Scotland Yard game with small graph"""
-    print("Test Scotland Yard Game Demo (10 nodes)")
-    from ShadowChase.examples.example_games import create_test_scotland_yard_game
+def demo_test_shadow_chase():
+    """Demonstrate test Shadow Chase game with small graph"""
+    print("Test Shadow Chase Game Demo (10 nodes)")
+    from ShadowChase.examples.example_games import create_test_shadow_chase_game
     
-    game = create_test_scotland_yard_game(2)
+    game = create_test_shadow_chase_game(2)
     
     # Initialize with specific positions
     detective_positions = [1, 3]
     mr_x_position = 8
     
-    game.initialize_scotland_yard_game(detective_positions, mr_x_position)
+    game.initialize_shadow_chase_game(detective_positions, mr_x_position)
     
     print(f"Detectives at: {detective_positions}")
     print(f"Mr. X at: {mr_x_position}")
@@ -277,12 +277,12 @@ def demo_test_scotland_yard():
     visualizer = GameVisualizer(game)
     visualizer.run()
 
-def demo_simple_test_scotland_yard():
-    """Demonstrate simple test Scotland Yard game"""
-    print("Simple Test Scotland Yard Game Demo")
-    from ShadowChase.examples.example_games import create_simple_test_scotland_yard_game
+def demo_simple_test_shadow_chase():
+    """Demonstrate simple test Shadow Chase game"""
+    print("Simple Test Shadow Chase Game Demo")
+    from ShadowChase.examples.example_games import create_simple_test_shadow_chase_game
     
-    game = create_simple_test_scotland_yard_game(num_detectives=2, show_MrX=True, use_tickets=False)
+    game = create_simple_test_shadow_chase_game(num_detectives=2, show_MrX=True, use_tickets=False)
     
     # Use basic initialization
     game.initialize_game([1, 3], 8)
@@ -291,7 +291,7 @@ def demo_simple_test_scotland_yard():
     visualizer.run()
 
 def demo_extracted_board_game(num_detectives: int = 3, auto_init: bool = True):
-    """Create Scotland Yard game using the extracted board data"""
+    """Create Shadow Chase game using the extracted board data"""
     game = create_extracted_board_game(num_detectives)
 
     # Define predefined positions using the method from game_logic.py

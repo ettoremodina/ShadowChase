@@ -1,7 +1,7 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
 from .ui_components import StyledButton, InfoDisplay
-from ..core.game import ScotlandYardGame
+from ..core.game import ShadowChaseGame
 
 class SetupControls:
     """Handles game setup UI and logic"""
@@ -71,8 +71,8 @@ class SetupControls:
         # Initially hide agent selection and update based on game mode
         self._on_game_mode_change()
         
-        # Heuristics visualization toggle (only for Scotland Yard games)
-        if isinstance(self.visualizer.game, ScotlandYardGame):
+        # Heuristics visualization toggle (only for Shadow Chase games)
+        if isinstance(self.visualizer.game, ShadowChaseGame):
             heuristics_frame = ttk.LabelFrame(self.setup_section, text="🧠 Heuristics")
             heuristics_frame.pack(fill=tk.X, padx=10, pady=8)
             
@@ -200,8 +200,8 @@ class SetupControls:
         
         try:
             # Use appropriate initialization method
-            if isinstance(self.visualizer.game, ScotlandYardGame):
-                self.visualizer.game.initialize_scotland_yard_game(detective_positions, MrX_position)
+            if isinstance(self.visualizer.game, ShadowChaseGame):
+                self.visualizer.game.initialize_shadow_chase_game(detective_positions, MrX_position)
             else:
                 self.visualizer.game.initialize_game(detective_positions, MrX_position)
         except ValueError as e:

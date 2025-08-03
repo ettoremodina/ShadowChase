@@ -1,5 +1,5 @@
 """
-Base trainer abstract class and data structures for Scotland Yard AI training.
+Base trainer abstract class and data structures for Shadow Chase AI training.
 
 This module provides the foundational classes that all training algorithms
 (MCTS, Deep Q-Learning, etc.) should inherit from.

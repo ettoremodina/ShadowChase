@@ -1,5 +1,5 @@
 """
-Deep Q-Network trainer for Scotland Yard.
+Deep Q-Network trainer for Shadow Chase.
 
 This module implements the DQN training algorithm using the existing training infrastructure.
 """
@@ -15,7 +15,7 @@ import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
 
-from ShadowChase.core.game import ScotlandYardGame
+from ShadowChase.core.game import ShadowChaseGame
 from training.base_trainer import BaseTrainer, TrainingResult
 from training.feature_extractor_simple import GameFeatureExtractor, FeatureConfig
 from training.training_environment import TrainingEnvironment
@@ -33,7 +33,7 @@ from agents.dqn_agent import DQNMrXAgent, DQNMultiDetectiveAgent
 
 class DQNTrainer(BaseTrainer):
     """
-    Deep Q-Network trainer for Scotland Yard agents.
+    Deep Q-Network trainer for Shadow Chase agents.
     
     Implements DQN with experience replay and target networks.
     """
@@ -98,7 +98,7 @@ class DQNTrainer(BaseTrainer):
         self.losses = []
         self.q_value_samples = []  # For monitoring Q-value distributions
     
-    def _initialize_networks(self, sample_game: ScotlandYardGame):
+    def _initialize_networks(self, sample_game: ShadowChaseGame):
         """Initialize the neural networks based on a sample game."""
         # Get feature size from a sample state
         feature_size = self.feature_extractor.get_feature_size(sample_game)

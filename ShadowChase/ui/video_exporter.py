@@ -20,7 +20,7 @@ class GameVideoExporter(BaseVisualizer):
     """Exports game replays as MP4 videos"""
     
     def __init__(self, game: ShadowChaseGame, game_id: str, output_path: str = None, 
-                 frame_duration: float = 1.0, fps: int = 1):
+                 frame_duration: float = 1.0, fps: int = 1, end_delay_seconds: float = 3.0):
         """
         Initialize video exporter
         
@@ -30,12 +30,17 @@ class GameVideoExporter(BaseVisualizer):
             output_path: Path where video will be saved (optional)
             frame_duration: Duration of each frame in seconds (default: 1.0)
             fps: Frames per second for video (should match 1/frame_duration)
+            end_delay_seconds: How long to show the final state (default: 3.0 seconds)
         """
         super().__init__(game)
         self.game_id = game_id
         self.output_path = output_path
         self.frame_duration = frame_duration
         self.fps = max(1, int(1 / frame_duration)) if frame_duration > 0 else 1
+        self.end_delay_seconds = end_delay_seconds
+        
+        # Calculate how many extra frames to add at the end
+        self.end_delay_frames = max(1, int(end_delay_seconds / frame_duration)) if end_delay_seconds > 0 else 0
         
         # Video settings
         self.fig_size = (16, 10)  # Larger figure for better video quality
@@ -126,10 +131,23 @@ class GameVideoExporter(BaseVisualizer):
     
     def create_video_frame(self, step: int) -> None:
         """Create a single frame for the video"""
-        if step >= len(self.game.game_history):
+        # Determine which game state to use
+        game_history_length = len(self.game.game_history)
+        
+        if step < game_history_length:
+            # Normal game state frame
+            actual_step = step
+            is_end_delay_frame = False
+        else:
+            # End delay frame - use the last game state
+            actual_step = game_history_length - 1
+            is_end_delay_frame = True
+        
+        if actual_step >= game_history_length:
             return
             
-        state = self.game.game_history[step]
+        self.current_frame = actual_step  # Track current frame for other methods
+        state = self.game.game_history[actual_step]
         
         # Clear all axes
         self.ax.clear()
@@ -137,22 +155,26 @@ class GameVideoExporter(BaseVisualizer):
         self.tickets_ax.clear()
         
         # Draw main graph
-        self._draw_game_graph(state, step)
+        self._draw_game_graph(state, actual_step, is_end_delay_frame)
         
         # Draw info panels
-        self._draw_info_panel(state, step)
+        self._draw_info_panel(state, actual_step, is_end_delay_frame)
         self._draw_tickets_panel(state)
         
         # Set titles and formatting
-        self._format_axes(step)
+        self._format_axes(actual_step, is_end_delay_frame)
     
-    def _draw_game_graph(self, state, step: int):
+    def _draw_game_graph(self, state, step: int, is_end_delay_frame: bool = False):
         """Draw the main game graph for current state"""
         # Draw edges with parallel positioning
         self.draw_edges_with_parallel_positioning(alpha=0.4)
         
-        # Get node colors and sizes
-        node_colors, node_sizes = self._get_video_node_colors_and_sizes(state)
+        # Get node colors and sizes using unified system
+        node_colors, node_sizes = self.get_node_colors_and_sizes(
+            mode="history", 
+            step=step, 
+            node_size=400  # Larger for video visibility
+        )
         
         # Draw nodes
         nx.draw_networkx_nodes(self.game.graph, self.pos, ax=self.ax,
@@ -165,64 +187,56 @@ class GameVideoExporter(BaseVisualizer):
         # Add transport legend
         self.draw_transport_legend()
         
-        self.ax.set_title(f"Shadow Chase Game - Step {step + 1}/{len(self.game.game_history)}", 
-                         fontsize=16, fontweight='bold', pad=20)
+        # Title with step info - show different info for end delay frames
+        total_game_steps = len(self.game.game_history)
+        if is_end_delay_frame:
+            self.ax.set_title(f"Shadow Chase Game - FINAL STATE (Game Complete)", 
+                             fontsize=16, fontweight='bold', pad=20, color='darkred')
+        else:
+            self.ax.set_title(f"Shadow Chase Game - Step {step + 1}/{total_game_steps}", 
+                             fontsize=16, fontweight='bold', pad=20)
         self.ax.axis('off')
     
-    def _get_video_node_colors_and_sizes(self, state):
-        """Get node colors and sizes for video frame"""
-        node_colors = []
-        node_sizes = []
-        node_size = 400  # Larger for video visibility
-        
-        for node in self.game.graph.nodes():
-            if node in state.detective_positions and node == state.MrX_position:
-                # Both detective and Mr. X at same position
-                node_colors.append('yellow')
-                node_sizes.append(node_size * 1.2)
-            elif node in state.detective_positions:
-                node_colors.append('blue')
-                node_sizes.append(node_size)
-            elif node == state.MrX_position:
-                node_colors.append('red')
-                node_sizes.append(node_size)
-              
-            else:
-                node_colors.append('lightgray')
-                node_sizes.append(node_size * 0.8)
-        
-        return node_colors, node_sizes
-    
-    def _draw_info_panel(self, state, step: int):
+    def _draw_info_panel(self, state, step: int, is_end_delay_frame: bool = False):
         """Draw game state information panel"""
-        info_text = f"Turn: {state.turn.value.title()}\n"
-        info_text += f"Turn Count: {state.turn_count}\n"
-        info_text += f"Detectives: {state.detective_positions}\n"
+        # Get unified state for consistent data access
+        unified_state = self.get_unified_state(mode="history", step=step)
         
-        if hasattr(state, 'mr_x_visible') and not state.mr_x_visible:
+        info_text = f"Turn: {unified_state.current_turn.title()}\n"
+        info_text += f"Turn Count: {unified_state.turn_count}\n"
+        info_text += f"Detectives: {unified_state.detective_positions}\n"
+        
+        if not unified_state.mr_x_visible:
             info_text += f"Mr. X: HIDDEN\n"
         else:
-            info_text += f"Mr. X: {state.MrX_position}\n"
+            info_text += f"Mr. X: {unified_state.mr_x_position}\n"
         
-        if hasattr(state, 'double_move_active') and state.double_move_active:
+        if unified_state.double_move_active:
             info_text += "Double Move: ACTIVE\n"
         
         # Check if game is over at this step
-        temp_game_state = self.game.game_state
-        self.game.game_state = state
-        is_over = self.game.is_game_over()
-        if is_over:
-            winner = self.game.get_winner()
-            info_text += f"\nGAME OVER!\nWinner: {winner.value.title() if winner else 'None'}"
-        self.game.game_state = temp_game_state
+        if unified_state.game_over:
+            info_text += f"\nGAME OVER!\nWinner: {unified_state.winner or 'None'}"
+            
+            # Add visual indicator for end delay frames
+            if is_end_delay_frame:
+                info_text += f"\n\n🏁 FINAL STATE"
+        
+        # Choose background color based on frame type
+        bg_color = 'lightcoral' if is_end_delay_frame and unified_state.game_over else 'lightblue'
         
         self.info_ax.text(0.05, 0.95, info_text, transform=self.info_ax.transAxes,
                          fontsize=12, verticalalignment='top', fontfamily='monospace',
-                         bbox=dict(boxstyle='round,pad=0.5', facecolor='lightblue', alpha=0.8))
-        self.info_ax.set_title("Game State", fontsize=14, fontweight='bold')
+                         bbox=dict(boxstyle='round,pad=0.5', facecolor=bg_color, alpha=0.8))
+        
+        title_text = "FINAL STATE" if is_end_delay_frame else "Game State"
+        self.info_ax.set_title(title_text, fontsize=14, fontweight='bold')
     
     def _draw_tickets_panel(self, state):
         """Draw tickets information panel"""
+        # Get unified state for consistent data access
+        unified_state = self.get_unified_state(mode="history", step=self.current_frame)
+        
         # Use the base visualizer method to create ticket table
         tickets_text = "TICKETS:\n\n"
         tickets_text += "Player│Tax│Bus│Sub│Blk│Dbl\n"
@@ -230,10 +244,12 @@ class GameVideoExporter(BaseVisualizer):
         
         # Detective tickets
         for i in range(self.game.num_detectives):
-            if hasattr(state, 'detective_tickets') and i in state.detective_tickets:
-                tickets = state.detective_tickets[i]
-            else:
-                tickets = {}
+            tickets = {}
+            if unified_state.detective_tickets:
+                if isinstance(unified_state.detective_tickets, dict) and i in unified_state.detective_tickets:
+                    tickets = unified_state.detective_tickets[i]
+                elif isinstance(unified_state.detective_tickets, list) and i < len(unified_state.detective_tickets):
+                    tickets = unified_state.detective_tickets[i]
             
             taxi = self._get_ticket_count(tickets, 'taxi')
             bus = self._get_ticket_count(tickets, 'bus')
@@ -242,10 +258,7 @@ class GameVideoExporter(BaseVisualizer):
             tickets_text += f"Det {i+1:<2}│{taxi:>3}│{bus:>3}│{underground:>3}│ - │ - \n"
         
         # Mr. X tickets
-        if hasattr(state, 'mr_x_tickets'):
-            mr_x_tickets = state.mr_x_tickets
-        else:
-            mr_x_tickets = {}
+        mr_x_tickets = unified_state.mr_x_tickets or {}
         
         taxi = self._get_ticket_count(mr_x_tickets, 'taxi')
         bus = self._get_ticket_count(mr_x_tickets, 'bus')
@@ -260,16 +273,20 @@ class GameVideoExporter(BaseVisualizer):
                             bbox=dict(boxstyle='round,pad=0.5', facecolor='lightyellow', alpha=0.8))
         self.tickets_ax.set_title("Tickets", fontsize=14, fontweight='bold')
     
-    def _format_axes(self, step: int):
+    def _format_axes(self, step: int, is_end_delay_frame: bool = False):
         """Format axes and overall figure"""
         # Remove tick marks from info panels
         for ax in [self.info_ax, self.tickets_ax]:
             ax.set_xticks([])
             ax.set_yticks([])
         
-        # Add game ID and timestamp
-        self.fig.suptitle(f"Shadow Chase Game Replay - {self.game_id}", 
-                         fontsize=18, fontweight='bold')
+        # Add game ID and timestamp - with special formatting for end frames
+        if is_end_delay_frame:
+            self.fig.suptitle(f"Shadow Chase Game Replay - {self.game_id} - 🏁 FINAL STATE", 
+                             fontsize=18, fontweight='bold', color='darkred')
+        else:
+            self.fig.suptitle(f"Shadow Chase Game Replay - {self.game_id}", 
+                             fontsize=18, fontweight='bold')
     
     def export_video(self, progress_callback=None) -> str:
         """
@@ -300,14 +317,20 @@ class GameVideoExporter(BaseVisualizer):
         with tempfile.TemporaryDirectory() as temp_dir:
             temp_path = Path(temp_dir)
             
-            # Generate individual frames
-            total_frames = len(self.game.game_history)
+            # Calculate total frames including end delay
+            game_frames = len(self.game.game_history)
+            total_frames = game_frames + self.end_delay_frames
+            
             if progress_callback:
-                progress_callback(0, total_frames, f"Preparing to generate {total_frames} frames...")
+                progress_callback(0, total_frames, f"Preparing to generate {total_frames} frames ({game_frames} game + {self.end_delay_frames} end delay)...")
             
             for i in range(total_frames):
                 if progress_callback:
-                    progress_callback(i, total_frames, f"Generating frame {i+1}/{total_frames}")
+                    if i < game_frames:
+                        progress_callback(i, total_frames, f"Generating game frame {i+1}/{game_frames}")
+                    else:
+                        end_frame_num = i - game_frames + 1
+                        progress_callback(i, total_frames, f"Generating end delay frame {end_frame_num}/{self.end_delay_frames}")
                 
                 try:
                     self.create_video_frame(i)
@@ -387,15 +410,18 @@ class GameVideoExporter(BaseVisualizer):
         try:
             import matplotlib.animation as animation
             
+            # Calculate total frames including end delay
+            total_frames = len(self.game.game_history) + self.end_delay_frames
+            
             # Create animation function
             def animate(frame_num):
-                if frame_num < len(self.game.game_history):
+                if frame_num < total_frames:
                     self.create_video_frame(frame_num)
                 return []
             
             # Create animation
             anim = animation.FuncAnimation(
-                self.fig, animate, frames=len(self.game.game_history),
+                self.fig, animate, frames=total_frames,
                 interval=int(self.frame_duration * 1000), blit=False, repeat=False
             )
             
@@ -520,11 +546,19 @@ def show_video_export_dialog(parent, loader: GameLoader):
                                       textvariable=duration_var, width=10)
         duration_spinbox.grid(row=0, column=1, padx=5, pady=5)
         
+        # End delay
+        ttk.Label(settings_frame, text="End Delay (seconds):").grid(row=1, column=0, sticky=tk.W, padx=5, pady=5)
+        end_delay_var = tk.DoubleVar(value=3.0)
+        end_delay_spinbox = ttk.Spinbox(settings_frame, from_=0.0, to=10.0, increment=0.5, 
+                                       textvariable=end_delay_var, width=10)
+        end_delay_spinbox.grid(row=1, column=1, padx=5, pady=5)
+        ttk.Label(settings_frame, text="(How long to show final state)", font=('Arial', 8), foreground='gray').grid(row=1, column=2, sticky=tk.W, padx=5)
+        
         # Output location
-        ttk.Label(settings_frame, text="Output File:").grid(row=1, column=0, sticky=tk.W, padx=5, pady=5)
+        ttk.Label(settings_frame, text="Output File:").grid(row=2, column=0, sticky=tk.W, padx=5, pady=5)
         output_var = tk.StringVar()
         output_entry = ttk.Entry(settings_frame, textvariable=output_var, width=40)
-        output_entry.grid(row=1, column=1, padx=5, pady=5)
+        output_entry.grid(row=2, column=1, padx=5, pady=5)
         
         def browse_output():
             filename = filedialog.asksaveasfilename(
@@ -537,7 +571,7 @@ def show_video_export_dialog(parent, loader: GameLoader):
                     filename += '.mp4'
                 output_var.set(filename)
         
-        ttk.Button(settings_frame, text="Browse...", command=browse_output).grid(row=1, column=2, padx=5, pady=5)
+        ttk.Button(settings_frame, text="Browse...", command=browse_output).grid(row=2, column=2, padx=5, pady=5)
         
         # Buttons
         button_frame = ttk.Frame(dialog)
@@ -597,6 +631,7 @@ def show_video_export_dialog(parent, loader: GameLoader):
             
             # Get settings
             frame_duration = duration_var.get()
+            end_delay = end_delay_var.get()
             output_path = output_var.get()
             
             if not output_path:
@@ -627,8 +662,8 @@ def show_video_export_dialog(parent, loader: GameLoader):
                     progress_bar['value'] = current
                     progress_dialog.update()
                 
-                # Export video
-                exporter = GameVideoExporter(game, game_id, output_path, frame_duration)
+                # Export video with end delay
+                exporter = GameVideoExporter(game, game_id, output_path, frame_duration, end_delay_seconds=end_delay)
                 result_path = exporter.export_video(update_progress)
                 
                 # Close progress dialog
@@ -651,7 +686,7 @@ def show_video_export_dialog(parent, loader: GameLoader):
 
 
 def export_video_from_command_line(game_file: str, output_file: str = None, 
-                                  frame_duration: float = 1.0) -> str:
+                                  frame_duration: float = 1.0, end_delay_seconds: float = 3.0) -> str:
     """
     Export video from command line
     
@@ -659,6 +694,7 @@ def export_video_from_command_line(game_file: str, output_file: str = None,
         game_file: Path to the saved game file
         output_file: Output video file path (optional)
         frame_duration: Duration of each frame in seconds
+        end_delay_seconds: How long to show the final state (default: 3.0 seconds)
         
     Returns:
         Path to the created video file
@@ -694,6 +730,6 @@ def export_video_from_command_line(game_file: str, output_file: str = None,
         if not output_file.lower().endswith('.mp4'):
             output_file += '.mp4'
     
-    # Export video
-    exporter = GameVideoExporter(game, game_id, output_file, frame_duration)
+    # Export video with end delay
+    exporter = GameVideoExporter(game, game_id, output_file, frame_duration, end_delay_seconds=end_delay_seconds)
     return exporter.export_video()

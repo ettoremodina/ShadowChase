@@ -264,16 +264,22 @@ class GameReplayWindow(BaseVisualizer):
         # Use base class method for drawing edges with reduced transparency for replay
         self.draw_edges_with_parallel_positioning(alpha=0.3)
         
-        # Get node colors and sizes for this state
-        node_colors, node_sizes = self._get_replay_node_colors_and_sizes(state)
+        # Get node colors and sizes using unified system
+        node_colors, node_sizes = self.get_node_colors_and_sizes(
+            mode="history", 
+            step=self.current_step, 
+            node_size=NODE_SIZE
+        )
+        
         nx.draw_networkx_nodes(self.game.graph, self.pos, ax=self.ax,
                               node_color=node_colors, node_size=node_sizes)
         
         # Draw labels
         nx.draw_networkx_labels(self.game.graph, self.pos, ax=self.ax, font_size=8)
         
-        # Title with step info and emoji
-        turn_info = f"Turn {state.turn_count} - {state.turn.value.title()}'s Turn"
+        # Get unified state for consistent title formatting
+        unified_state = self.get_unified_state(mode="history", step=self.current_step)
+        turn_info = f"Turn {unified_state.turn_count} - {unified_state.current_turn.title()}'s Turn"
         self.ax.set_title(f"🎬 Game Replay - {turn_info}", fontsize=12, fontweight='bold')
         
         # Use base class method for legend
@@ -282,66 +288,38 @@ class GameReplayWindow(BaseVisualizer):
         self.ax.axis('off')
         self.canvas.draw()
 
-    def _get_replay_node_colors_and_sizes(self, state):
-        """Get node colors and sizes for replay based on state"""
-        node_colors = []
-        node_sizes = []
-        
-        for node in self.game.graph.nodes():
-            if node in state.detective_positions and node == state.MrX_position:
-                node_colors.append('yellow')
-                node_sizes.append(NODE_SIZE)
-            elif node in state.detective_positions:
-                node_colors.append('blue')
-                node_sizes.append(NODE_SIZE)
-            elif node == state.MrX_position:  
-                node_colors.append('red')
-                node_sizes.append(NODE_SIZE)
-            else:
-                node_colors.append('lightgray')
-                node_sizes.append(NODE_SIZE)
-        
-        return node_colors, node_sizes
-
     def update_info_display(self, state):
         """Update current state information"""
         if not self.info_display:
             return
         
-        info_text = f"🎯 Turn: {state.turn.value.title()}\n"
-        info_text += f"📊 Turn Count: {state.turn_count}\n"
-        info_text += f"👮 detective Positions: {state.detective_positions}\n"
+        # Get unified state for consistent data access
+        unified_state = self.get_unified_state(mode="history", step=self.current_step)
         
-        # is_shadow_chase = isinstance(self.game, ShadowChaseGame)
-        is_shadow_chase = True
-        if is_shadow_chase or hasattr(state, 'mr_x_visible'):
-            if hasattr(state, 'mr_x_visible') and not state.mr_x_visible:
-                info_text += f"🎭 Mr. X Position: HIDDEN\n"
-            else:
-                info_text += f"🕵️‍♂️ Mr. X Position: {state.MrX_position}\n"
-            
-            if hasattr(state, 'double_move_active') and state.double_move_active:
-                info_text += "⚡ Double Move: ACTIVE\n"
+        info_text = f"🎯 Turn: {unified_state.current_turn.title()}\n"
+        info_text += f"📊 Turn Count: {unified_state.turn_count}\n"
+        info_text += f"👮 Detective Positions: {unified_state.detective_positions}\n"
+        
+        if not unified_state.mr_x_visible:
+            info_text += f"🎭 Mr. X Position: HIDDEN\n"
         else:
-            info_text += f"🏃 MrX Position: {state.MrX_position}\n"
+            info_text += f"🕵️‍♂️ Mr. X Position: {unified_state.mr_x_position}\n"
+        
+        if unified_state.double_move_active:
+            info_text += "⚡ Double Move: ACTIVE\n"
         
         # Add ticket usage information if available
-        if hasattr(state, 'last_move_ticket') and state.last_move_ticket:
-            ticket_emoji = self.get_ticket_emoji(state.last_move_ticket)
-            info_text += f"🎫 Last Move Ticket: {ticket_emoji} {state.last_move_ticket}\n"
+        if unified_state.last_move_ticket:
+            ticket_emoji = self.get_ticket_emoji(unified_state.last_move_ticket)
+            info_text += f"🎫 Last Move Ticket: {ticket_emoji} {unified_state.last_move_ticket}\n"
         
-        if hasattr(state, 'previous_position') and state.previous_position:
-            current_pos = state.MrX_position if state.turn.value == 'MrX' else "N/A"
-            info_text += f"🔄 Move: {state.previous_position} → {current_pos}\n"
+        if unified_state.previous_position:
+            current_pos = unified_state.mr_x_position if unified_state.current_turn == 'mr_x' else "N/A"
+            info_text += f"🔄 Move: {unified_state.previous_position} → {current_pos}\n"
         
         # Check if game is over at this step
-        temp_game_state = self.game.game_state
-        self.game.game_state = state
-        is_over = self.game.is_game_over()
-        if is_over:
-            winner = self.game.get_winner()
-            info_text += f"\n🏆 GAME OVER!\n🎉 Winner: {winner.value.title() if winner else 'None'}"
-        self.game.game_state = temp_game_state
+        if unified_state.game_over:
+            info_text += f"\n🏆 GAME OVER!\n🎉 Winner: {unified_state.winner or 'None'}"
         
         self.info_display.set_text(info_text)
     

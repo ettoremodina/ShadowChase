@@ -6,6 +6,48 @@ import matplotlib.image as mpimg
 import networkx as nx
 import numpy as np
 import os
+from dataclasses import dataclass
+from typing import Optional, List, Dict, Any
+
+
+@dataclass
+class UnifiedGameState:
+    """Unified state representation for all visualizers"""
+    # Core game state
+    detective_positions: List[int]
+    mr_x_position: int
+    turn_count: int
+    current_turn: str  # 'detective' or 'mr_x'
+    
+    # Mr. X visibility
+    mr_x_visible: bool = True
+    
+    # Tickets
+    detective_tickets: Optional[Dict] = None
+    mr_x_tickets: Optional[Dict] = None
+    
+    # Move information
+    last_move_ticket: Optional[str] = None
+    previous_position: Optional[int] = None
+    double_move_active: bool = False
+    
+    # Game status
+    game_over: bool = False
+    winner: Optional[str] = None
+    
+    # UI-specific state (for GameVisualizer)
+    setup_mode: bool = False
+    selected_positions: List[int] = None
+    active_player_positions: List[int] = None
+    detective_selections: List[int] = None
+    
+    def __post_init__(self):
+        if self.selected_positions is None:
+            self.selected_positions = []
+        if self.active_player_positions is None:
+            self.active_player_positions = []
+        if self.detective_selections is None:
+            self.detective_selections = []
 
 
 class BaseVisualizer:
@@ -112,6 +154,183 @@ class BaseVisualizer:
             print(f"Error loading board image: {e}")
             self.board_image = None
             self.show_board_image = False
+    
+    def get_unified_state(self, mode: str = "live", step: Optional[int] = None, 
+                         ui_state: Optional[Dict] = None) -> UnifiedGameState:
+        """
+        Get unified state representation for any visualizer mode
+        
+        Args:
+            mode: "live" (current game state), "history" (from game history)
+            step: Step number for history mode
+            ui_state: UI-specific state variables (for GameVisualizer)
+        
+        Returns:
+            UnifiedGameState object with normalized attributes
+        """
+        if mode == "live":
+            return self._get_live_state(ui_state)
+        elif mode == "history":
+            return self._get_historical_state(step)
+        else:
+            raise ValueError(f"Unknown mode: {mode}")
+    
+    def _get_live_state(self, ui_state: Optional[Dict] = None) -> UnifiedGameState:
+        """Get unified state from current game state"""
+        # Get current game state
+        current_state = getattr(self.game, 'game_state', None)
+        
+        if not current_state:
+            # No active game - return setup state
+            return UnifiedGameState(
+                detective_positions=[],
+                mr_x_position=0,
+                turn_count=0,
+                current_turn='detective',
+                setup_mode=True,
+                selected_positions=ui_state.get('selected_positions', []) if ui_state else [],
+                active_player_positions=ui_state.get('active_player_positions', []) if ui_state else [],
+                detective_selections=ui_state.get('detective_selections', []) if ui_state else []
+            )
+        
+        # Normalize attribute names from current state
+        detective_positions = self._get_attribute(current_state, ['detective_positions'])
+        mr_x_position = self._get_attribute(current_state, ['MrX_position', 'mr_x_position'])
+        turn_count = self._get_attribute(current_state, ['turn_count'], default=0)
+        
+        # Normalize turn information
+        current_turn = self._normalize_turn(current_state)
+        
+        # Get Mr. X visibility
+        mr_x_visible = self._get_attribute(current_state, ['mr_x_visible'], default=True)
+        
+        # Get tickets
+        detective_tickets = self._get_attribute(current_state, ['detective_tickets'])
+        mr_x_tickets = self._get_attribute(current_state, ['mr_x_tickets'])
+        
+        # Get move information
+        last_move_ticket = self._get_attribute(current_state, ['last_move_ticket'])
+        previous_position = self._get_attribute(current_state, ['previous_position'])
+        double_move_active = self._get_attribute(current_state, ['double_move_active'], default=False)
+        
+        # Check game status
+        game_over = self.game.is_game_over() if hasattr(self.game, 'is_game_over') else False
+        winner = None
+        if game_over and hasattr(self.game, 'get_winner'):
+            winner_obj = self.game.get_winner()
+            winner = winner_obj.value if hasattr(winner_obj, 'value') else str(winner_obj)
+        
+        return UnifiedGameState(
+            detective_positions=detective_positions or [],
+            mr_x_position=mr_x_position or 0,
+            turn_count=turn_count,
+            current_turn=current_turn,
+            mr_x_visible=mr_x_visible,
+            detective_tickets=detective_tickets,
+            mr_x_tickets=mr_x_tickets,
+            last_move_ticket=last_move_ticket,
+            previous_position=previous_position,
+            double_move_active=double_move_active,
+            game_over=game_over,
+            winner=winner,
+            setup_mode=False,
+            selected_positions=ui_state.get('selected_positions', []) if ui_state else [],
+            active_player_positions=ui_state.get('active_player_positions', []) if ui_state else [],
+            detective_selections=ui_state.get('detective_selections', []) if ui_state else []
+        )
+    
+    def _get_historical_state(self, step: int) -> UnifiedGameState:
+        """Get unified state from game history"""
+        if not hasattr(self.game, 'game_history') or not self.game.game_history:
+            raise ValueError("No game history available")
+        
+        if step >= len(self.game.game_history):
+            raise ValueError(f"Step {step} is beyond game history length {len(self.game.game_history)}")
+        
+        historical_state = self.game.game_history[step]
+        
+        # Normalize attribute names from historical state
+        detective_positions = self._get_attribute(historical_state, ['detective_positions'])
+        mr_x_position = self._get_attribute(historical_state, ['MrX_position', 'mr_x_position'])
+        turn_count = self._get_attribute(historical_state, ['turn_count'], default=step)
+        
+        # Normalize turn information
+        current_turn = self._normalize_turn(historical_state)
+        
+        # Get Mr. X visibility
+        mr_x_visible = self._get_attribute(historical_state, ['mr_x_visible'], default=True)
+        
+        # Get tickets
+        detective_tickets = self._get_attribute(historical_state, ['detective_tickets'])
+        mr_x_tickets = self._get_attribute(historical_state, ['mr_x_tickets'])
+        
+        # Get move information
+        last_move_ticket = self._get_attribute(historical_state, ['last_move_ticket'])
+        previous_position = self._get_attribute(historical_state, ['previous_position'])
+        double_move_active = self._get_attribute(historical_state, ['double_move_active'], default=False)
+        
+        # Check game status at this step
+        game_over = False
+        winner = None
+        
+        # Temporarily set game state to check game over status
+        original_state = getattr(self.game, 'game_state', None)
+        try:
+            self.game.game_state = historical_state
+            if hasattr(self.game, 'is_game_over'):
+                game_over = self.game.is_game_over()
+                if game_over and hasattr(self.game, 'get_winner'):
+                    winner_obj = self.game.get_winner()
+                    winner = winner_obj.value if hasattr(winner_obj, 'value') else str(winner_obj)
+        finally:
+            self.game.game_state = original_state
+        
+        return UnifiedGameState(
+            detective_positions=detective_positions or [],
+            mr_x_position=mr_x_position or 0,
+            turn_count=turn_count,
+            current_turn=current_turn,
+            mr_x_visible=mr_x_visible,
+            detective_tickets=detective_tickets,
+            mr_x_tickets=mr_x_tickets,
+            last_move_ticket=last_move_ticket,
+            previous_position=previous_position,
+            double_move_active=double_move_active,
+            game_over=game_over,
+            winner=winner,
+            setup_mode=False
+        )
+    
+    def _get_attribute(self, obj, attr_names: List[str], default=None):
+        """Get attribute from object trying multiple possible names"""
+        for attr_name in attr_names:
+            if hasattr(obj, attr_name):
+                return getattr(obj, attr_name)
+        return default
+    
+    def _normalize_turn(self, state) -> str:
+        """Normalize turn information to consistent format"""
+        # Try different turn attribute names and formats
+        turn_attr = self._get_attribute(state, ['turn', 'current_turn', 'player_turn'])
+        
+        if turn_attr is None:
+            return 'detective'  # Default
+        
+        # Handle enum objects
+        if hasattr(turn_attr, 'value'):
+            turn_value = turn_attr.value.lower()
+        elif hasattr(turn_attr, 'name'):
+            turn_value = turn_attr.name.lower()
+        else:
+            turn_value = str(turn_attr).lower()
+        
+        # Normalize to standard format
+        if 'detective' in turn_value or 'det' in turn_value:
+            return 'detective'
+        elif 'mr' in turn_value or 'x' in turn_value:
+            return 'mr_x'
+        else:
+            return 'detective'  # Default
     
     def draw_board_image(self):
         """Draw the board image as background"""
@@ -353,49 +572,82 @@ class BaseVisualizer:
         
         tickets_display.set_text(tickets_text)
     
-    def draw_basic_graph_elements(self, title="Game Graph", node_colors=None, node_sizes=None):
-        """Draw basic graph elements (nodes, edges, labels) without specific game state"""
-        self.ax.clear()
+    def get_node_colors_and_sizes(self, mode: str = "live", step: Optional[int] = None,
+                                 node_size: int = 300, ui_state: Optional[Dict] = None) -> tuple:
+        """
+        Unified node coloring system for all visualizers
         
-        # Draw edges with parallel positioning
-        self.draw_edges_with_parallel_positioning()
+        Args:
+            mode: "live" (GameVisualizer), "history" (VideoExporter/Replay)
+            step: Step number for history mode
+            node_size: Base node size (300 for normal, 400 for video)
+            ui_state: UI-specific state variables (for GameVisualizer)
         
-        # Use provided colors/sizes or defaults
-        if node_colors is None:
-            node_colors = ['lightgray'] * len(self.game.graph.nodes())
-        if node_sizes is None:
-            node_sizes = [300] * len(self.game.graph.nodes())
+        Returns:
+            Tuple of (node_colors, node_sizes) lists
+        """
+        # Get unified state
+        unified_state = self.get_unified_state(mode, step, ui_state)
         
-        nx.draw_networkx_nodes(self.game.graph, self.pos, ax=self.ax,
-                              node_color=node_colors, node_size=node_sizes)
+        node_colors = []
+        node_sizes = []
         
-        # Draw labels
-        nx.draw_networkx_labels(self.game.graph, self.pos, ax=self.ax, font_size=8)
+        for node in self.game.graph.nodes():
+            color, size = self._get_node_color_and_size(mode, node, unified_state, node_size)
+            node_colors.append(color)
+            node_sizes.append(size)
         
-        # Set title and legend
-        self.ax.set_title(title, fontsize=12, fontweight='bold')
-        self.draw_transport_legend()
+        return node_colors, node_sizes
+
+    def _get_node_color_and_size(self, mode: str, node: int, state: UnifiedGameState, base_size: int) -> tuple:
+        """Get color and size for a single node based on unified state"""
         
-        self.ax.axis('off')
-        if self.canvas:
-            self.canvas.draw()
+        # Setup mode (GameVisualizer only)
+        if state.setup_mode:
+            if node in state.selected_positions:
+                color = 'blue' if len(state.selected_positions) <= self.game.num_detectives else 'red'
+                return color, base_size
+            else:
+                return 'lightgray', base_size
+        
+        # Game mode - handle special cases first
+        
+        # Node with both detective and Mr. X (collision)
+        if node in state.detective_positions and node == state.mr_x_position:
+            return 'yellow', int(base_size * 1.2)
+        
+        # Active player positions (GameVisualizer specific)
+        if node in state.active_player_positions:
+            if node in state.detective_positions:
+                return 'cyan', base_size
+            else:
+                return 'orange', base_size
+        
+        # Detective selections (GameVisualizer specific)
+        if node in state.detective_selections:
+            return 'purple', base_size
+        
+        # Detective positions
+        if node in state.detective_positions:
+            return 'blue', base_size
+        
+        # Mr. X position
+        if node == state.mr_x_position:
+            # Check visibility for Shadow Chase games
+            if hasattr(self.game, '__class__') and 'ShadowChase' in self.game.__class__.__name__:
+                if state.mr_x_visible or mode == "history":
+                    return 'red', base_size
+                else:
+                    return 'lightgray', base_size
+            else:
+                return 'red', base_size
+        
+        # Empty nodes
+        # For video export, make empty nodes slightly smaller
+        if hasattr(self, '__class__') and 'Video' in self.__class__.__name__:
+            return 'lightgray', int(base_size * 0.8)
+        else:
+            return 'lightgray', base_size
     
-    def draw_common_graph_structure(self, title="Game Graph"):
-        """Draw common graph structure that can be extended by subclasses"""
-        self.ax.clear()
-        
-        # This method should be overridden by subclasses for custom drawing
-        # Default implementation draws basic structure
-        self.draw_edges_with_parallel_positioning()
-        
-        # Draw labels
-        nx.draw_networkx_labels(self.game.graph, self.pos, ax=self.ax, font_size=8)
-        
-        # Set title and legend
-        self.ax.set_title(title, fontsize=12, fontweight='bold')
-        self.draw_transport_legend()
-        
-        self.ax.axis('off')
-        if self.canvas:
-            self.canvas.draw()
-            
+
+

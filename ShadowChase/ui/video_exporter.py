@@ -199,31 +199,44 @@ class GameVideoExporter(BaseVisualizer):
     
     def _draw_info_panel(self, state, step: int, is_end_delay_frame: bool = False):
         """Draw game state information panel"""
-        # Get unified state for consistent data access
-        unified_state = self.get_unified_state(mode="history", step=step)
+        # Get historical state for consistent data access
+        historical_state = self.get_historical_state(step)
         
-        info_text = f"Turn: {unified_state.current_turn.title()}\n"
-        info_text += f"Turn Count: {unified_state.turn_count}\n"
-        info_text += f"Detectives: {unified_state.detective_positions}\n"
+        # Get normalized attributes
+        turn_count = getattr(historical_state, 'turn_count', step)
+        detective_positions = getattr(historical_state, 'detective_positions', [])
+        mr_x_position = getattr(historical_state, 'mr_x_position', None) or getattr(historical_state, 'MrX_position', 0)
+        mr_x_visible = getattr(historical_state, 'mr_x_visible', True)
         
-        if not unified_state.mr_x_visible:
-            info_text += f"Mr. X: HIDDEN\n"
+        # Normalize turn information
+        current_turn = self._normalize_turn(historical_state)
+        
+        info_text = f"Turn: {current_turn.title()}\n"
+        info_text += f"Turn Count: {turn_count}\n"
+        info_text += f"Detectives: {detective_positions}\n"
+        
+        if not mr_x_visible:
+            info_text += f"Mr. X: HIDDEN {mr_x_position}\n"
         else:
-            info_text += f"Mr. X: {unified_state.mr_x_position}\n"
+            info_text += f"Mr. X: {mr_x_position}\n"
         
-        if unified_state.double_move_active:
+        double_move_active = getattr(historical_state, 'double_move_active', False)
+        if double_move_active:
             info_text += "Double Move: ACTIVE\n"
         
         # Check if game is over at this step
-        if unified_state.game_over:
-            info_text += f"\nGAME OVER!\nWinner: {unified_state.winner or 'None'}"
+        game_over = self._check_game_over_status(historical_state)
+        winner = None
+        if game_over:
+            winner = self._get_winner_at_step(historical_state)
+            info_text += f"\nGAME OVER!\nWinner: {winner or 'None'}"
             
             # Add visual indicator for end delay frames
             if is_end_delay_frame:
                 info_text += f"\n\n🏁 FINAL STATE"
         
         # Choose background color based on frame type
-        bg_color = 'lightcoral' if is_end_delay_frame and unified_state.game_over else 'lightblue'
+        bg_color = 'lightcoral' if is_end_delay_frame and game_over else 'lightblue'
         
         self.info_ax.text(0.05, 0.95, info_text, transform=self.info_ax.transAxes,
                          fontsize=12, verticalalignment='top', fontfamily='monospace',
@@ -232,10 +245,11 @@ class GameVideoExporter(BaseVisualizer):
         title_text = "FINAL STATE" if is_end_delay_frame else "Game State"
         self.info_ax.set_title(title_text, fontsize=14, fontweight='bold')
     
+    
     def _draw_tickets_panel(self, state):
         """Draw tickets information panel"""
-        # Get unified state for consistent data access
-        unified_state = self.get_unified_state(mode="history", step=self.current_frame)
+        # Get historical state for consistent data access
+        historical_state = self.get_historical_state(self.current_frame)
         
         # Use the base visualizer method to create ticket table
         tickets_text = "TICKETS:\n\n"
@@ -245,11 +259,12 @@ class GameVideoExporter(BaseVisualizer):
         # Detective tickets
         for i in range(self.game.num_detectives):
             tickets = {}
-            if unified_state.detective_tickets:
-                if isinstance(unified_state.detective_tickets, dict) and i in unified_state.detective_tickets:
-                    tickets = unified_state.detective_tickets[i]
-                elif isinstance(unified_state.detective_tickets, list) and i < len(unified_state.detective_tickets):
-                    tickets = unified_state.detective_tickets[i]
+            detective_tickets = getattr(historical_state, 'detective_tickets', None)
+            if detective_tickets:
+                if isinstance(detective_tickets, dict) and i in detective_tickets:
+                    tickets = detective_tickets[i]
+                elif isinstance(detective_tickets, list) and i < len(detective_tickets):
+                    tickets = detective_tickets[i]
             
             taxi = self._get_ticket_count(tickets, 'taxi')
             bus = self._get_ticket_count(tickets, 'bus')
@@ -258,7 +273,7 @@ class GameVideoExporter(BaseVisualizer):
             tickets_text += f"Det {i+1:<2}│{taxi:>3}│{bus:>3}│{underground:>3}│ - │ - \n"
         
         # Mr. X tickets
-        mr_x_tickets = unified_state.mr_x_tickets or {}
+        mr_x_tickets = getattr(historical_state, 'mr_x_tickets', None) or {}
         
         taxi = self._get_ticket_count(mr_x_tickets, 'taxi')
         bus = self._get_ticket_count(mr_x_tickets, 'bus')

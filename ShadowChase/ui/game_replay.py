@@ -277,9 +277,11 @@ class GameReplayWindow(BaseVisualizer):
         # Draw labels
         nx.draw_networkx_labels(self.game.graph, self.pos, ax=self.ax, font_size=8)
         
-        # Get unified state for consistent title formatting
-        unified_state = self.get_unified_state(mode="history", step=self.current_step)
-        turn_info = f"Turn {unified_state.turn_count} - {unified_state.current_turn.title()}'s Turn"
+        # Get historical state for consistent title formatting
+        historical_state = self.get_historical_state(self.current_step)
+        turn_count = getattr(historical_state, 'turn_count', self.current_step)
+        current_turn = self._normalize_turn(historical_state)
+        turn_info = f"Turn {turn_count} - {current_turn.title()}'s Turn"
         self.ax.set_title(f"🎬 Game Replay - {turn_info}", fontsize=12, fontweight='bold')
         
         # Use base class method for legend
@@ -293,34 +295,46 @@ class GameReplayWindow(BaseVisualizer):
         if not self.info_display:
             return
         
-        # Get unified state for consistent data access
-        unified_state = self.get_unified_state(mode="history", step=self.current_step)
+        # Get historical state for consistent data access
+        historical_state = self.get_historical_state(self.current_step)
         
-        info_text = f"🎯 Turn: {unified_state.current_turn.title()}\n"
-        info_text += f"📊 Turn Count: {unified_state.turn_count}\n"
-        info_text += f"👮 Detective Positions: {unified_state.detective_positions}\n"
+        # Get normalized attributes
+        turn_count = getattr(historical_state, 'turn_count', self.current_step)
+        detective_positions = getattr(historical_state, 'detective_positions', [])
+        mr_x_position = getattr(historical_state, 'mr_x_position', None) or getattr(historical_state, 'MrX_position', 0)
+        mr_x_visible = getattr(historical_state, 'mr_x_visible', True)
+        current_turn = self._normalize_turn(historical_state)
         
-        if not unified_state.mr_x_visible:
-            info_text += f"🎭 Mr. X Position: HIDDEN\n"
+        info_text = f"🎯 Turn: {current_turn.title()}\n"
+        info_text += f"📊 Turn Count: {turn_count}\n"
+        info_text += f"👮 Detective Positions: {detective_positions}\n"
+        
+        if not mr_x_visible:
+            info_text += f"🎭 Mr. X Position: {mr_x_position} HIDDEN\n"
         else:
-            info_text += f"🕵️‍♂️ Mr. X Position: {unified_state.mr_x_position}\n"
+            info_text += f"🕵️‍♂️ Mr. X Position: {mr_x_position}\n"
         
-        if unified_state.double_move_active:
+        double_move_active = getattr(historical_state, 'double_move_active', False)
+        if double_move_active:
             info_text += "⚡ Double Move: ACTIVE\n"
         
         # Add ticket usage information if available
-        if unified_state.last_move_ticket:
-            ticket_emoji = self.get_ticket_emoji(unified_state.last_move_ticket)
-            info_text += f"🎫 Last Move Ticket: {ticket_emoji} {unified_state.last_move_ticket}\n"
+        last_move_ticket = getattr(historical_state, 'last_move_ticket', None)
+        if last_move_ticket:
+            ticket_emoji = self.get_ticket_emoji(last_move_ticket)
+            info_text += f"🎫 Last Move Ticket: {ticket_emoji} {last_move_ticket}\n"
         
-        if unified_state.previous_position:
-            current_pos = unified_state.mr_x_position if unified_state.current_turn == 'mr_x' else "N/A"
-            info_text += f"🔄 Move: {unified_state.previous_position} → {current_pos}\n"
+        previous_position = getattr(historical_state, 'previous_position', None)
+        if previous_position:
+            current_pos = mr_x_position if current_turn == 'mr_x' else "N/A"
+            info_text += f"🔄 Move: {previous_position} → {current_pos}\n"
         
         # Check if game is over at this step
-        if unified_state.game_over:
-            info_text += f"\n🏆 GAME OVER!\n🎉 Winner: {unified_state.winner or 'None'}"
+        game_over = self._check_game_over_status(historical_state)
+        if game_over:
+            winner = self._get_winner_at_step(historical_state)
+            info_text += f"\n🏆 GAME OVER!\n🎉 Winner: {winner or 'None'}"
         
         self.info_display.set_text(info_text)
     
-    
+

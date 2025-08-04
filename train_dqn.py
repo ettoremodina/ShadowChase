@@ -73,7 +73,7 @@ def plot_training_metrics(trainer, save_path="training_results/training_metrics.
     plt.close('all')
 
 
-def train_with_monitoring(player_role="mr_x", num_episodes=5000, plotting_every=1000, device=None):
+def train_with_monitoring(player_role="MrX", num_episodes=5000, plotting_every=1000, device=None):
     """Train DQN with enhanced monitoring and diagnostics."""
     print(f"🚀 Starting enhanced DQN training for {player_role}")
     print("=" * 60)
@@ -144,21 +144,21 @@ def evaluate_trained_agent(model_path, player_role, num_games=100, device=None):
     registry = get_agent_registry()
     
     # Create trained agent
-    if player_role == "mr_x":
+    if player_role == "MrX":
         trained_agent = DQNMrXAgent(model_path=model_path, epsilon=0.0, device=device)  # No exploration
         opponent = registry.create_multi_detective_agent(AgentType.RANDOM, 2)
     else:
         trained_agent = DQNMultiDetectiveAgent(2, model_path=model_path, epsilon=0.0, device=device)
-        opponent = registry.create_mr_x_agent(AgentType.RANDOM)
+        opponent = registry.create_MrX_agent(AgentType.RANDOM)
     
     # Run evaluation games
     wins = 0
     total_rewards = []
     
     for i in range(num_games):
-        if player_role == "mr_x":
+        if player_role == "MrX":
             result, _ = env.run_episode(trained_agent, opponent)
-            wins += (result.winner == "mr_x")
+            wins += (result.winner == "MrX")
         else:
             result, _ = env.run_episode(opponent, trained_agent)
             wins += (result.winner == "detectives")
@@ -180,7 +180,7 @@ def main():
     """Main training and evaluation pipeline."""
     
     parser = argparse.ArgumentParser(description='Enhanced DQN Training')
-    parser.add_argument('--role', choices=['mr_x', 'detectives'], default='mr_x',
+    parser.add_argument('--role', choices=['MrX', 'detectives'], default='MrX',
                        help='Player role to train')
     parser.add_argument('--episodes', type=int, default=5000,
                        help='Number of training episodes')
@@ -228,10 +228,10 @@ if __name__ == "__main__":
     print(f"🖥️  Using device: {device}")
     
     # detective_result, detective_trainer = train_with_monitoring("detectives", 9000, plotting_every=100, device=device)
-    mr_x_result, mr_x_trainer = train_with_monitoring("mr_x", 9000, plotting_every=3000, device=device)
+    MrX_result, MrX_trainer = train_with_monitoring("MrX", 9000, plotting_every=3000, device=device)
     
     # # Evaluate the trained agents
     # print("\n=== Detective Evaluation ===")
     # evaluate_trained_agent(detective_result.model_path, "detectives", num_games=30, device=device)
     # print("\n=== Mr. X Evaluation ===") 
-    # evaluate_trained_agent(mr_x_result.model_path, "mr_x", num_games=30, device=device)
+    # evaluate_trained_agent(MrX_result.model_path, "MrX", num_games=30, device=device)

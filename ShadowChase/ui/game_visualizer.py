@@ -7,10 +7,9 @@ import matplotlib.pyplot as plt
 from ..core.game import Game, Player, ShadowChaseGame, TicketType, TransportType
 from ..services.game_loader import GameLoader
 from ..services.game_service import GameService
-from .ui_components import ScrollableFrame, StyledButton, InfoDisplay
+from .ui_components import ScrollableFrame, StyledButton, InfoDisplay, VisualTicketDisplay
 from .setup_controls import SetupControls
 from .game_controls import GameControls
-from .transport_selection import select_transport
 from .game_replay import GameReplayWindow
 from .video_exporter import show_video_export_dialog
 from .base_visualizer import BaseVisualizer
@@ -35,17 +34,18 @@ class GameVisualizer(BaseVisualizer):
         self.solver = None
         self.root = tk.Tk()
         self.root.title("Shadow Chase Game")
-        self.root.geometry(f"{self.root.winfo_screenwidth()}x{self.root.winfo_screenheight()}")
+        # Set the window to fullscreen
+        self.root.state('zoomed')  # Windows fullscreen
         self.root.configure(bg="#f8f9fa")
         
         # Game mode and AI agents
         self.game_mode = "human_vs_human"
         self.detective_agent = None
-        self.mr_x_agent = None
+        self.MrX_agent = None
         
         # Agent types for UI selection - import locally to avoid circular import
         from agents import AgentType
-        self.mr_x_agent_type = AgentType.RANDOM
+        self.MrX_agent_type = AgentType.RANDOM
         self.detective_agent_type = AgentType.RANDOM
         
         # Game state
@@ -63,7 +63,7 @@ class GameVisualizer(BaseVisualizer):
         
         # Mr. X special moves state
         self.use_black_ticket = tk.BooleanVar()
-        self.mr_x_selections = []
+        self.MrX_selections = []
 
         # Heuristics for position analysis
         self.heuristics = None
@@ -76,9 +76,20 @@ class GameVisualizer(BaseVisualizer):
         self.setup_ui()
         self.setup_graph_display()
         
+        # Key bindings
+        self.root.bind('<Return>', self._on_enter_key)
+        
         # If auto_positions were provided, enable the start button but don't auto-start
         if auto_positions and len(auto_positions) == self.game.num_detectives + 1:
             self.setup_controls.start_button.config(state=tk.NORMAL)
+
+    def _on_enter_key(self, event):
+        """Handle Enter key press - same as clicking Make Move button"""
+        # Only trigger if we're not in setup mode and the move button is enabled
+        if (not self.setup_mode and 
+            hasattr(self.game_controls, 'move_button') and 
+            self.game_controls.move_button['state'] == 'normal'):
+            self.game_controls.send_move()
 
     def _initialize_heuristics(self):
         """Initialize heuristics calculator for position analysis"""
@@ -145,9 +156,9 @@ class GameVisualizer(BaseVisualizer):
             self.scrollable_controls.scrollable_frame)
         self.moves_display.pack(fill=tk.X, pady=(0, 10))
         
-        # Create ticket table display for Shadow Chase games but don't pack it yet
-        self.tickets_table_display = InfoDisplay(self.scrollable_controls.scrollable_frame,
-                                                "🎫 Ticket Table", height=10)
+        # Create enhanced ticket table display for Shadow Chase games
+        self.tickets_table_display = VisualTicketDisplay(self.scrollable_controls.scrollable_frame,
+                                                         "🎫 Ticket Information")
         # Don't pack it here - let update_ui_visibility() control when it appears
         
         # Save/Load section
@@ -225,7 +236,7 @@ class GameVisualizer(BaseVisualizer):
             
             is_shadow_chase = isinstance(self.game, ShadowChaseGame)
             if is_shadow_chase:
-                if self.game.game_state.mr_x_visible:
+                if self.game.game_state.MrX_visible:
                     info_text += f"🕵️‍♂️ Mr. X position: {state_info['MrX_position']} (VISIBLE)\n"
                 else:
                     info_text += f"🕵️‍♂️ Mr. X position: HIDDEN\n"
@@ -243,9 +254,9 @@ class GameVisualizer(BaseVisualizer):
         
         self.info_display.set_text(info_text)
         
-        # Update ticket table for Shadow Chase games
+        # Update enhanced ticket table for Shadow Chase games
         if isinstance(self.game, ShadowChaseGame) and self.game.game_state:
-            self.update_tickets_display_table(self.tickets_table_display)
+            self.update_enhanced_tickets_display(self.tickets_table_display)
         
         # Update other displays
         self.game_controls.update_turn_display()
@@ -313,9 +324,9 @@ class GameVisualizer(BaseVisualizer):
                 self.game, 
                 self.game_mode,
                 self.detective_agent,
-                self.mr_x_agent,
+                self.MrX_agent,
                 self.detective_agent_type.value if hasattr(self.detective_agent_type, 'value') else None,
-                self.mr_x_agent_type.value if hasattr(self.mr_x_agent_type, 'value') else None
+                self.MrX_agent_type.value if hasattr(self.MrX_agent_type, 'value') else None
             )
             messagebox.showinfo("💾 Game Saved", f"Game saved as {game_id}")
         except Exception as e:
@@ -416,9 +427,9 @@ class GameVisualizer(BaseVisualizer):
                 self.game,
                 self.game_mode,
                 self.detective_agent, 
-                self.mr_x_agent,
+                self.MrX_agent,
                 self.detective_agent_type.value if hasattr(self.detective_agent_type, 'value') else None,
-                self.mr_x_agent_type.value if hasattr(self.mr_x_agent_type, 'value') else None
+                self.MrX_agent_type.value if hasattr(self.MrX_agent_type, 'value') else None
             )
             messagebox.showinfo("🎉 Game Completed & Saved!", 
                               f"Game automatically saved as: {game_id}\n\n"
@@ -437,19 +448,25 @@ class GameVisualizer(BaseVisualizer):
         self.current_player_moves = {}
         self.highlighted_edges = []
         self.active_player_positions = []
+        self.available_moves_text = ""  # Store text for enhanced display
     
         if not self.game.game_state or self.game.is_game_over():
+            self.available_moves_text = "No moves available - game over"
             return
     
         is_shadow_chase = isinstance(self.game, ShadowChaseGame)
         current_player = self.game.game_state.turn
-    
+        moves_text_lines = []
+
         if current_player == Player.DETECTIVES:
             self.game.game_state.double_move_active = False # Reset on detectives' turn
-            self.game_controls.mr_x_selections = []
+            self.game_controls.MrX_selections = []
             if self.current_detective_index < self.game.num_detectives:
                 detective_pos = self.game.game_state.detective_positions[self.current_detective_index]
                 self.active_player_positions = [detective_pos]
+                
+                moves_text_lines.append(f"🕵️ Detective {self.current_detective_index + 1} Moves (from {detective_pos}):")
+                moves_text_lines.append("")
                 
                 # The get_valid_moves method in ShadowChaseGame already filters by tickets and occupied positions.
                 if is_shadow_chase:
@@ -458,27 +475,52 @@ class GameVisualizer(BaseVisualizer):
                     valid_moves = self.game.get_valid_moves(Player.DETECTIVES, detective_pos)
                 
                 self.current_player_moves[detective_pos] = {}
+                
+                # Group moves by transport type for better display
+                transport_moves = {}
+                
                 for move in valid_moves:
                     if is_shadow_chase:
                         dest, transport = move
+                        transport_name = transport.name.lower()
+                        if transport_name not in transport_moves:
+                            transport_moves[transport_name] = []
+                        transport_moves[transport_name].append(dest)
+                        
                         if dest not in self.current_player_moves[detective_pos]:
                             self.current_player_moves[detective_pos][dest] = []
                         self.current_player_moves[detective_pos][dest].append(transport.value)
                         self.highlighted_edges.append((detective_pos, dest, transport.value))
                     else: # Standard Game
                         dest = move
+                        if 'taxi' not in transport_moves:
+                            transport_moves['taxi'] = []
+                        transport_moves['taxi'].append(dest)
                         self.current_player_moves[detective_pos][dest] = [1] # Generic transport
                         self.highlighted_edges.append((detective_pos, dest, 1))
+                
+                # Format moves text by transport type
+                for transport_type, destinations in transport_moves.items():
+                    if destinations:
+                        moves_text_lines.append(f"{transport_type.upper()}: {', '.join(map(str, sorted(destinations)))}")
 
         else:  # MrX's turn
             # Always use the current MrX position, regardless of double move state
             MrX_pos = self.game.game_state.MrX_position
             self.active_player_positions = [MrX_pos]
             
+            moves_text_lines.append(f"🕵️‍♂️ Mr. X Moves (from {MrX_pos}):")
+            moves_text_lines.append("")
+            
             valid_moves = self.game.get_valid_moves(Player.MRX, MrX_pos)
             
             self.current_player_moves[MrX_pos] = {}
-            mr_x_tickets = self.game.get_mr_x_tickets()
+            MrX_tickets = self.game.get_MrX_tickets()
+            
+            # Group moves by transport type
+            transport_moves = {}
+            black_destinations = set()  # Track destinations already added to black ticket list
+            
             for move in valid_moves:
                 if is_shadow_chase:
                     dest, transport = move
@@ -489,19 +531,45 @@ class GameVisualizer(BaseVisualizer):
                     
                     # Check if Mr. X can use the specific transport type
                     required_ticket = TicketType[transport.name]
-                    if mr_x_tickets.get(required_ticket, 0) > 0:
+                    if MrX_tickets.get(required_ticket, 0) > 0:
+                        transport_name = transport.name.lower()
+                        if transport_name not in transport_moves:
+                            transport_moves[transport_name] = []
+                        transport_moves[transport_name].append(dest)
+                        
                         self.current_player_moves[MrX_pos][dest].append(transport.value)
                         self.highlighted_edges.append((MrX_pos, dest, transport.value))
                     
-                    # Check if Mr. X can use black ticket for this destination
-                    if mr_x_tickets.get(TicketType.BLACK, 0) > 0:
+                    # Check if Mr. X can use black ticket for this destination (only add once per destination)
+                    if (MrX_tickets.get(TicketType.BLACK, 0) > 0 and 
+                        dest not in black_destinations):
+                        
+                        black_destinations.add(dest)
+                        if 'black' not in transport_moves:
+                            transport_moves['black'] = []
+                        transport_moves['black'].append(dest)
+                            
                         if TransportType.BLACK.value not in self.current_player_moves[MrX_pos][dest]:
                             self.current_player_moves[MrX_pos][dest].append(TransportType.BLACK.value)
                             self.highlighted_edges.append((MrX_pos, dest, TransportType.BLACK.value))
                 else: # Standard Game
                     dest = move
+                    if 'taxi' not in transport_moves:
+                        transport_moves['taxi'] = []
+                    transport_moves['taxi'].append(dest)
                     self.current_player_moves[MrX_pos][dest] = [1]
                     self.highlighted_edges.append((MrX_pos, dest, 1))
+            
+            # Format moves text by transport type
+            for transport_type, destinations in transport_moves.items():
+                if destinations:
+                    moves_text_lines.append(f"{transport_type.upper()}: {', '.join(map(str, sorted(set(destinations))))}")
+
+        # Store the formatted text for the enhanced moves display
+        if not moves_text_lines or len(moves_text_lines) <= 2:
+            self.available_moves_text = "No valid moves available"
+        else:
+            self.available_moves_text = "\n".join(moves_text_lines)
 
     def handle_game_click(self, node):
         """Handle a node click during the game by checking against available moves."""
@@ -534,20 +602,15 @@ class GameVisualizer(BaseVisualizer):
                     messagebox.showerror("Error", "No valid transport found for this destination")
                     return
                 
-                # Show transport selection dialog if multiple options exist
+                # Use the new transport selection system
                 if len(available_transports) > 1:
-                    selected_transport = select_transport(
-                        self.root, source_pos, node, available_transports, 
-                        f"Detective {self.current_detective_index + 1}"
-                    )
-                    if selected_transport is None:
-                        return  # User cancelled
-                    transport = selected_transport
+                    # Show transport selection buttons instead of dialog
+                    self.game_controls.show_transport_selection(node, available_transports)
+                    return  # Wait for transport selection
                 else:
-                    # Only one transport option
+                    # Only one transport option - select automatically
                     transport = available_transports[0]
-                
-                self.detective_selections.append((node, transport))
+                    self.detective_selections.append((node, transport))
             else:
                 self.detective_selections.append(node)
             
@@ -573,26 +636,28 @@ class GameVisualizer(BaseVisualizer):
                     return
                 
                 # Check if Mr. X can use black ticket for this destination
-                mr_x_tickets = self.game.get_mr_x_tickets()
-                can_use_black = (mr_x_tickets.get(TicketType.BLACK, 0) > 0 and 
+                MrX_tickets = self.game.get_MrX_tickets()
+                can_use_black = (MrX_tickets.get(TicketType.BLACK, 0) > 0 and 
                                any(move[0] == node for move in valid_moves))
                 
-                # Show transport selection dialog
-                selected_transport = select_transport(
-                    self.root, source_pos, node, available_transports, 
-                    "Mr. X", can_use_black
-                )
-                
-                if selected_transport is None:
-                    return  # User cancelled
-                
-                # Always treat as a single move - the double move logic is handled in make_move
-                self.game_controls.mr_x_selections = [(node, selected_transport)]
-                self.selected_nodes = [node]
-                self.game_controls.move_button.config(state=tk.NORMAL)
-                
-                # Clear the black ticket checkbox since we're using the dialog now
-                self.game_controls.use_black_ticket.set(False)
+                # Use the new transport selection system
+                if len(available_transports) > 1 or can_use_black:
+                    # Show transport selection buttons instead of dialog
+                    self.game_controls.show_transport_selection(node, available_transports, can_use_black)
+                    return  # Wait for transport selection
+                else:
+                    # Only one transport option - select automatically
+                    selected_transport = available_transports[0] if available_transports else None
+                    if selected_transport is None:
+                        return
+                    
+                    # Always treat as a single move - the double move logic is handled in make_move
+                    self.game_controls.MrX_selections = [(node, selected_transport)]
+                    self.selected_nodes = [node]
+                    self.game_controls.move_button.config(state=tk.NORMAL)
+                    
+                    # Clear the black ticket checkbox since we're using the dialog now
+                    self.game_controls.use_black_ticket.set(False)
                 
             else: # Standard game
                 self.selected_positions = [node]
@@ -603,6 +668,18 @@ class GameVisualizer(BaseVisualizer):
     
     def update_ui_visibility(self):
         """Update UI section visibility based on game state"""
+        # Clear selections that might be leftover from previous turns
+        if not self.setup_mode and self.game.game_state:
+            current_turn = getattr(self.game.game_state, 'turn', None)
+            if current_turn and hasattr(current_turn, 'value'):
+                # If it's not detectives' turn, clear detective selections
+                if current_turn.value != 'detectives':
+                    self.detective_selections = []
+                    self.current_detective_index = 0
+                # If it's not Mr. X's turn, clear Mr. X selections
+                if current_turn.value != 'mrx':
+                    self.game_controls.MrX_selections = []
+        
         if self.setup_mode:
             # Setup mode - show only setup controls
             self.setup_section.pack(fill=tk.X, pady=(0, 10))
@@ -686,27 +763,48 @@ class GameVisualizer(BaseVisualizer):
             show_edges=show_edges
         )
         
-        # Draw nodes based on game state - only show active nodes when board image is displayed
+        # Draw nodes based on game state - use unified coloring system
+        # Always get colors for all nodes to ensure consistency
+        ui_state = {
+            'selected_positions': getattr(self, 'selected_positions', []),
+            'active_player_positions': getattr(self, 'active_player_positions', []),
+            'detective_selections': getattr(self, 'detective_selections', [])
+        }
+        all_node_colors, all_node_sizes = self.get_node_colors_and_sizes(mode="live", ui_state=ui_state)
+        
         if hasattr(self, 'show_board_image') and self.show_board_image:
+            # Show only active nodes when board image is displayed
             active_nodes = self._get_active_nodes()
             filtered_pos = {node: pos for node, pos in self.pos.items() if node in active_nodes}
             
-            # Get colors and sizes specifically for active nodes
-            filtered_colors, filtered_sizes = self._get_active_node_colors_and_sizes(active_nodes)
-            
             if filtered_pos:
-                # Draw nodes with same style as when board is not shown
-                nx.draw_networkx_nodes(self.game.graph.subgraph(active_nodes), filtered_pos, ax=self.ax,
+                # Filter colors and sizes for active nodes only, maintaining color consistency
+                # Create the subgraph first to get the actual node order that NetworkX will use
+                subgraph = self.game.graph.subgraph(active_nodes)
+                subgraph_nodes_list = list(subgraph.nodes())  # This is the order NetworkX will actually use
+                
+                # Create mapping from original graph nodes to their indices
+                all_nodes_list = list(self.game.graph.nodes())
+                node_to_index = {node: i for i, node in enumerate(all_nodes_list)}
+                
+                # Get colors and sizes in the order that matches the subgraph node order
+                filtered_colors = [all_node_colors[node_to_index[node]] for node in subgraph_nodes_list]
+                filtered_sizes = [all_node_sizes[node_to_index[node]] for node in subgraph_nodes_list]
+                
+                # Create positions dict that matches the subgraph nodes
+                ordered_filtered_pos = {node: filtered_pos[node] for node in subgraph_nodes_list if node in filtered_pos}
+                
+                # Draw nodes - now the colors/sizes align with NetworkX's internal node order
+                nx.draw_networkx_nodes(subgraph, ordered_filtered_pos, ax=self.ax,
                                       node_color=filtered_colors, node_size=filtered_sizes)
                 
-                # Draw labels only for active nodes with same style as when board is not shown
-                nx.draw_networkx_labels(self.game.graph.subgraph(active_nodes), filtered_pos, ax=self.ax, 
+                # Draw labels only for active nodes
+                nx.draw_networkx_labels(subgraph, ordered_filtered_pos, ax=self.ax, 
                                       font_size=8)
         else:
-            # Show all nodes when board image is not displayed
-            node_colors, node_sizes = self._get_game_node_colors_and_sizes()
+            # Show all nodes when board image is not displayed - use the same coloring system
             nx.draw_networkx_nodes(self.game.graph, self.pos, ax=self.ax,
-                                  node_color=node_colors, node_size=node_sizes)
+                                  node_color=all_node_colors, node_size=all_node_sizes)
             # Draw labels
             nx.draw_networkx_labels(self.game.graph, self.pos, ax=self.ax, font_size=8)
         
@@ -720,6 +818,22 @@ class GameVisualizer(BaseVisualizer):
                 circle = plt.Circle((x, y), 0.04, fill=False, color='black', 
                                   linewidth=2, linestyle='--', alpha=0.8)
                 self.ax.add_patch(circle)
+        
+        # Draw circles around available move destinations
+        if not self.setup_mode and self.active_player_positions:
+            # Get current player's available destinations
+            available_destinations = set()
+            for source_pos in self.active_player_positions:
+                if source_pos in self.current_player_moves:
+                    available_destinations.update(self.current_player_moves[source_pos].keys())
+            
+            # Draw black circles around available destinations
+            for node in available_destinations:
+                if node in self.pos and node not in self.selected_nodes:  # Don't double-circle selected nodes
+                    x, y = self.pos[node]
+                    circle = plt.Circle((x, y), 0.038, fill=False, color='black', 
+                                      linewidth=3, alpha=1)
+                    self.ax.add_patch(circle)
 
         self.ax.set_title("Shadow Chase Game", fontsize=14, fontweight='bold')
 
@@ -745,9 +859,9 @@ class GameVisualizer(BaseVisualizer):
                 active_nodes.update(self.game.game_state.detective_positions)
             
             # Add Mr. X position if visible
-            if hasattr(self.game.game_state, 'mr_x_position'):
-                if hasattr(self.game.game_state, 'mr_x_visible') and self.game.game_state.mr_x_visible:
-                    active_nodes.add(self.game.game_state.mr_x_position)
+            if hasattr(self.game.game_state, 'MrX_position'):
+                if hasattr(self.game.game_state, 'MrX_visible') and self.game.game_state.MrX_visible:
+                    active_nodes.add(self.game.game_state.MrX_position)
             
             # Add possible Mr. X positions during detective turns (heuristic shadows)
             if (hasattr(self.game.game_state, 'current_turn') and 
@@ -812,100 +926,6 @@ class GameVisualizer(BaseVisualizer):
         except Exception as e:
             messagebox.showerror("Error", f"Could not refresh calibration: {e}")
     
-    def _get_game_node_colors_and_sizes(self):
-        """Get node colors and sizes based on game state"""
-        node_colors = []
-        node_sizes = []
-        
-        for node in self.game.graph.nodes():
-            if self.setup_mode:
-                if node in self.selected_positions:
-                    if len(self.selected_positions) <= self.game.num_detectives:
-                        node_colors.append('blue')
-                    else:
-                        node_colors.append('red')
-                    node_sizes.append(NODE_SIZE)
-                else:
-                    node_colors.append('lightgray')
-                    node_sizes.append(NODE_SIZE)
-            else:
-                if self.game.game_state:
-                    if node in self.active_player_positions:
-                        if node in self.game.game_state.detective_positions:
-                            node_colors.append('cyan')
-                        else:
-                            node_colors.append('orange')
-                        node_sizes.append(NODE_SIZE)
-                    elif node in self.detective_selections:
-                        node_colors.append('purple')
-                        node_sizes.append(NODE_SIZE)
-                    elif node in self.game.game_state.detective_positions:
-                        node_colors.append('blue')
-                        node_sizes.append(NODE_SIZE)
-                    elif node == self.game.game_state.MrX_position:
-                        is_shadow_chase = isinstance(self.game, ShadowChaseGame)
-                        if not is_shadow_chase or self.game.game_state.mr_x_visible:
-                            node_colors.append('red')
-                            node_sizes.append(NODE_SIZE)
-                        else:
-                            node_colors.append('lightgray')
-                            node_sizes.append(NODE_SIZE)
-                    else:
-                        node_colors.append('lightgray')
-                        node_sizes.append(NODE_SIZE)
-                else:
-                    node_colors.append('lightgray')
-                    node_sizes.append(NODE_SIZE)
-        
-        return node_colors, node_sizes
-    
-    def _get_active_node_colors_and_sizes(self, active_nodes):
-        """Get node colors and sizes specifically for active nodes when board image is shown"""
-        node_colors = []
-        node_sizes = []
-        
-        for node in active_nodes:
-            if self.setup_mode:
-                if node in self.selected_positions:
-                    if len(self.selected_positions) <= self.game.num_detectives:
-                        node_colors.append('blue')
-                    else:
-                        node_colors.append('red')
-                    node_sizes.append(NODE_SIZE)
-                else:
-                    node_colors.append('lightgray')
-                    node_sizes.append(NODE_SIZE)
-            else:
-                if self.game.game_state:
-                    if node in self.active_player_positions:
-                        if node in self.game.game_state.detective_positions:
-                            node_colors.append('cyan')
-                        else:
-                            node_colors.append('orange')
-                        node_sizes.append(NODE_SIZE)
-                    elif node in self.detective_selections:
-                        node_colors.append('purple')
-                        node_sizes.append(NODE_SIZE)
-                    elif node in self.game.game_state.detective_positions:
-                        node_colors.append('blue')
-                        node_sizes.append(NODE_SIZE)
-                    elif node == self.game.game_state.MrX_position:
-                        is_shadow_chase = isinstance(self.game, ShadowChaseGame)
-                        if not is_shadow_chase or self.game.game_state.mr_x_visible:
-                            node_colors.append('red')
-                            node_sizes.append(NODE_SIZE)
-                        else:
-                            node_colors.append('lightgray')
-                            node_sizes.append(NODE_SIZE)
-                    else:
-                        node_colors.append('lightgray')
-                        node_sizes.append(NODE_SIZE)
-                else:
-                    node_colors.append('lightgray')
-                    node_sizes.append(NODE_SIZE)
-        
-        return node_colors, node_sizes
-
     def _draw_heuristic_shadows(self):
         """Draw subtle shadows on nodes where Mr. X could possibly be located"""
         # Only draw shadows if heuristics are enabled and available
@@ -918,7 +938,7 @@ class GameVisualizer(BaseVisualizer):
             
         # Only show during detective turns (when Mr. X is hidden)
         if (self.game.game_state.turn != Player.DETECTIVES or 
-            self.game.game_state.mr_x_visible):
+            self.game.game_state.MrX_visible):
             return
             
         # Initialize or update heuristics
@@ -933,7 +953,7 @@ class GameVisualizer(BaseVisualizer):
             
         try:
             # Get possible Mr. X positions
-            possible_positions = self.heuristics.get_possible_mr_x_positions()
+            possible_positions = self.heuristics.get_possible_MrX_positions()
             
             if not possible_positions:
                 return
@@ -967,26 +987,26 @@ class GameVisualizer(BaseVisualizer):
         
         if self.game_mode == "human_vs_human":
             self.detective_agent = None
-            self.mr_x_agent = None
+            self.MrX_agent = None
         elif self.game_mode == "human_det_vs_ai_mrx":
             # Human plays as detectives, AI plays as Mr. X
             self.detective_agent = None
-            self.mr_x_agent = registry.create_mr_x_agent(self.mr_x_agent_type) if isinstance(self.game, ShadowChaseGame) else None
+            self.MrX_agent = registry.create_MrX_agent(self.MrX_agent_type) if isinstance(self.game, ShadowChaseGame) else None
         elif self.game_mode == "ai_det_vs_human_mrx":
             # AI plays as detectives, Human plays as Mr. X
             if isinstance(self.game, ShadowChaseGame):
                 self.detective_agent = registry.create_multi_detective_agent(self.detective_agent_type, self.game.num_detectives)
             else:
                 self.detective_agent = None
-            self.mr_x_agent = None
+            self.MrX_agent = None
         elif self.game_mode == "ai_vs_ai":
             # AI plays both sides
             if isinstance(self.game, ShadowChaseGame):
                 self.detective_agent = registry.create_multi_detective_agent(self.detective_agent_type, self.game.num_detectives)
-                self.mr_x_agent = registry.create_mr_x_agent(self.mr_x_agent_type)
+                self.MrX_agent = registry.create_MrX_agent(self.MrX_agent_type)
             else:
                 self.detective_agent = None
-                self.mr_x_agent = None
+                self.MrX_agent = None
 
     def is_current_player_ai(self):
         """Check if the current player is AI-controlled"""
@@ -998,7 +1018,7 @@ class GameVisualizer(BaseVisualizer):
         if current_player == Player.DETECTIVES:
             return self.detective_agent is not None
         else:  # Player.MRX
-            return self.mr_x_agent is not None
+            return self.MrX_agent is not None
 
     def is_current_player_human(self):
         """Check if the current player is human-controlled"""
@@ -1021,12 +1041,12 @@ class GameVisualizer(BaseVisualizer):
                 else:
                     return False
             
-            elif current_player == Player.MRX and self.mr_x_agent:
+            elif current_player == Player.MRX and self.MrX_agent:
                 # AI Mr. X moves
-                move_result = self.mr_x_agent.choose_move(self.game)
+                move_result = self.MrX_agent.choose_move(self.game)
                 if move_result and len(move_result) == 3:
                     dest, transport, use_double = move_result
-                    success = self.game.make_move(mr_x_moves=[(dest, transport)], use_double_move=use_double)
+                    success = self.game.make_move(MrX_moves=[(dest, transport)], use_double_move=use_double)
                     return success
                 else:
                     return False
@@ -1055,13 +1075,13 @@ class GameVisualizer(BaseVisualizer):
                     self.current_detective_index = len(detective_moves)  # All detectives selected
                     self.game_controls.move_button.config(state=tk.NORMAL)
                     
-            elif current_player == Player.MRX and self.mr_x_agent:
+            elif current_player == Player.MRX and self.MrX_agent:
                 # Get AI Mr. X move for display
-                move_result = self.mr_x_agent.choose_move(self.game)
+                move_result = self.MrX_agent.choose_move(self.game)
                 if move_result and len(move_result) == 3:
                     dest, transport, use_double = move_result
                     # Set up the selections for display
-                    self.game_controls.mr_x_selections = [(dest, transport)]
+                    self.game_controls.MrX_selections = [(dest, transport)]
                     self.selected_nodes = [dest]
                     
                     # Set the double move checkbox if AI wants to use it

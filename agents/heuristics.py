@@ -67,7 +67,7 @@ class GameHeuristics:
             self._distance_cache[cache_key] = -1
             return -1
     
-    def get_mr_x_distances_from_detectives(self) -> List[int]:
+    def get_MrX_distances_from_detectives(self) -> List[int]:
         """
         Calculate Mr. X's distance from each detective.
         
@@ -78,30 +78,30 @@ class GameHeuristics:
         if not self.game_state:
             return []
             
-        mr_x_position = self.game_state.MrX_position
+        MrX_position = self.game_state.MrX_position
         detective_positions = self.game_state.detective_positions
         
         distances = []
         for detective_pos in detective_positions:
-            distance = self.calculate_shortest_distance(mr_x_position, detective_pos)
+            distance = self.calculate_shortest_distance(MrX_position, detective_pos)
             distances.append(distance)
             
         return distances
     
-    def get_detective_distances_to_mr_x(self) -> List[int]:
+    def get_detective_distances_to_MrX(self) -> List[int]:
         """
         Calculate each detective's distance to Mr. X.
         
-        This is essentially the same as get_mr_x_distances_from_detectives()
+        This is essentially the same as get_MrX_distances_from_detectives()
         but provides a different perspective for detective agents.
         
         Returns:
             List of distances from each detective to Mr. X.
             Distance is -1 if no path exists.
         """
-        return self.get_mr_x_distances_from_detectives()
+        return self.get_MrX_distances_from_detectives()
     
-    def get_detective_distances_to_last_known_mr_x_position(self) -> List[int]:
+    def get_detective_distances_to_last_known_MrX_position(self) -> List[int]:
         """
         Calculate each detective's distance to Mr. X's last known visible position.
         
@@ -119,7 +119,7 @@ class GameHeuristics:
         last_known_position = None
         
         # If Mr. X is currently visible, use current position
-        if self.game_state.mr_x_visible:
+        if self.game_state.MrX_visible:
             last_known_position = self.game_state.MrX_position
         # Otherwise, try to get last visible position from game
         elif hasattr(self.game, 'last_visible_position') and self.game.last_visible_position is not None:
@@ -137,7 +137,7 @@ class GameHeuristics:
             
         return distances
     
-    def get_minimum_distance_to_mr_x(self) -> int:
+    def get_minimum_distance_to_MrX(self) -> int:
         """
         Get the minimum distance from any detective to Mr. X.
         
@@ -145,7 +145,7 @@ class GameHeuristics:
             Minimum distance from any detective to Mr. X.
             Returns -1 if no detective can reach Mr. X.
         """
-        distances = self.get_mr_x_distances_from_detectives()
+        distances = self.get_MrX_distances_from_detectives()
         
         if not distances:
             return -1
@@ -158,7 +158,7 @@ class GameHeuristics:
             
         return min(valid_distances)
     
-    def get_maximum_distance_to_mr_x(self) -> int:
+    def get_maximum_distance_to_MrX(self) -> int:
         """
         Get the maximum distance from any detective to Mr. X.
         
@@ -166,7 +166,7 @@ class GameHeuristics:
             Maximum distance from any detective to Mr. X.
             Returns -1 if no detective can reach Mr. X.
         """
-        distances = self.get_mr_x_distances_from_detectives()
+        distances = self.get_MrX_distances_from_detectives()
         
         if not distances:
             return -1
@@ -179,7 +179,7 @@ class GameHeuristics:
             
         return max(valid_distances)
     
-    def get_possible_mr_x_positions(self) -> set:
+    def get_possible_MrX_positions(self) -> set:
         """
         Calculate Mr. X's possible positions based on ticket history and last known position.
         
@@ -193,10 +193,10 @@ class GameHeuristics:
         if not self.game_state or not hasattr(self.game, 'ticket_history'):
             return set()
         
-        last_known_position = self.game.get_mr_x_last_visible_position()
+        last_known_position = self.game.get_MrX_last_visible_position()
         
         # If Mr. X is currently visible, return his exact position
-        if self.game_state.mr_x_visible:
+        if self.game_state.MrX_visible:
             return {last_known_position}
         
         # Find the last reveal turn and build possibilities from there
@@ -204,11 +204,11 @@ class GameHeuristics:
             return set()
         
         # Get all Mr. X moves since the last reveal
-        mr_x_moves_since_reveal = self._get_mr_x_moves_since_last_reveal()
+        MrX_moves_since_reveal = self._get_MrX_moves_since_last_reveal()
         
         # Build possible positions step by step
         possible_positions = {last_known_position}
-        for move_data in mr_x_moves_since_reveal:
+        for move_data in MrX_moves_since_reveal:
             transport_used = move_data.get('transport_used')
             if transport_used is None:
                 transport_used = move_data.get('ticket_used')
@@ -235,7 +235,7 @@ class GameHeuristics:
         """
         return turn_number in self.game.reveal_turns
     
-    def _get_mr_x_moves_since_last_reveal(self) -> List[Dict]:
+    def _get_MrX_moves_since_last_reveal(self) -> List[Dict]:
         """
         Get all Mr. X moves since the last reveal turn.
         
@@ -250,7 +250,7 @@ class GameHeuristics:
         MrX_turn_count = 0
         
         for turn_data in ticket_history:
-            if turn_data.get('player') == 'mr_x':
+            if turn_data.get('player') == 'MrX':
                 MrX_turn_count += 1
                 if self._was_reveal_turn(MrX_turn_count):
                     last_reveal_MrX_turn = MrX_turn_count
@@ -258,12 +258,12 @@ class GameHeuristics:
         # Now collect all Mr. X moves after the last reveal turn
         current_MrX_turn = 0
         for turn_data in ticket_history:
-            if turn_data.get('player') == 'mr_x':
+            if turn_data.get('player') == 'MrX':
                 current_MrX_turn += 1
                 # Only include moves after the last reveal turn
                 if current_MrX_turn > last_reveal_MrX_turn:
-                    mr_x_moves = turn_data.get('mr_x_moves', [])
-                    moves_since_reveal.extend(mr_x_moves)
+                    MrX_moves = turn_data.get('MrX_moves', [])
+                    moves_since_reveal.extend(MrX_moves)
         
         return moves_since_reveal
 
@@ -330,7 +330,7 @@ class GameHeuristics:
 
         return False
     
-    def get_detective_distances_to_possible_mr_x_positions(self) -> Dict[int, List[int]]:
+    def get_detective_distances_to_possible_MrX_positions(self) -> Dict[int, List[int]]:
         """
         Calculate each detective's distance to all possible Mr. X positions.
         
@@ -338,7 +338,7 @@ class GameHeuristics:
             Dictionary mapping detective index to list of distances to each possible position.
             Each distance list corresponds to the possible positions in the same order.
         """
-        possible_positions = self.get_possible_mr_x_positions()
+        possible_positions = self.get_possible_MrX_positions()
         
         if not possible_positions or not self.game_state:
             return {}
@@ -355,14 +355,14 @@ class GameHeuristics:
         
         return detective_distances
     
-    def get_minimum_distance_to_possible_mr_x_positions(self) -> int:
+    def get_minimum_distance_to_possible_MrX_positions(self) -> int:
         """
         Get the minimum distance from any detective to any possible Mr. X position.
         
         Returns:
             Minimum distance, or -1 if no valid distances exist.
         """
-        detective_distances = self.get_detective_distances_to_possible_mr_x_positions()
+        detective_distances = self.get_detective_distances_to_possible_MrX_positions()
         
         if not detective_distances:
             return -1
@@ -376,7 +376,7 @@ class GameHeuristics:
         
         return min_distance if min_distance != float('inf') else -1
 
-    def get_best_mr_x_move_by_distance(self, valid_moves: List[Tuple]) -> Tuple[int, int]:
+    def get_best_MrX_move_by_distance(self, valid_moves: List[Tuple]) -> Tuple[int, int]:
         """
         Get Mr. X's best move to maximize distance to closest detective.
         
@@ -418,19 +418,19 @@ class GameHeuristics:
         
         # If multiple moves have same max distance, choose randomly
         ### here I should choose the one that increases possible locations
-        best_moves_2 = self.get_mr_x_moves_that_increase_possible_locations(best_moves)
+        best_moves_2 = self.get_MrX_moves_that_increase_possible_locations(best_moves)
         return random.choice(best_moves_2) if len(best_moves_2) > 1 else best_moves_2[0]
     
     def get_best_detective_move_by_distance_to_possible_positions(self, detective_pos: int, 
                                                                 valid_moves: List[Tuple], 
-                                                                possible_mr_x_locations: set) -> Tuple[int, int]:
+                                                                possible_MrX_locations: set) -> Tuple[int, int]:
         """
         Get detective's best move to minimize sum of distances to possible Mr. X positions.
         
         Args:
             detective_pos: Current detective position
             valid_moves: List of (destination, transport) tuples
-            possible_mr_x_locations: Set of possible Mr. X positions
+            possible_MrX_locations: Set of possible Mr. X positions
             
         Returns:
             Best (destination, transport) move, or None if no valid moves
@@ -441,7 +441,7 @@ class GameHeuristics:
         if len(valid_moves) == 1:
             return valid_moves[0]
         
-        if not possible_mr_x_locations:
+        if not possible_MrX_locations:
             # If no known possible positions, return first move
             return valid_moves[0]
         
@@ -452,7 +452,7 @@ class GameHeuristics:
             total_distance = 0
             valid_distances = 0
             
-            for possible_pos in possible_mr_x_locations:
+            for possible_pos in possible_MrX_locations:
                 distance = self.calculate_shortest_distance(dest, possible_pos)
                 if distance >= 0:
                     total_distance += distance
@@ -467,7 +467,7 @@ class GameHeuristics:
         
         return best_move if best_move else valid_moves[0]
     
-    def get_mr_x_moves_that_increase_possible_locations(self, valid_moves: List[Tuple]) -> List[Tuple]:
+    def get_MrX_moves_that_increase_possible_locations(self, valid_moves: List[Tuple]) -> List[Tuple]:
         """
         Filter Mr. X moves that potentially increase the number of possible locations.
         This is a simplified heuristic - could be made more sophisticated.

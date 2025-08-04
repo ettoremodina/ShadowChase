@@ -285,7 +285,7 @@ class GameLoader:
             'MrX_position': state.MrX_position,
             'turn': state.turn.value,
             'turn_count': state.turn_count,
-            'mr_x_visible': getattr(state, 'mr_x_visible', True),
+            'MrX_visible': getattr(state, 'MrX_visible', True),
             'double_move_active': getattr(state, 'double_move_active', False)
         }
         
@@ -296,10 +296,10 @@ class GameLoader:
                 for i, tickets in state.detective_tickets.items()
             }
         
-        if hasattr(state, 'mr_x_tickets'):
-            serialized['mr_x_tickets'] = {
+        if hasattr(state, 'MrX_tickets'):
+            serialized['MrX_tickets'] = {
                 k.value if hasattr(k, 'value') else str(k): v 
-                for k, v in state.mr_x_tickets.items()
+                for k, v in state.MrX_tickets.items()
             }
         
         if hasattr(state, 'ticket_history'):

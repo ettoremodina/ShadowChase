@@ -49,7 +49,7 @@ class CachePerformanceComparison:
     def run_performance_test(self, 
                            num_games: int = 10,
                            map_size: str = "test",
-                           mr_x_agent: AgentType = AgentType.OPTIMIZED_MCTS,
+                           MrX_agent: AgentType = AgentType.OPTIMIZED_MCTS,
                            detective_agent: AgentType = AgentType.OPTIMIZED_MCTS,
                            max_turns: int = 24) -> Dict[str, Any]:
         """
@@ -58,7 +58,7 @@ class CachePerformanceComparison:
         Args:
             num_games: Number of games to run for each test
             map_size: Size of the game map
-            mr_x_agent: Agent type for Mr. X
+            MrX_agent: Agent type for Mr. X
             detective_agent: Agent type for detectives
             max_turns: Maximum turns per game
             
@@ -69,13 +69,13 @@ class CachePerformanceComparison:
         print("=" * 60)
         print(f"Testing {num_games} games with each cache setting")
         print(f"Map: {map_size}, Max turns: {max_turns}")
-        print(f"Mr. X: {mr_x_agent.value}, Detectives: {detective_agent.value}")
+        print(f"Mr. X: {MrX_agent.value}, Detectives: {detective_agent.value}")
         
         # Test 1: Cache enabled
         print(f"\n🟢 PHASE 1: Testing with cache ENABLED")
         enable_cache()
         cache_enabled_results = self._run_test_batch(
-            num_games, map_size, mr_x_agent, detective_agent, max_turns, "cache_enabled"
+            num_games, map_size, MrX_agent, detective_agent, max_turns, "cache_enabled"
         )
         
         # Clear cache for fair comparison
@@ -86,7 +86,7 @@ class CachePerformanceComparison:
         print(f"\n🔴 PHASE 2: Testing with cache DISABLED")
         disable_cache()
         cache_disabled_results = self._run_test_batch(
-            num_games, map_size, mr_x_agent, detective_agent, max_turns, "cache_disabled"
+            num_games, map_size, MrX_agent, detective_agent, max_turns, "cache_disabled"
         )
         
         # Re-enable cache for normal operation
@@ -104,7 +104,7 @@ class CachePerformanceComparison:
             'analysis': analysis
         }
     
-    def _run_test_batch(self, num_games: int, map_size: str, mr_x_agent: AgentType, 
+    def _run_test_batch(self, num_games: int, map_size: str, MrX_agent: AgentType, 
                        detective_agent: AgentType, max_turns: int, test_name: str) -> Dict[str, Any]:
         """Run a batch of games and collect performance metrics."""
         print(f"   Running {num_games} games...")
@@ -123,7 +123,7 @@ class CachePerformanceComparison:
                 verbosity=VerbosityLevel.SILENT,
                 auto_save=True,
                 max_turns=max_turns,
-                mr_x_agent_type=mr_x_agent,
+                MrX_agent_type=MrX_agent,
                 detective_agent_type=detective_agent,
                 save_dir=self.save_dir
             )
@@ -360,14 +360,14 @@ def main():
     # Configuration
     num_games = 20  # Number of games per test
     map_size = "test"
-    mr_x_agent = AgentType.OPTIMIZED_MCTS
+    MrX_agent = AgentType.OPTIMIZED_MCTS
     detective_agent = AgentType.OPTIMIZED_MCTS
     max_turns = 24
     
     print(f"Configuration:")
     print(f"  Games per test: {num_games}")
     print(f"  Map size: {map_size}")
-    print(f"  Mr. X agent: {mr_x_agent.value}")
+    print(f"  Mr. X agent: {MrX_agent.value}")
     print(f"  Detective agent: {detective_agent.value}")
     print(f"  Max turns: {max_turns}")
     
@@ -378,7 +378,7 @@ def main():
         results = comparison.run_performance_test(
             num_games=num_games,
             map_size=map_size,
-            mr_x_agent=mr_x_agent,
+            MrX_agent=MrX_agent,
             detective_agent=detective_agent,
             max_turns=max_turns
         )

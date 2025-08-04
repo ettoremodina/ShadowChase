@@ -124,7 +124,7 @@ class BaseVisualizer:
                 def __init__(self):
                     self.detective_positions = []
                     self.MrX_position = 0
-                    self.mr_x_position = 0  # Normalized attribute
+                    self.MrX_position = 0  # Normalized attribute
                     self.turn_count = 0
                     self.setup_mode = True
                     self.selected_positions = ui_state.get('selected_positions', []) if ui_state else []
@@ -134,8 +134,8 @@ class BaseVisualizer:
             return SetupState()
         
         # Add normalized attributes to existing state object if they don't exist
-        if not hasattr(current_state, 'mr_x_position') and hasattr(current_state, 'MrX_position'):
-            current_state.mr_x_position = current_state.MrX_position
+        if not hasattr(current_state, 'MrX_position') and hasattr(current_state, 'MrX_position'):
+            current_state.MrX_position = current_state.MrX_position
         
         # Add UI state if provided
         if ui_state:
@@ -158,8 +158,8 @@ class BaseVisualizer:
         historical_state = self.game.game_history[step]
         
         # Add normalized attributes if needed
-        if not hasattr(historical_state, 'mr_x_position') and hasattr(historical_state, 'MrX_position'):
-            historical_state.mr_x_position = historical_state.MrX_position
+        if not hasattr(historical_state, 'MrX_position') and hasattr(historical_state, 'MrX_position'):
+            historical_state.MrX_position = historical_state.MrX_position
         
         return historical_state
     def _get_attribute(self, obj, attr_names: List[str], default=None):
@@ -189,7 +189,7 @@ class BaseVisualizer:
         if 'detective' in turn_value or 'det' in turn_value:
             return 'detective'
         elif 'mr' in turn_value or 'x' in turn_value:
-            return 'mr_x'
+            return 'MrX'
         else:
             return 'detective'  # Default
     
@@ -374,64 +374,18 @@ class BaseVisualizer:
         
         return 0
     
-    def update_tickets_display_table(self, tickets_display, state=None):
-        """Update tickets display as a table format with improved spacing"""
-        if not tickets_display or not hasattr(tickets_display, 'set_text'):
+    def update_enhanced_tickets_display(self, tickets_display, state=None):
+        """Update enhanced visual tickets display"""
+        if not tickets_display or not hasattr(tickets_display, 'update_tickets'):
             return
         
         # Use current game state if no state provided
         current_state = state or self.game.game_state
         if not current_state:
-            tickets_display.set_text("No game state available")
             return
         
-        # Create table format for tickets with better spacing
-        tickets_text = "🎫 TICKET TABLE:\n\n"
-        
-        # Header row with proper spacing
-        tickets_text += "Player│🚕│🚌│🚇│⚫│⚡\n"
-        tickets_text += "──────┼──┼──┼──┼──┼──\n"
-        
-        # Detective rows
-        for i in range(self.game.num_detectives):
-            player_name = f"Det {i+1}"
-            
-            # Get tickets for this detective
-            if hasattr(current_state, 'detective_tickets'):
-                detective_tickets = current_state.detective_tickets
-                if isinstance(detective_tickets, dict) and i in detective_tickets:
-                    tickets = detective_tickets[i]
-                elif isinstance(detective_tickets, list) and i < len(detective_tickets):
-                    tickets = detective_tickets[i]
-                else:
-                    tickets = {}
-            else:
-                # Fallback to game method if available
-                tickets = getattr(self.game, 'get_detective_tickets', lambda x: {})(i)
-            
-            # Display ticket counts in table format with proper alignment
-            taxi_count = self._get_ticket_count(tickets, 'taxi')
-            bus_count = self._get_ticket_count(tickets, 'bus')
-            underground_count = self._get_ticket_count(tickets, 'underground')
-            
-            tickets_text += f"{player_name:<6}│{taxi_count:>2}│{bus_count:>2}│{underground_count:>2}│ -│ -\n"
-        
-        # Mr. X row
-        if hasattr(current_state, 'mr_x_tickets'):
-            mr_x_tickets = current_state.mr_x_tickets
-        else:
-            # Fallback to game method if available
-            mr_x_tickets = getattr(self.game, 'get_mr_x_tickets', lambda: {})()
-        
-        taxi_count = self._get_ticket_count(mr_x_tickets, 'taxi')
-        bus_count = self._get_ticket_count(mr_x_tickets, 'bus')
-        underground_count = self._get_ticket_count(mr_x_tickets, 'underground')
-        black_count = self._get_ticket_count(mr_x_tickets, 'black')
-        double_count = self._get_ticket_count(mr_x_tickets, 'double_move')
-        
-        tickets_text += f"{'Mr. X':<6}│{taxi_count:>2}│{bus_count:>2}│{underground_count:>2}│{black_count:>2}│{double_count:>2}\n"
-        
-        tickets_display.set_text(tickets_text)
+        # Use the enhanced component's update method
+        tickets_display.update_tickets(current_state, self.game)
     
     def get_node_colors_and_sizes(self, mode: str = "live", step: Optional[int] = None,
                                  node_size: int = 300, ui_state: Optional[Dict] = None) -> tuple:
@@ -466,7 +420,7 @@ class BaseVisualizer:
         return node_colors, node_sizes
 
     def _get_node_color_and_size(self, mode: str, node: int, state, base_size: int) -> tuple:
-        """Get color and size for a single node based on state"""
+        """Get color and size for a single node based on state - simplified logic"""
         
         # Setup mode (GameVisualizer only)
         if hasattr(state, 'setup_mode') and state.setup_mode:
@@ -478,51 +432,54 @@ class BaseVisualizer:
         
         # Get normalized attributes
         detective_positions = getattr(state, 'detective_positions', [])
-        mr_x_position = getattr(state, 'mr_x_position', None) or getattr(state, 'MrX_position', 0)
-        mr_x_visible = getattr(state, 'mr_x_visible', True)
+        MrX_position = getattr(state, 'MrX_position', 0)
+        MrX_visible = getattr(state, 'MrX_visible', True)
         
         # UI-specific attributes
         active_player_positions = getattr(state, 'active_player_positions', [])
         detective_selections = getattr(state, 'detective_selections', [])
         
-        # Game mode - handle special cases first
+        # Handle special cases in priority order
         
-        # Node with both detective and Mr. X (collision)
-        if node in detective_positions and node == mr_x_position:
+        # 1. Node with both detective and Mr. X (collision)
+        if node in detective_positions and node == MrX_position:
             return 'yellow', int(base_size * 1.2)
         
-        # Active player positions (GameVisualizer specific)
+        # 2. Active player positions (current player's position - highlighted)
         if node in active_player_positions:
             if node in detective_positions:
-                return 'cyan', base_size
+                return 'cyan', base_size  # Active detective
             else:
-                return 'orange', base_size
+                return 'orange', base_size  # Active Mr. X
         
-        # Detective selections (GameVisualizer specific)
-        if node in detective_selections:
-            return 'purple', base_size
+        # 3. Detective selections (selected destinations)
+        selected_destinations = []
+        for selection in detective_selections:
+            if isinstance(selection, tuple) and len(selection) >= 1:
+                selected_destinations.append(selection[0])
+            elif isinstance(selection, int):
+                selected_destinations.append(selection)
         
-        # Detective positions
+        if node in selected_destinations:
+            return 'green', base_size  # Selected destination
+        
+        # 4. Detective positions (normal blue)
         if node in detective_positions:
             return 'blue', base_size
         
-        # Mr. X position
-        if node == mr_x_position:
+        # 5. Mr. X position
+        if node == MrX_position:
             # Check visibility for Shadow Chase games
             if hasattr(self.game, '__class__') and 'ShadowChase' in self.game.__class__.__name__:
-                if mr_x_visible or mode == "history":
+                if MrX_visible or mode == "history":
                     return 'red', base_size
                 else:
                     return 'lightgray', base_size
             else:
                 return 'red', base_size
         
-        # Empty nodes
-        # For video export, make empty nodes slightly smaller
-        if hasattr(self, '__class__') and 'Video' in self.__class__.__name__:
-            return 'lightgray', int(base_size * 0.8)
-        else:
-            return 'lightgray', base_size
+        # 6. Empty nodes (default)
+        return 'lightgray', base_size
     
 
 

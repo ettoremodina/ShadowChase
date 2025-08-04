@@ -43,9 +43,9 @@ def get_game_configuration() -> Tuple[str, str, int, int, AgentType, AgentType]:
     """Get game configuration from user or defaults"""
     try:
         from game_controls.game_logic import get_game_mode, get_verbosity_level
-        map_size, play_mode, num_detectives, mr_x_agent, detective_agent = get_game_mode()
+        map_size, play_mode, num_detectives, MrX_agent, detective_agent = get_game_mode()
         verbosity = get_verbosity_level()
-        return map_size, play_mode, num_detectives, verbosity, mr_x_agent, detective_agent
+        return map_size, play_mode, num_detectives, verbosity, MrX_agent, detective_agent
     except Exception:
         # Default configuration if interactive selection fails
         return "test", "ai_vs_ai", 2, VerbosityLevel.MOVES, AgentType.RANDOM, AgentType.RANDOM
@@ -65,7 +65,7 @@ def create_and_initialize_game(map_size: str, num_detectives: int) -> ShadowChas
 
 def save_game_session(game: ShadowChaseGame, play_mode: str, map_size: str, 
                      num_detectives: int, turn_count: int, display: GameDisplay,
-                     mr_x_agent_type=None, detective_agent_type=None, save_dir: str = "fritto_misto", execution_time: float = None) -> Optional[str]:
+                     MrX_agent_type=None, detective_agent_type=None, save_dir: str = "fritto_misto", execution_time: float = None) -> Optional[str]:
     """Save a completed game session with metadata"""
     try:
         from ShadowChase.services.game_loader import GameLoader
@@ -73,12 +73,12 @@ def save_game_session(game: ShadowChaseGame, play_mode: str, map_size: str,
         game_service = GameService(game_loader)
         
         # Convert agent types to strings if they are AgentType enums
-        mr_x_agent_str = mr_x_agent_type.value if hasattr(mr_x_agent_type, 'value') else mr_x_agent_type
+        MrX_agent_str = MrX_agent_type.value if hasattr(MrX_agent_type, 'value') else MrX_agent_type
         detective_agent_str = detective_agent_type.value if hasattr(detective_agent_type, 'value') else detective_agent_type
         
         game_id = game_service.save_terminal_game(
             game, play_mode, map_size, num_detectives, turn_count,
-            mr_x_agent_str, detective_agent_str, execution_time
+            MrX_agent_str, detective_agent_str, execution_time
         )
         if display.verbosity >= VerbosityLevel.BASIC:
             display.print_info(f"Game saved successfully! Game ID: {game_id}")
@@ -91,13 +91,13 @@ def save_game_session(game: ShadowChaseGame, play_mode: str, map_size: str,
 
 def save_game_automatically(game: ShadowChaseGame, play_mode: str, map_size: str,
                           num_detectives: int, turn_count: int, display: GameDisplay,
-                          mr_x_agent_type=None, detective_agent_type=None, save_dir: str = "fritto_misto", execution_time: float = None) -> Optional[str]:
+                          MrX_agent_type=None, detective_agent_type=None, save_dir: str = "fritto_misto", execution_time: float = None) -> Optional[str]:
     """Save game without user confirmation"""
     if not game.game_history:  # Don't save if no moves were made
         return None
     
     game_id = save_game_session(game, play_mode, map_size, num_detectives, turn_count, display,
-                               mr_x_agent_type, detective_agent_type, save_dir, execution_time)
+                               MrX_agent_type, detective_agent_type, save_dir, execution_time)
     if game_id and display.verbosity >= VerbosityLevel.MOVES:
         print(f"✅ Game {game_id} saved automatically to {save_dir}")
     return game_id
@@ -105,7 +105,7 @@ def save_game_automatically(game: ShadowChaseGame, play_mode: str, map_size: str
 
 def offer_save_option(game: ShadowChaseGame, play_mode: str, map_size: str, 
                      num_detectives: int, turn_count: int, display: GameDisplay,
-                     mr_x_agent_type=None, detective_agent_type=None, save_dir: str = "fritto_misto"):
+                     MrX_agent_type=None, detective_agent_type=None, save_dir: str = "fritto_misto"):
     """Offer the user option to save the game with confirmation"""
     if not game.game_history:  # Don't save if no moves were made
         return
@@ -118,7 +118,7 @@ def offer_save_option(game: ShadowChaseGame, play_mode: str, map_size: str,
         
         if save_choice in ['y', 'yes']:
             game_id = save_game_session(game, play_mode, map_size, num_detectives, turn_count, display,
-                                       mr_x_agent_type, detective_agent_type, save_dir, None)
+                                       MrX_agent_type, detective_agent_type, save_dir, None)
             if game_id:
                 print(f"✅ Game saved as: {game_id}")
                 print(f"📁 Game files saved to: {save_dir}/")
@@ -161,14 +161,14 @@ def execute_single_turn(controller: GameController, game: ShadowChaseGame,
         # Mr. X turn
         if play_mode in ["human_vs_human", "ai_det_vs_human_mrx"]:
             # Human Mr. X
-            print(f"\n{display.symbols['mr_x']} MR. X'S TURN")
-            success = controller.make_mr_x_move()
+            print(f"\n{display.symbols['MrX']} MR. X'S TURN")
+            success = controller.make_MrX_move()
             if not success:
                 return False  # User quit
         else:
             # AI Mr. X
             if display.verbosity >= VerbosityLevel.BASIC:
-                print(f"\n{display.symbols['mr_x']} AI MR. X'S TURN")
+                print(f"\n{display.symbols['MrX']} AI MR. X'S TURN")
             success = controller.make_ai_move(Player.MRX)
             if not success:
                 display.print_error("AI Mr. X failed to move")
@@ -186,7 +186,7 @@ def execute_single_turn(controller: GameController, game: ShadowChaseGame,
 def play_single_game(map_size: str = "test", play_mode: str = "ai_vs_ai", 
                     num_detectives: int = 2, verbosity: int = VerbosityLevel.BASIC,
                     auto_save: bool = False, max_turns: int = 24,
-                    mr_x_agent_type=None, detective_agent_type=None, save_dir: str = "fritto_misto") -> Tuple[Optional[str], int, bool]:
+                    MrX_agent_type=None, detective_agent_type=None, save_dir: str = "fritto_misto") -> Tuple[Optional[str], int, bool]:
     """
     Play a single game with specified parameters.
     
@@ -197,7 +197,7 @@ def play_single_game(map_size: str = "test", play_mode: str = "ai_vs_ai",
         verbosity: Display verbosity level
         auto_save: Whether to automatically save the game
         max_turns: Maximum number of turns
-        mr_x_agent_type: Type of agent for Mr. X (defaults to RANDOM)
+        MrX_agent_type: Type of agent for Mr. X (defaults to RANDOM)
         detective_agent_type: Type of agent for detectives (defaults to RANDOM)
         save_dir: Directory for saving games (defaults to "fritto_misto")
     
@@ -217,13 +217,13 @@ def play_single_game(map_size: str = "test", play_mode: str = "ai_vs_ai",
     display.set_game(game)
     
     # Set default agent types if not provided
-    if mr_x_agent_type is None:
-        mr_x_agent_type = AgentType.RANDOM
+    if MrX_agent_type is None:
+        MrX_agent_type = AgentType.RANDOM
     if detective_agent_type is None:
         detective_agent_type = AgentType.RANDOM
     
     # Create controller with agent types
-    controller = GameController(game, display, mr_x_agent_type, detective_agent_type)
+    controller = GameController(game, display, MrX_agent_type, detective_agent_type)
     
     # Show game start info only if verbosity is high enough
     if verbosity >= VerbosityLevel.MOVES:
@@ -273,17 +273,17 @@ def play_single_game(map_size: str = "test", play_mode: str = "ai_vs_ai",
         auto_save = True  # Always auto-save in AI vs AI mode
     if auto_save:
         game_id = save_game_automatically(game, play_mode, map_size, num_detectives, turn_count, display,
-                                         mr_x_agent_type, detective_agent_type, save_dir, execution_time)
+                                         MrX_agent_type, detective_agent_type, save_dir, execution_time)
     elif verbosity >= VerbosityLevel.MOVES:
         offer_save_option(game, play_mode, map_size, num_detectives, turn_count, display,
-                         mr_x_agent_type, detective_agent_type, save_dir)
+                         MrX_agent_type, detective_agent_type, save_dir)
 
     return game_id, turn_count, game_completed
 
 
 def play_multiple_games(n_games: int, map_size: str = "test", play_mode: str = "ai_vs_ai",
                        num_detectives: int = 2, verbosity: int = VerbosityLevel.BASIC,
-                       max_turns: int = 24, mr_x_agent_type=None, detective_agent_type=None, 
+                       max_turns: int = 24, MrX_agent_type=None, detective_agent_type=None, 
                        save_dir: str = "fritto_misto") -> dict:
     """
     Play N games automatically with the specified parameters.
@@ -296,18 +296,18 @@ def play_multiple_games(n_games: int, map_size: str = "test", play_mode: str = "
         num_detectives: Number of detectives
         verbosity: Display verbosity level
         max_turns: Maximum number of turns per game
-        mr_x_agent_type: Type of agent for Mr. X
+        MrX_agent_type: Type of agent for Mr. X
         detective_agent_type: Type of agent for detectives
         save_dir: Directory for saving games
     
     Returns:
         Dictionary with game statistics
     """
-    mr_x_agent = AgentType(mr_x_agent_type) 
+    MrX_agent = AgentType(MrX_agent_type) 
     detective_agent = AgentType(detective_agent_type) 
     print(f"🎮 BATCH GAME EXECUTION - {n_games} games")
     if verbosity >= VerbosityLevel.BASIC:
-        print(f"   Mr. X Agent: {mr_x_agent_type.title()}")
+        print(f"   Mr. X Agent: {MrX_agent_type.title()}")
         print(f"   Detective Agent: {detective_agent_type.title()}")
         print(f"   Save Directory: {save_dir}")
         print("=" * 50)
@@ -321,7 +321,7 @@ def play_multiple_games(n_games: int, map_size: str = "test", play_mode: str = "
         'total_turns': 0,
         'saved_games': [],
         'incomplete_games': [],  # Track incomplete game IDs
-        'mr_x_agent': mr_x_agent_type,
+        'MrX_agent': MrX_agent_type,
         'detective_agent': detective_agent_type,
         'start_time': datetime.now(),
         'end_time': None
@@ -339,7 +339,7 @@ def play_multiple_games(n_games: int, map_size: str = "test", play_mode: str = "
             verbosity=verbosity,  # Use the passed verbosity instead of hardcoded BASIC
             auto_save=True,
             max_turns=max_turns,
-            mr_x_agent_type=mr_x_agent,
+            MrX_agent_type=MrX_agent,
             detective_agent_type=detective_agent,
             save_dir=save_dir
         )
@@ -389,7 +389,7 @@ def play_multiple_games(n_games: int, map_size: str = "test", play_mode: str = "
         print(f"Average turns per game: {results['total_turns']/results['completed_games']:.1f}" if results['completed_games'] > 0 else "N/A")
         print(f"Execution time: {duration}")
         print(f"Games per minute: {results['completed_games']/(duration.total_seconds()/60):.1f}" if duration.total_seconds() > 0 else "N/A")
-        print(f"Mr. X Agent: {results['mr_x_agent'].title()}")
+        print(f"Mr. X Agent: {results['MrX_agent'].title()}")
         print(f"Detective Agent: {results['detective_agent'].title()}")
     else:
         # For silent mode, still show incomplete games

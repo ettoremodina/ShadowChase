@@ -196,7 +196,7 @@ class DQNMrXAgent(MrXAgent, DQNAgentMixin):
         else:
             # Inference mode: load from saved model
             if model_path is None:
-                model_path = self._find_latest_model("mr_x")
+                model_path = self._find_latest_model("MrX")
             
             if model_path and os.path.exists(model_path):
                 self.load_model(model_path)
@@ -209,7 +209,7 @@ class DQNMrXAgent(MrXAgent, DQNAgentMixin):
         """Calculate step-wise reward for Mr. X to encourage good behavior."""
         
         heuristics = GameHeuristics(game)
-        min_distance = heuristics.get_minimum_distance_to_mr_x()
+        min_distance = heuristics.get_minimum_distance_to_MrX()
         
         # Reward staying far from detectives
         distance_reward = min_distance * 0.1
@@ -449,28 +449,28 @@ class DQNDetectiveAgent(DetectiveAgent, DQNAgentMixin):
         detective_pos = self.get_current_position(game)
         
         # Get all possible Mr. X positions
-        possible_mr_x_positions = heuristics.get_possible_mr_x_positions()
+        possible_MrX_positions = heuristics.get_possible_MrX_positions()
         
-        if not possible_mr_x_positions:
+        if not possible_MrX_positions:
             # If no possible positions available, return small penalty
             return -0.01
         
         # Calculate distances from this detective to all possible Mr. X positions
         distances_to_possible_positions = []
-        for possible_pos in possible_mr_x_positions:
+        for possible_pos in possible_MrX_positions:
             distance = heuristics.calculate_shortest_distance(detective_pos, possible_pos)
             if distance >= 0:  # Only include valid paths
                 distances_to_possible_positions.append(distance)
         
         if not distances_to_possible_positions:
             # No valid paths to any possible position - large penalty
-            sum_distance_to_mr_x = 100  # Large penalty proportional to sum
+            sum_distance_to_MrX = 100  # Large penalty proportional to sum
         else:
             # Use sum of distances to all possible Mr. X positions
-            sum_distance_to_mr_x = sum(distances_to_possible_positions)
+            sum_distance_to_MrX = sum(distances_to_possible_positions)
         
         # Reward getting closer to possible Mr. X positions (inverse sum)
-        distance_reward = -sum_distance_to_mr_x * 0.01  # Negative because we want smaller sum, scaled down since it's a sum
+        distance_reward = -sum_distance_to_MrX * 0.01  # Negative because we want smaller sum, scaled down since it's a sum
         
         # Small step penalty to encourage ending games quickly
         step_penalty = -0.01
@@ -554,7 +554,7 @@ class DQNMultiDetectiveAgent(MultiDetectiveAgent):
 
 
 # Factory functions for agent registry
-def create_dqn_mr_x_agent(model_path: Optional[str] = None, trainer=None, device=None) -> DQNMrXAgent:
+def create_dqn_MrX_agent(model_path: Optional[str] = None, trainer=None, device=None) -> DQNMrXAgent:
     """Create a DQN Mr. X agent."""
     return DQNMrXAgent(model_path, trainer, device=device)
 

@@ -36,7 +36,7 @@ class AgentRegistry:
     
     def __init__(self):
         """Initialize the agent registry with available agents"""
-        self._mr_x_agents: Dict[AgentType, Tuple[Type[MrXAgent], str]] = {
+        self._MrX_agents: Dict[AgentType, Tuple[Type[MrXAgent], str]] = {
             AgentType.RANDOM: (RandomMrXAgent, "Random Mr. X - Makes random valid moves"),
             AgentType.HEURISTIC: (HeuristicMrXAgent, "Heuristic Mr. X - Maximizes distance from closest detective"),
             # AgentType.MCTS: (MCTSMrXAgent, "MCTS Mr. X - Uses Monte Carlo Tree Search with random simulations"),
@@ -54,10 +54,10 @@ class AgentRegistry:
         
         # Add DQN agents if available
         # # if DQN_AVAILABLE:
-        self._mr_x_agents[AgentType.DEEP_Q] = (self._get_dqn_mr_x_agent_class, "Deep Q-Learning Mr. X - Uses trained neural network for decision making")
+        self._MrX_agents[AgentType.DEEP_Q] = (self._get_dqn_MrX_agent_class, "Deep Q-Learning Mr. X - Uses trained neural network for decision making")
         self._multi_detective_agents[AgentType.DEEP_Q] = (self._get_dqn_multi_detective_agent_class, "Deep Q-Learning Detectives - Use trained neural network for decision making")
     
-    def _get_dqn_mr_x_agent_class(self):
+    def _get_dqn_MrX_agent_class(self):
         """Lazy loading for DQN Mr. X agent class"""
         from .dqn_agent import DQNMrXAgent
         return DQNMrXAgent 
@@ -70,12 +70,12 @@ class AgentRegistry:
  
     def get_available_agent_types(self) -> List[AgentType]:
         """Get list of available agent types"""
-        return list(self._mr_x_agents.keys())
+        return list(self._MrX_agents.keys())
     
     def get_agent_description(self, agent_type: AgentType, player: Player) -> str:
         """Get description of an agent type for a specific player"""
         if player == Player.MRX:
-            return self._mr_x_agents[agent_type][1]
+            return self._MrX_agents[agent_type][1]
         else:
             return self._multi_detective_agents[agent_type][1]
     
@@ -91,12 +91,12 @@ class AgentRegistry:
         }
         return display_names.get(agent_type, str(agent_type.value).title())
     
-    def create_mr_x_agent(self, agent_type: AgentType) -> MrXAgent:
+    def create_MrX_agent(self, agent_type: AgentType) -> MrXAgent:
         """Create a Mr. X agent of the specified type"""
-        if agent_type not in self._mr_x_agents:
+        if agent_type not in self._MrX_agents:
             raise ValueError(f"Unknown Mr. X agent type: {agent_type}")
         
-        agent_class_or_factory = self._mr_x_agents[agent_type][0]
+        agent_class_or_factory = self._MrX_agents[agent_type][0]
         
         # Handle lazy loading for DQN agents
         if callable(agent_class_or_factory) and hasattr(agent_class_or_factory, '__name__') and agent_class_or_factory.__name__.startswith('_get_dqn'):
@@ -121,9 +121,9 @@ class AgentRegistry:
     
         return agent_class(num_detectives)
     
-    def register_mr_x_agent(self, agent_type: AgentType, agent_class: Type[MrXAgent], description: str):
+    def register_MrX_agent(self, agent_type: AgentType, agent_class: Type[MrXAgent], description: str):
         """Register a new Mr. X agent type"""
-        self._mr_x_agents[agent_type] = (agent_class, description)
+        self._MrX_agents[agent_type] = (agent_class, description)
     
     def register_multi_detective_agent(self, agent_type: AgentType, agent_class: Type[MultiDetectiveAgent], description: str):
         """Register a new multi-detective agent type"""
@@ -153,11 +153,11 @@ class AgentSelector:
         
         for i, agent_type in enumerate(agent_types, 1):
             display_name = registry.get_agent_display_name(agent_type)
-            mr_x_desc = registry.get_agent_description(agent_type, Player.MRX)
+            MrX_desc = registry.get_agent_description(agent_type, Player.MRX)
             detective_desc = registry.get_agent_description(agent_type, Player.DETECTIVES)
             
             print(f"{i}. {display_name}")
-            print(f"   Mr. X: {mr_x_desc}")
+            print(f"   Mr. X: {MrX_desc}")
             print(f"   Detectives: {detective_desc}")
             print()
     
@@ -201,21 +201,21 @@ class AgentSelector:
         return choices
 
 
-def create_agents_from_types(mr_x_type: AgentType, detective_type: AgentType, 
+def create_agents_from_types(MrX_type: AgentType, detective_type: AgentType, 
                            num_detectives: int) -> Tuple[MrXAgent, MultiDetectiveAgent]:
     """Create agent instances from agent types"""
     registry = get_agent_registry()
     
-    mr_x_agent = registry.create_mr_x_agent(mr_x_type)
+    MrX_agent = registry.create_MrX_agent(MrX_type)
     detective_agent = registry.create_multi_detective_agent(detective_type, num_detectives)
     
-    return mr_x_agent, detective_agent
+    return MrX_agent, detective_agent
 
 
-def create_agents_from_strings(mr_x_type_str: str, detective_type_str: str, 
+def create_agents_from_strings(MrX_type_str: str, detective_type_str: str, 
                              num_detectives: int) -> Tuple[MrXAgent, MultiDetectiveAgent]:
     """Create agent instances from string representations of agent types"""
-    mr_x_type = AgentType(mr_x_type_str)
+    MrX_type = AgentType(MrX_type_str)
     detective_type = AgentType(detective_type_str)
     
-    return create_agents_from_types(mr_x_type, detective_type, num_detectives)
+    return create_agents_from_types(MrX_type, detective_type, num_detectives)

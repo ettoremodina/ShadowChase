@@ -126,7 +126,7 @@ class RandomAgentCacheTest:
             num_detectives=self.num_detectives,
             verbosity=VerbosityLevel.SILENT,  # Silent for clean output
             max_turns=self.max_turns,
-            mr_x_agent_type=AgentType.RANDOM,
+            MrX_agent_type=AgentType.RANDOM,
             detective_agent_type=AgentType.RANDOM,
             save_dir=self.save_dir
         )

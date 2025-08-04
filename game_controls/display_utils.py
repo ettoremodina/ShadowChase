@@ -29,7 +29,7 @@ class GameDisplay:
         # Display symbols
         self.symbols = {
             'detective': '🕵️',
-            'mr_x': '🕵️‍♂️',
+            'MrX': '🕵️‍♂️',
             'taxi': '🚕',
             'bus': '🚌', 
             'underground': '🚇',
@@ -106,8 +106,8 @@ class GameDisplay:
             print(f"  Detective {i+1}: Position {pos}")
         
         # Mr. X position
-        print(f"\n{self.symbols['mr_x']} MR. X:")
-        if state.mr_x_visible:
+        print(f"\n{self.symbols['MrX']} MR. X:")
+        if state.MrX_visible:
             print(f"  Position: {state.MrX_position} {self.symbols['visible']}")
         else:
             print(f"  Position: Hidden {self.symbols['hidden']}")
@@ -125,18 +125,18 @@ class GameDisplay:
                 print(f"    {icon} {ticket_type.value.capitalize()}: {count}")
         
         # Mr. X tickets
-        mr_x_tickets = game.get_mr_x_tickets()
+        MrX_tickets = game.get_MrX_tickets()
         print(f"\n  Mr. X:")
-        for ticket_type, count in mr_x_tickets.items():
+        for ticket_type, count in MrX_tickets.items():
             icon = self.symbols.get(ticket_type.value, '🎫')
             print(f"    {icon} {ticket_type.value.capitalize()}: {count}")
     
     def _print_move_history(self, game: ShadowChaseGame):
         """Print recent move history"""
-        if not hasattr(game.game_state, 'mr_x_moves_log'):
+        if not hasattr(game.game_state, 'MrX_moves_log'):
             return
             
-        moves_log = game.game_state.mr_x_moves_log
+        moves_log = game.game_state.MrX_moves_log
         if not moves_log:
             return
         
@@ -279,19 +279,19 @@ class GameDisplay:
         print("\n🔍 HEURISTIC ANALYSIS:")
         
         # Basic distance information
-        distances = self.heuristics.get_mr_x_distances_from_detectives()
+        distances = self.heuristics.get_MrX_distances_from_detectives()
         if distances:
             print(f"  📏 Distances from Mr. X to detectives: {distances}")
-            min_dist = self.heuristics.get_minimum_distance_to_mr_x()
+            min_dist = self.heuristics.get_minimum_distance_to_MrX()
             if min_dist >= 0:
                 print(f"  📏 Closest detective distance: {min_dist}")
         
         # Possible positions analysis
-        possible_positions = self.heuristics.get_possible_mr_x_positions()
+        possible_positions = self.heuristics.get_possible_MrX_positions()
         if possible_positions:
             sorted_positions = sorted(possible_positions)
             if len(sorted_positions) == 1:
-                if game.game_state.mr_x_visible:
+                if game.game_state.MrX_visible:
                     print(f"  🎯 Mr. X position: {sorted_positions[0]} (VISIBLE)")
                 else:
                     print(f"  🎯 Mr. X known position: {sorted_positions[0]}")
@@ -299,7 +299,7 @@ class GameDisplay:
                 print(f"  🎯 Possible Mr. X positions ({len(sorted_positions)}): {sorted_positions}")
                 
                 # Distance analysis to possible positions
-                detective_distances = self.heuristics.get_detective_distances_to_possible_mr_x_positions()
+                detective_distances = self.heuristics.get_detective_distances_to_possible_MrX_positions()
                 if detective_distances:
                     print(f"  📊 Detective distances to possible positions:")
                     for det_idx, distances in detective_distances.items():
@@ -309,7 +309,7 @@ class GameDisplay:
                             max_d = max(valid_distances)
                             print(f"    Detective {det_idx + 1}: min={min_d}, max={max_d}")
                 
-                min_possible_dist = self.heuristics.get_minimum_distance_to_possible_mr_x_positions()
+                min_possible_dist = self.heuristics.get_minimum_distance_to_possible_MrX_positions()
                 if min_possible_dist >= 0:
                     print(f"  🎯 Minimum distance to any possible position: {min_possible_dist}")
         else:
@@ -421,7 +421,7 @@ def display_game_over(game: ShadowChaseGame, display: GameDisplay, turn_count: i
             print(f"\n🏆 {display.symbols['detective']} DETECTIVES WIN!")
             print("The detectives have successfully captured Mr. X!")
         else:
-            print(f"\n🏆 {display.symbols['mr_x']} MR. X WINS!")
+            print(f"\n🏆 {display.symbols['MrX']} MR. X WINS!")
             print("Mr. X has successfully evaded the detectives!")
     else:
         print(f"\n⏰ Game ended after {max_turns} turns")

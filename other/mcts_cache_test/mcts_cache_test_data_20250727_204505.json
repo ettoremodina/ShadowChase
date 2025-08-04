@@ -32,7 +32,7 @@
         "game_20250727_203934_0454bea3eb11418a"
       ],
       "incomplete_games": [],
-      "mr_x_agent": "AgentType.OPTIMIZED_MCTS",
+      "MrX_agent": "AgentType.OPTIMIZED_MCTS",
       "detective_agent": "AgentType.OPTIMIZED_MCTS",
       "start_time": "2025-07-27 20:33:45.622492",
       "end_time": "2025-07-27 20:39:34.586311"
@@ -71,7 +71,7 @@
         "game_20250727_204505_aa7da32a350b420c"
       ],
       "incomplete_games": [],
-      "mr_x_agent": "AgentType.OPTIMIZED_MCTS",
+      "MrX_agent": "AgentType.OPTIMIZED_MCTS",
       "detective_agent": "AgentType.OPTIMIZED_MCTS",
       "start_time": "2025-07-27 20:39:34.644687",
       "end_time": "2025-07-27 20:45:05.813240"
@@ -150,7 +150,7 @@
             "game_20250727_203934_0454bea3eb11418a"
           ],
           "incomplete_games": [],
-          "mr_x_agent": "AgentType.OPTIMIZED_MCTS",
+          "MrX_agent": "AgentType.OPTIMIZED_MCTS",
           "detective_agent": "AgentType.OPTIMIZED_MCTS",
           "start_time": "2025-07-27 20:33:45.622492",
           "end_time": "2025-07-27 20:39:34.586311"
@@ -189,7 +189,7 @@
             "game_20250727_204505_aa7da32a350b420c"
           ],
           "incomplete_games": [],
-          "mr_x_agent": "AgentType.OPTIMIZED_MCTS",
+          "MrX_agent": "AgentType.OPTIMIZED_MCTS",
           "detective_agent": "AgentType.OPTIMIZED_MCTS",
           "start_time": "2025-07-27 20:39:34.644687",
           "end_time": "2025-07-27 20:45:05.813240"

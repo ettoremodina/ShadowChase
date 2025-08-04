@@ -39,10 +39,10 @@ from ShadowChase.services.cache_system import get_global_cache, CacheNamespace
 
 class GameStateHash(NamedTuple):
     """Hashable representation of game state for caching."""
-    mr_x_position: Optional[int]
+    MrX_position: Optional[int]
     detective_positions: Tuple[int, ...]
     turn: int
-    mr_x_tickets: Tuple[int, ...]  # (taxi, bus, underground, black, double)
+    MrX_tickets: Tuple[int, ...]  # (taxi, bus, underground, black, double)
     detective_tickets: Tuple[Tuple[int, ...], ...]  # Nested tuple for each detective
     reveal_turns: Tuple[int, ...]
     current_player: str
@@ -78,10 +78,10 @@ class GameStateCache:
         
         # Create hashable representation
         hash_data = GameStateHash(
-            mr_x_position=state.MrX_position,
+            MrX_position=state.MrX_position,
             detective_positions=tuple(state.detective_positions),
             turn=state.turn,
-            mr_x_tickets=tuple(state.mr_x_tickets.values()) if hasattr(state, 'mr_x_tickets') else (0, 0, 0, 0, 0),
+            MrX_tickets=tuple(state.MrX_tickets.values()) if hasattr(state, 'MrX_tickets') else (0, 0, 0, 0, 0),
             detective_tickets=tuple(tuple(tickets.values()) if hasattr(tickets, 'values') else (0, 0, 0) 
                                   for tickets in (getattr(state, 'detective_tickets', []) or [])),
             reveal_turns=tuple(getattr(state, 'reveal_turns', [])),
@@ -317,7 +317,7 @@ class EpsilonGreedyMCTSNode:
         if current_player == Player.MRX:
             # Mr. X move
             dest, transport, use_double = move
-            new_state.make_move(mr_x_moves=[(dest, transport)], use_double_move=use_double)
+            new_state.make_move(MrX_moves=[(dest, transport)], use_double_move=use_double)
         else:
             # Detective move - need to construct full move list
             detective_moves = []
@@ -336,7 +336,7 @@ class EpsilonGreedyMCTSNode:
         
         return child
     
-    def simulate(self, heuristics: GameHeuristics, epsilon: float, possible_mr_x_locations: set) -> Tuple[str, Optional[int]]:
+    def simulate(self, heuristics: GameHeuristics, epsilon: float, possible_MrX_locations: set) -> Tuple[str, Optional[int]]:
         """
         Run an epsilon-greedy simulation from this node to a terminal state.
         Uses heuristics with probability (1-epsilon) and random moves with probability epsilon.
@@ -344,10 +344,10 @@ class EpsilonGreedyMCTSNode:
         Args:
             heuristics: GameHeuristics instance for intelligent move selection
             epsilon: Probability of making random moves (0.0 = always heuristic, 1.0 = always random)
-            possible_mr_x_locations: Set of possible Mr. X positions for detective strategy
+            possible_MrX_locations: Set of possible Mr. X positions for detective strategy
             
         Returns:
-            Tuple of (winner, capturing_detective_id) where winner is 'mr_x', 'detectives', or 'timeout'
+            Tuple of (winner, capturing_detective_id) where winner is 'MrX', 'detectives', or 'timeout'
             and capturing_detective_id is the detective that captured Mr. X (or None)
         """
         simulation_state = self._efficient_copy_game(self.game_state)
@@ -361,9 +361,9 @@ class EpsilonGreedyMCTSNode:
             if simulation_state.is_game_over():
                 # Check if Mr. X was captured and by which detective
                 if simulation_state.get_winner() == Player.DETECTIVES:
-                    mr_x_pos = simulation_state.game_state.MrX_position
+                    MrX_pos = simulation_state.game_state.MrX_position
                     for i, det_pos in enumerate(simulation_state.game_state.detective_positions):
-                        if det_pos == mr_x_pos:
+                        if det_pos == MrX_pos:
                             capturing_detective_id = i
                             break
                 break
@@ -382,11 +382,11 @@ class EpsilonGreedyMCTSNode:
                     dest, transport = random.choice(valid_moves)
                 else:
                     # Heuristic move: maximize distance to closest detective
-                    dest, transport = self._choose_mr_x_heuristic_move(
-                        simulation_state, valid_moves, heuristics, possible_mr_x_locations
+                    dest, transport = self._choose_MrX_heuristic_move(
+                        simulation_state, valid_moves, heuristics, possible_MrX_locations
                     )
                 
-                simulation_state.make_move(mr_x_moves=[(dest, transport)])
+                simulation_state.make_move(MrX_moves=[(dest, transport)])
                 
             else:
                 # Detective moves - epsilon-greedy for each detective
@@ -402,7 +402,7 @@ class EpsilonGreedyMCTSNode:
                         else:
                             # Heuristic move: minimize sum of distances to possible Mr. X positions
                             best_move = self._choose_detective_heuristic_move(
-                                pos, moves, heuristics, possible_mr_x_locations
+                                pos, moves, heuristics, possible_MrX_locations
                             )
                             detective_moves.append(best_move)
                     else:
@@ -416,17 +416,17 @@ class EpsilonGreedyMCTSNode:
             # Update heuristics and possible positions after each move
             heuristics.update_game_state(simulation_state)
             if current_player == Player.MRX:
-                possible_mr_x_locations = heuristics.get_possible_mr_x_positions()
+                possible_MrX_locations = heuristics.get_possible_MrX_positions()
         
         # Determine winner
         if simulation_state.is_game_over():
             winner = simulation_state.get_winner()
-            return ("mr_x" if winner == Player.MRX else "detectives", capturing_detective_id)
+            return ("MrX" if winner == Player.MRX else "detectives", capturing_detective_id)
         else:
             return ("timeout", None)
     
-    def _choose_mr_x_heuristic_move(self, game_state: ShadowChaseGame, valid_moves: List[Tuple], 
-                                   heuristics: GameHeuristics, possible_mr_x_locations: set) -> Tuple[int, TransportType]:
+    def _choose_MrX_heuristic_move(self, game_state: ShadowChaseGame, valid_moves: List[Tuple], 
+                                   heuristics: GameHeuristics, possible_MrX_locations: set) -> Tuple[int, TransportType]:
         """
         Choose Mr. X's best move using heuristics:
         1. Maximize distance to closest detective
@@ -437,7 +437,7 @@ class EpsilonGreedyMCTSNode:
             game_state: Current game state
             valid_moves: List of valid (destination, transport) moves
             heuristics: GameHeuristics instance
-            possible_mr_x_locations: Current set of possible Mr. X positions
+            possible_MrX_locations: Current set of possible Mr. X positions
             
         Returns:
             Best (destination, transport) move
@@ -480,7 +480,7 @@ class EpsilonGreedyMCTSNode:
         return random.choice(best_moves)
     
     def _choose_detective_heuristic_move(self, detective_pos: int, valid_moves: List[Tuple], 
-                                       heuristics: GameHeuristics, possible_mr_x_locations: set) -> Tuple[int, TransportType]:
+                                       heuristics: GameHeuristics, possible_MrX_locations: set) -> Tuple[int, TransportType]:
         """
         Choose detective's best move using heuristics:
         Minimize sum of distances to all possible Mr. X positions
@@ -489,7 +489,7 @@ class EpsilonGreedyMCTSNode:
             detective_pos: Current detective position
             valid_moves: List of valid (destination, transport) moves
             heuristics: GameHeuristics instance
-            possible_mr_x_locations: Set of possible Mr. X positions
+            possible_MrX_locations: Set of possible Mr. X positions
             
         Returns:
             Best (destination, transport) move
@@ -500,7 +500,7 @@ class EpsilonGreedyMCTSNode:
         if len(valid_moves) == 1:
             return valid_moves[0]
         
-        if not possible_mr_x_locations:
+        if not possible_MrX_locations:
             # If no known possible positions, move randomly
             return random.choice(valid_moves)
         
@@ -511,7 +511,7 @@ class EpsilonGreedyMCTSNode:
             total_distance = 0
             valid_distances = 0
             
-            for possible_pos in possible_mr_x_locations:
+            for possible_pos in possible_MrX_locations:
                 distance = heuristics.calculate_shortest_distance(dest, possible_pos)
                 if distance >= 0:
                     total_distance += distance
@@ -544,7 +544,7 @@ class EpsilonGreedyMCTSNode:
         winner, capturing_detective_id = result
         
         # Update wins based on perspective and coalition reduction
-        if perspective == Player.MRX and winner == "mr_x":
+        if perspective == Player.MRX and winner == "MrX":
             self.wins += 1
         elif perspective == Player.DETECTIVES and winner == "detectives":
             # Apply coalition reduction if applicable
@@ -689,7 +689,7 @@ class EpsilonGreedyMCTSAgent:
             self.heuristics.update_game_state(game_state)
         
         # Get possible Mr. X locations for detective strategy
-        possible_mr_x_locations = self.heuristics.get_possible_mr_x_positions()
+        possible_MrX_locations = self.heuristics.get_possible_MrX_positions()
         
         # Create persistent cache key for this search
         persistent_cache_key = self.persistent_cache.create_agent_cache_key(
@@ -702,7 +702,7 @@ class EpsilonGreedyMCTSAgent:
             turn_count=game_state.game_state.turn_count,
             mrx_turn_count=game_state.game_state.MrX_turn_count,
             detective_tickets=[(k, tuple(v.items())) for k, v in game_state.game_state.detective_tickets.items()],
-            mr_x_tickets=tuple(game_state.game_state.mr_x_tickets.items()),
+            MrX_tickets=tuple(game_state.game_state.MrX_tickets.items()),
             epsilon=current_epsilon
         )
         
@@ -767,10 +767,10 @@ class EpsilonGreedyMCTSAgent:
             
             # Update heuristics for current node's game state
             self.heuristics.update_game_state(node.game_state)
-            possible_mr_x_locations = self.heuristics.get_possible_mr_x_positions()
+            possible_MrX_locations = self.heuristics.get_possible_MrX_positions()
             
             # Simulation phase with epsilon-greedy heuristics
-            result = node.simulate(self.heuristics, current_epsilon, possible_mr_x_locations)
+            result = node.simulate(self.heuristics, current_epsilon, possible_MrX_locations)
             
             # Backpropagation phase with coalition reduction
             node.backpropagate(result, perspective, root_detective_id, coalition_reduction_factor_r)

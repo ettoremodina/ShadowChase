@@ -3,7 +3,7 @@ from tkinter import ttk
 import networkx as nx
 from ..core.game import  ShadowChaseGame
 from ..services.game_loader import GameLoader
-from .ui_components import StyledButton, InfoDisplay
+from .ui_components import StyledButton, InfoDisplay, VisualTicketDisplay
 from .base_visualizer import BaseVisualizer
 
 NODE_SIZE = 300
@@ -114,7 +114,7 @@ class GameReplayWindow(BaseVisualizer):
         self.info_display.pack(fill=tk.X, pady=(0, 10))
         
         # Tickets display
-        self.tickets_display = InfoDisplay(left_panel, "🎫 Ticket Information", height=10)
+        self.tickets_display = VisualTicketDisplay(left_panel, "🎫 Ticket Information")
         self.tickets_display.pack(fill=tk.X, pady=(0, 10))
         
         # Right panel for graph
@@ -204,7 +204,7 @@ class GameReplayWindow(BaseVisualizer):
         # Update displays
         self.update_history_display(current_state)
         self.update_info_display(current_state)
-        self.update_tickets_display_table(self.tickets_display, current_state)
+        self.update_enhanced_tickets_display(self.tickets_display, current_state)
         self.draw_graph(current_state)
 
     def update_history_display(self, current_state):
@@ -224,9 +224,9 @@ class GameReplayWindow(BaseVisualizer):
             step = ticket_history[i]
             turn_num = step.get('turn_number', i)
             player = step.get('player', '')
-            if player == 'mr_x':
+            if player == 'MrX':
                 history_text += f"🕵️‍♂️ Turn {turn_num} - MR. X MOVES:\n"
-                for move in step.get('mr_x_moves', []):
+                for move in step.get('MrX_moves', []):
                     edge = move.get('edge', None)
                     ticket_used = move.get('ticket_used', 'Unknown')
                     ticket_emoji = self.get_ticket_emoji(ticket_used)
@@ -301,18 +301,18 @@ class GameReplayWindow(BaseVisualizer):
         # Get normalized attributes
         turn_count = getattr(historical_state, 'turn_count', self.current_step)
         detective_positions = getattr(historical_state, 'detective_positions', [])
-        mr_x_position = getattr(historical_state, 'mr_x_position', None) or getattr(historical_state, 'MrX_position', 0)
-        mr_x_visible = getattr(historical_state, 'mr_x_visible', True)
+        MrX_position = getattr(historical_state, 'MrX_position', None) or getattr(historical_state, 'MrX_position', 0)
+        MrX_visible = getattr(historical_state, 'MrX_visible', True)
         current_turn = self._normalize_turn(historical_state)
         
         info_text = f"🎯 Turn: {current_turn.title()}\n"
         info_text += f"📊 Turn Count: {turn_count}\n"
         info_text += f"👮 Detective Positions: {detective_positions}\n"
         
-        if not mr_x_visible:
-            info_text += f"🎭 Mr. X Position: {mr_x_position} HIDDEN\n"
+        if not MrX_visible:
+            info_text += f"🎭 Mr. X Position: {MrX_position} HIDDEN\n"
         else:
-            info_text += f"🕵️‍♂️ Mr. X Position: {mr_x_position}\n"
+            info_text += f"🕵️‍♂️ Mr. X Position: {MrX_position}\n"
         
         double_move_active = getattr(historical_state, 'double_move_active', False)
         if double_move_active:
@@ -326,7 +326,7 @@ class GameReplayWindow(BaseVisualizer):
         
         previous_position = getattr(historical_state, 'previous_position', None)
         if previous_position:
-            current_pos = mr_x_position if current_turn == 'mr_x' else "N/A"
+            current_pos = MrX_position if current_turn == 'MrX' else "N/A"
             info_text += f"🔄 Move: {previous_position} → {current_pos}\n"
         
         # Check if game is over at this step

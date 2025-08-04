@@ -38,7 +38,7 @@ def main():
     if args.batch:
         print(f"🤖 Batch mode: Playing {args.batch} AI vs AI games")
         
-        print(f"Mr. X Agent: {args.mr_x_agent}")
+        print(f"Mr. X Agent: {args.MrX_agent}")
         print(f"Detective Agent: {args.detective_agent}")
         
         results = play_multiple_games(
@@ -48,7 +48,7 @@ def main():
             num_detectives=args.detectives,
             verbosity=args.verbosity,  # Use the verbosity from command line args
             max_turns=args.max_turns,
-            mr_x_agent_type=args.mr_x_agent,
+            MrX_agent_type=args.MrX_agent,
             detective_agent_type=args.detective_agent,
             save_dir=args.save_dir
         )
@@ -58,7 +58,7 @@ def main():
     else:
         try:
             # Get full game configuration including agent types
-            map_size, play_mode, num_detectives, verbosity, mr_x_agent, detective_agent = get_game_configuration()
+            map_size, play_mode, num_detectives, verbosity, MrX_agent, detective_agent = get_game_configuration()
             
             # Play single interactive game
             game_id, turn_count, completed = play_single_game(
@@ -68,7 +68,7 @@ def main():
                 verbosity=verbosity,
                 auto_save=False,
                 max_turns=args.max_turns,
-                mr_x_agent_type=mr_x_agent,
+                MrX_agent_type=MrX_agent,
                 detective_agent_type=detective_agent,
                 save_dir=args.save_dir
             )

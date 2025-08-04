@@ -243,7 +243,7 @@ def run_mcts_profiling_session(num_moves: int = 20, map_size: str = "extended") 
     game = create_extracted_board_game(5)
     
     # Create agents with reduced parameters for profiling
-    mr_x_agent = MCTSMrXAgent()
+    MrX_agent = MCTSMrXAgent()
     
     detective_agent = MCTSMultiDetectiveAgent(
         num_detectives=5
@@ -260,10 +260,10 @@ def run_mcts_profiling_session(num_moves: int = 20, map_size: str = "extended") 
         # try:
         if current_player == Player.MRX:
             # Mr. X move
-            move = mr_x_agent.choose_move(game)
+            move = MrX_agent.choose_move(game)
             if move:
                 dest, transport, use_double = move
-                game.make_move(mr_x_moves=[(dest, transport)], use_double_move=use_double)
+                game.make_move(MrX_moves=[(dest, transport)], use_double_move=use_double)
         else:
             # Detective moves
             moves = detective_agent.choose_all_moves(game)
@@ -300,7 +300,7 @@ def run_mcts_profiling_session(num_moves: int = 20, map_size: str = "extended") 
         'function_stats': function_profiler.get_stats(),
         'caching_analysis': game_analyzer.get_analysis(),
         'agent_stats': {
-            'mr_x_stats': mr_x_agent.get_statistics(),
+            'MrX_stats': MrX_agent.get_statistics(),
             'detective_stats': detective_agent.get_statistics()
         }
     }

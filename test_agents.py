@@ -15,9 +15,9 @@ from ShadowChase.services.cache_system import (
 
 from agents import AgentSelector
 
-def play_combination(test_name, mr_x_agent, detective_agent, games_per_combo, map_size, num_detectives, max_turns):
+def play_combination(test_name, MrX_agent, detective_agent, games_per_combo, map_size, num_detectives, max_turns):
     """Helper function to run a single agent combination"""
-    combo = f"{mr_x_agent}_vs_{detective_agent}"
+    combo = f"{MrX_agent}_vs_{detective_agent}"
     save_dir = f"{test_name}/{combo}"
 
     print(f"\nRunning: {combo}")
@@ -29,7 +29,7 @@ def play_combination(test_name, mr_x_agent, detective_agent, games_per_combo, ma
         "--detectives", str(num_detectives),
         "--max-turns", str(max_turns),
         "--save-dir", save_dir,
-        "--mr-x-agent", mr_x_agent,
+        "--mr-x-agent", MrX_agent,
         "--detective-agent", detective_agent,
         "--verbosity", "0"
     ]
@@ -80,10 +80,10 @@ def main():
     run_all_combinations = False
     
     if run_all_combinations:
-        for mr_x in agent_types:
+        for MrX in agent_types:
             for detective in agent_types:
-                if mr_x != detective:
-                    play_combination(test_name, mr_x, detective, games_per_combo, map_size, num_detectives, 24)
+                if MrX != detective:
+                    play_combination(test_name, MrX, detective, games_per_combo, map_size, num_detectives, 24)
 
 
 

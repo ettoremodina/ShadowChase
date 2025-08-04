@@ -139,7 +139,7 @@ class MCTSNode:
         if current_player == Player.MRX:
             # Mr. X move
             dest, transport, use_double = move
-            new_state.make_move(mr_x_moves=[(dest, transport)], use_double_move=use_double)
+            new_state.make_move(MrX_moves=[(dest, transport)], use_double_move=use_double)
         else:
             # Detective move - need to construct full move list
             detective_moves = []
@@ -163,7 +163,7 @@ class MCTSNode:
         Run a random simulation from this node to a terminal state.
         
         Returns:
-            Winner of the simulation ('mr_x', 'detectives', or 'timeout')
+            Winner of the simulation ('MrX', 'detectives', or 'timeout')
         """
         simulation_state = copy.deepcopy(self.game_state)
         
@@ -178,7 +178,7 @@ class MCTSNode:
                 if not valid_moves:
                     break
                 dest, transport = random.choice(valid_moves)
-                simulation_state.make_move(mr_x_moves=[(dest, transport)])
+                simulation_state.make_move(MrX_moves=[(dest, transport)])
             else:
                 # Detective moves - simplified random moves
                 detective_moves = []
@@ -198,7 +198,7 @@ class MCTSNode:
         # Determine winner
         if simulation_state.is_game_over():
             winner = simulation_state.get_winner()
-            return "mr_x" if winner == Player.MRX else "detectives"
+            return "MrX" if winner == Player.MRX else "detectives"
         else:
             return "timeout"
     
@@ -207,13 +207,13 @@ class MCTSNode:
         Backpropagate simulation result up the tree.
         
         Args:
-            result: Simulation result ('mr_x', 'detectives', or 'timeout')
+            result: Simulation result ('MrX', 'detectives', or 'timeout')
             perspective: Player perspective for calculating wins
         """
         self.visits += 1
         
         # Update wins based on perspective
-        if perspective == Player.MRX and result == "mr_x":
+        if perspective == Player.MRX and result == "MrX":
             self.wins += 1
         elif perspective == Player.DETECTIVES and result == "detectives":
             self.wins += 1

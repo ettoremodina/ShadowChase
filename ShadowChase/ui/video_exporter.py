@@ -205,8 +205,8 @@ class GameVideoExporter(BaseVisualizer):
         # Get normalized attributes
         turn_count = getattr(historical_state, 'turn_count', step)
         detective_positions = getattr(historical_state, 'detective_positions', [])
-        mr_x_position = getattr(historical_state, 'mr_x_position', None) or getattr(historical_state, 'MrX_position', 0)
-        mr_x_visible = getattr(historical_state, 'mr_x_visible', True)
+        MrX_position = getattr(historical_state, 'MrX_position', None) or getattr(historical_state, 'MrX_position', 0)
+        MrX_visible = getattr(historical_state, 'MrX_visible', True)
         
         # Normalize turn information
         current_turn = self._normalize_turn(historical_state)
@@ -215,10 +215,10 @@ class GameVideoExporter(BaseVisualizer):
         info_text += f"Turn Count: {turn_count}\n"
         info_text += f"Detectives: {detective_positions}\n"
         
-        if not mr_x_visible:
-            info_text += f"Mr. X: HIDDEN {mr_x_position}\n"
+        if not MrX_visible:
+            info_text += f"Mr. X: HIDDEN {MrX_position}\n"
         else:
-            info_text += f"Mr. X: {mr_x_position}\n"
+            info_text += f"Mr. X: {MrX_position}\n"
         
         double_move_active = getattr(historical_state, 'double_move_active', False)
         if double_move_active:
@@ -273,13 +273,13 @@ class GameVideoExporter(BaseVisualizer):
             tickets_text += f"Det {i+1:<2}│{taxi:>3}│{bus:>3}│{underground:>3}│ - │ - \n"
         
         # Mr. X tickets
-        mr_x_tickets = getattr(historical_state, 'mr_x_tickets', None) or {}
+        MrX_tickets = getattr(historical_state, 'MrX_tickets', None) or {}
         
-        taxi = self._get_ticket_count(mr_x_tickets, 'taxi')
-        bus = self._get_ticket_count(mr_x_tickets, 'bus')
-        underground = self._get_ticket_count(mr_x_tickets, 'underground')
-        black = self._get_ticket_count(mr_x_tickets, 'black')
-        double = self._get_ticket_count(mr_x_tickets, 'double_move')
+        taxi = self._get_ticket_count(MrX_tickets, 'taxi')
+        bus = self._get_ticket_count(MrX_tickets, 'bus')
+        underground = self._get_ticket_count(MrX_tickets, 'underground')
+        black = self._get_ticket_count(MrX_tickets, 'black')
+        double = self._get_ticket_count(MrX_tickets, 'double_move')
         
         tickets_text += f"Mr. X │{taxi:>3}│{bus:>3}│{underground:>3}│{black:>3}│{double:>3}\n"
         

@@ -6,7 +6,7 @@ import networkx as nx
 
 class Player(Enum):
     DETECTIVES = "detectives"
-    MRX = "mr_x"  # Added for Shadow Chase
+    MRX = "MrX"  # Added for Shadow Chase
 
 class TransportType(Enum):
     TAXI = 1
@@ -33,9 +33,9 @@ class GameState:
                  turn: Player, turn_count: int = 0,
                  MrX_turn_count: int = 1,
                  detective_tickets: Dict[int, Dict[TicketType, int]] = None,
-                 mr_x_tickets: Dict[TicketType, int] = None,
-                 mr_x_visible: bool = True,
-                 mr_x_moves_log: List[Tuple[int, TransportType]] = None):
+                 MrX_tickets: Dict[TicketType, int] = None,
+                 MrX_visible: bool = True,
+                 MrX_moves_log: List[Tuple[int, TransportType]] = None):
         self.detective_positions = detective_positions.copy()
         self.MrX_position = MrX_position
         self.turn = turn
@@ -43,9 +43,9 @@ class GameState:
         self.turn_count = turn_count
         # Shadow Chase specific
         self.detective_tickets = detective_tickets or {}
-        self.mr_x_tickets = mr_x_tickets or {}
-        self.mr_x_visible = mr_x_visible
-        self.mr_x_moves_log = mr_x_moves_log or []
+        self.MrX_tickets = MrX_tickets or {}
+        self.MrX_visible = MrX_visible
+        self.MrX_moves_log = MrX_moves_log or []
         self.double_move_active = False
 
     
@@ -55,9 +55,9 @@ class GameState:
             self.turn, self.turn_count,
             self.MrX_turn_count,
             {k: v.copy() for k, v in self.detective_tickets.items()},
-            self.mr_x_tickets.copy(),
-            self.mr_x_visible,
-            self.mr_x_moves_log.copy(),
+            self.MrX_tickets.copy(),
+            self.MrX_visible,
+            self.MrX_moves_log.copy(),
         )
         new_state.double_move_active = self.double_move_active
         return new_state
@@ -211,7 +211,7 @@ class ShadowChaseWinCondition(WinCondition):
         # Detectives win if any detective is on Mr. X's position
         return game_state.MrX_position in game_state.detective_positions
     
-    def is_mr_x_win(self, game_state: GameState) -> bool:
+    def is_MrX_win(self, game_state: GameState) -> bool:
         # Mr. X wins if max turns reached
         if game_state.MrX_turn_count >= self.max_turns:
             return True
@@ -249,7 +249,7 @@ class ShadowChaseWinCondition(WinCondition):
         return False
     
     def is_game_over(self, game_state: GameState) -> bool:
-        return self.is_detectives_win(game_state) or self.is_mr_x_win(game_state)
+        return self.is_detectives_win(game_state) or self.is_MrX_win(game_state)
     
     
 class Game:
@@ -386,7 +386,7 @@ class ShadowChaseGame(Game):
         self.reveal_turns = {3, 8, 13, 18, 24}
         
     def initialize_shadow_chase_game(self, detective_positions: List[int], 
-                                    mr_x_position: int):
+                                    MrX_position: int):
         """Initialize Shadow Chase game with tickets"""
         # Initialize detective tickets
         detective_tickets = {}
@@ -403,14 +403,14 @@ class ShadowChaseGame(Game):
             # }
         
         # Initialize Mr. X tickets
-        mr_x_tickets = {
+        MrX_tickets = {
             TicketType.TAXI: 4,
             TicketType.BUS: 3,
             TicketType.UNDERGROUND: 3,
             TicketType.BLACK: 5,
             TicketType.DOUBLE_MOVE: 2
         }
-        # mr_x_tickets = {
+        # MrX_tickets = {
         #     TicketType.TAXI: 1,#4,
         #     TicketType.BUS: 3,
         #     TicketType.UNDERGROUND: 3,
@@ -419,8 +419,8 @@ class ShadowChaseGame(Game):
         # }
         
         self.game_state = GameState(
-            detective_positions, mr_x_position, Player.MRX, 0,  0,
-            detective_tickets, mr_x_tickets, False, []
+            detective_positions, MrX_position, Player.MRX, 0,  0,
+            detective_tickets, MrX_tickets, False, []
         )
         self.game_history = [self.game_state.copy()]
         self.ticket_history = []
@@ -443,9 +443,9 @@ class ShadowChaseGame(Game):
                 return set() # Position does not match any detective
             
             return self._get_valid_detective_moves(detective_id, position, pending_moves)
-        else: # MR_X
+        else: # MrX
             position = self.game_state.MrX_position
-            return self._get_valid_mr_x_moves(position)
+            return self._get_valid_MrX_moves(position)
 
     def _get_valid_detective_moves(self, detective_id: int, position: int, pending_moves: List[Tuple[int, TransportType]] = None) -> Set[Tuple[int, TransportType]]:
         """Get valid moves for a specific detective."""
@@ -468,29 +468,29 @@ class ShadowChaseGame(Game):
                 valid_moves.add((dest, transport))
         return valid_moves
 
-    def _get_valid_mr_x_moves(self, position: int) -> Set[Tuple[int, TransportType]]:
+    def _get_valid_MrX_moves(self, position: int) -> Set[Tuple[int, TransportType]]:
         """Get valid moves for Mr. X."""
         valid_moves = set()
         all_moves = self.MrX_movement.get_valid_moves(self.graph, position, self.game_state)
-        mr_x_tickets = self.get_mr_x_tickets()
+        MrX_tickets = self.get_MrX_tickets()
 
         for dest, transport in all_moves:
             required_ticket = TicketType[transport.name]
             
             # Mr. X can use specific ticket or black ticket
-            if mr_x_tickets.get(required_ticket, 0) > 0:
+            if MrX_tickets.get(required_ticket, 0) > 0:
                 valid_moves.add((dest, transport))
-            if mr_x_tickets.get(TicketType.BLACK, 0) > 0:
+            if MrX_tickets.get(TicketType.BLACK, 0) > 0:
                 valid_moves.add((dest, TransportType.BLACK))
         return valid_moves
 
     def can_use_double_move(self) -> bool:
         """Check if Mr. X can use double move ticket"""
-        return (self.game_state.mr_x_tickets.get(TicketType.DOUBLE_MOVE, 0) > 0 and 
+        return (self.game_state.MrX_tickets.get(TicketType.DOUBLE_MOVE, 0) > 0 and 
                 not self.game_state.double_move_active)
 
     def make_move(self, detective_moves: List[Tuple[int, TransportType]] = None, 
-                  mr_x_moves: List[Tuple[int, TransportType]] = None, 
+                  MrX_moves: List[Tuple[int, TransportType]] = None, 
                   use_double_move: bool = False) -> bool:
         """
         Make a move in Shadow Chase. Simplified double move handling.
@@ -506,7 +506,7 @@ class ShadowChaseGame(Game):
             'turn_number': self.game_state.turn_count,
             'player': self.game_state.turn.value,
             'detective_moves': [],
-            'mr_x_moves': [],
+            'MrX_moves': [],
             'double_move_used': False
         }
         
@@ -531,7 +531,7 @@ class ShadowChaseGame(Game):
                 if new_pos != old_pos and transport is not None:
                     required_ticket = TicketType[transport.name]
                     self.game_state.detective_tickets[i][required_ticket] -= 1
-                    self.game_state.mr_x_tickets[required_ticket] = self.game_state.mr_x_tickets.get(required_ticket, 0) + 1
+                    self.game_state.MrX_tickets[required_ticket] = self.game_state.MrX_tickets.get(required_ticket, 0) + 1
                     detective_move_data['ticket_used'] = required_ticket.value
                 
                 turn_data['detective_moves'].append(detective_move_data)
@@ -540,58 +540,58 @@ class ShadowChaseGame(Game):
             self.game_state.turn = Player.MRX
 
         else:  # Mr. X's turn
-            if not mr_x_moves or len(mr_x_moves) != 1:
+            if not MrX_moves or len(MrX_moves) != 1:
                 return False
 
             old_pos = self.game_state.MrX_position
-            new_pos, transport_to_use = mr_x_moves[0]
+            new_pos, transport_to_use = MrX_moves[0]
             
             # Determine ticket to consume
             ticket_to_consume = TicketType[transport_to_use.name]
-            self.game_state.mr_x_tickets[ticket_to_consume] -= 1
+            self.game_state.MrX_tickets[ticket_to_consume] -= 1
 
             # Handle double move ticket consumption
             if use_double_move and not self.game_state.double_move_active:
-                if self.game_state.mr_x_tickets.get(TicketType.DOUBLE_MOVE, 0) <= 0:
+                if self.game_state.MrX_tickets.get(TicketType.DOUBLE_MOVE, 0) <= 0:
                     return False
-                self.game_state.mr_x_tickets[TicketType.DOUBLE_MOVE] -= 1
+                self.game_state.MrX_tickets[TicketType.DOUBLE_MOVE] -= 1
                 self.game_state.double_move_active = True
                 turn_data['double_move_used'] = True
 
             # Check and consume ticket
             # actual_ticket_used = None
-            # if self.game_state.mr_x_tickets.get(ticket_to_consume, 0) > 0:
-            #     # self.game_state.mr_x_tickets[ticket_to_consume] -= 1
+            # if self.game_state.MrX_tickets.get(ticket_to_consume, 0) > 0:
+            #     # self.game_state.MrX_tickets[ticket_to_consume] -= 1
             #     # actual_ticket_used = ticket_to_consume
-            # # elif self.game_state.mr_x_tickets.get(TicketType.BLACK, 0) > 0:
-            #     # self.game_state.mr_x_tickets[TicketType.BLACK] -= 1
+            # # elif self.game_state.MrX_tickets.get(TicketType.BLACK, 0) > 0:
+            #     # self.game_state.MrX_tickets[TicketType.BLACK] -= 1
             #     # actual_ticket_used = TicketType.BLACK
             # else:
             #     return False
 
             # Execute the move
-            self.game_state.mr_x_moves_log.append((new_pos, transport_to_use))
+            self.game_state.MrX_moves_log.append((new_pos, transport_to_use))
             self.game_state.MrX_position = new_pos
             
             # Record Mr. X move in ticket history
-            mr_x_move_data = {
+            MrX_move_data = {
                 'edge': (old_pos, new_pos),
                 'transport_used': transport_to_use.value,
                 'ticket_used': ticket_to_consume.value,
                 'double_move_part': 1 if self.game_state.double_move_active else 0
             }
-            turn_data['mr_x_moves'].append(mr_x_move_data)
+            turn_data['MrX_moves'].append(MrX_move_data)
             
             # Handle turn progression for double moves
             if self.game_state.double_move_active:
                 # We're in a double move - check if this completes it
                 if use_double_move:
                     # This is the first move of a double move - stay on Mr. X's turn
-                    mr_x_move_data['double_move_part'] = 1
+                    MrX_move_data['double_move_part'] = 1
                     self.game_state.turn = Player.MRX
                 else:
                     # This is the second move of a double move - end it
-                    mr_x_move_data['double_move_part'] = 2
+                    MrX_move_data['double_move_part'] = 2
                     self.game_state.double_move_active = False
                     self.game_state.turn = Player.DETECTIVES
             else:
@@ -600,8 +600,8 @@ class ShadowChaseGame(Game):
             self.game_state.MrX_turn_count += 1
 
         self.game_state.turn_count += 1
-        self.game_state.mr_x_visible = self.game_state.MrX_turn_count in self.reveal_turns
-        if self.game_state.mr_x_visible:
+        self.game_state.MrX_visible = self.game_state.MrX_turn_count in self.reveal_turns
+        if self.game_state.MrX_visible:
             # If Mr. X is visible, update last visible position
             self.last_visible_position = self.game_state.MrX_position
         # Add turn data to ticket history
@@ -619,7 +619,7 @@ class ShadowChaseGame(Game):
         else:
             return Player.MRX
 
-    def get_mr_x_last_visible_position(self) -> Optional[int]:
+    def get_MrX_last_visible_position(self) -> Optional[int]:
         """Get Mr. X's last visible position"""
         return self.last_visible_position
     
@@ -632,7 +632,7 @@ class ShadowChaseGame(Game):
         """Get ticket counts for a detective"""
         return self.game_state.detective_tickets.get(detective_id, {})
     
-    def get_mr_x_tickets(self) -> Dict[TicketType, int]:
+    def get_MrX_tickets(self) -> Dict[TicketType, int]:
         """Get Mr. X's ticket counts"""
-        return self.game_state.mr_x_tickets.copy()
+        return self.game_state.MrX_tickets.copy()
 

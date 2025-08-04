@@ -126,7 +126,7 @@
         "game_20250727_202710_a819ef5a02634eb1"
       ],
       "incomplete_games": [],
-      "mr_x_agent": "AgentType.RANDOM",
+      "MrX_agent": "AgentType.RANDOM",
       "detective_agent": "AgentType.RANDOM",
       "start_time": "2025-07-27 20:27:08.923486",
       "end_time": "2025-07-27 20:27:10.108750"
@@ -259,7 +259,7 @@
         "game_20250727_202710_87f4e62a81f444db"
       ],
       "incomplete_games": [],
-      "mr_x_agent": "AgentType.RANDOM",
+      "MrX_agent": "AgentType.RANDOM",
       "detective_agent": "AgentType.RANDOM",
       "start_time": "2025-07-27 20:27:10.144267",
       "end_time": "2025-07-27 20:27:10.821538"
@@ -425,7 +425,7 @@
             "game_20250727_202710_a819ef5a02634eb1"
           ],
           "incomplete_games": [],
-          "mr_x_agent": "AgentType.RANDOM",
+          "MrX_agent": "AgentType.RANDOM",
           "detective_agent": "AgentType.RANDOM",
           "start_time": "2025-07-27 20:27:08.923486",
           "end_time": "2025-07-27 20:27:10.108750"
@@ -558,7 +558,7 @@
             "game_20250727_202710_87f4e62a81f444db"
           ],
           "incomplete_games": [],
-          "mr_x_agent": "AgentType.RANDOM",
+          "MrX_agent": "AgentType.RANDOM",
           "detective_agent": "AgentType.RANDOM",
           "start_time": "2025-07-27 20:27:10.144267",
           "end_time": "2025-07-27 20:27:10.821538"

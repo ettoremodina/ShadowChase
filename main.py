@@ -158,13 +158,13 @@ def test_shadow_chase_game():
     
     # Initialize with specific positions
     detective_positions = [1, 13]
-    mr_x_position = 100
+    MrX_position = 100
     
-    game.initialize_shadow_chase_game(detective_positions, mr_x_position)
+    game.initialize_shadow_chase_game(detective_positions, MrX_position)
     
     print(f"Game initialized:")
     print(f"Detectives at: {detective_positions}")
-    print(f"Mr. X at: {mr_x_position} (hidden: {not game.game_state.mr_x_visible})")
+    print(f"Mr. X at: {MrX_position} (hidden: {not game.game_state.MrX_visible})")
     
     # Show initial tickets
     print("\nInitial tickets:")
@@ -172,8 +172,8 @@ def test_shadow_chase_game():
         tickets = game.get_detective_tickets(i)
         print(f"Detective {i+1}: {tickets}")
     
-    mr_x_tickets = game.get_mr_x_tickets()
-    print(f"Mr. X: {mr_x_tickets}")
+    MrX_tickets = game.get_MrX_tickets()
+    print(f"Mr. X: {MrX_tickets}")
 
 def demo_path_game():
     """Demonstrate game on path graph"""
@@ -216,20 +216,20 @@ def demo_shadow_chase_game():
     # Initialize with random positions
     nodes = list(game.graph.nodes())
     detective_positions = random.sample(nodes, 3)
-    mr_x_position = random.choice([n for n in nodes if n not in detective_positions])
+    MrX_position = random.choice([n for n in nodes if n not in detective_positions])
     
-    game.initialize_shadow_chase_game(detective_positions, mr_x_position)
+    game.initialize_shadow_chase_game(detective_positions, MrX_position)
     
     print(f"Detectives at: {detective_positions}")
-    print(f"Mr. X at: {mr_x_position} (hidden)")
+    print(f"Mr. X at: {MrX_position} (hidden)")
     
     # Show ticket counts
     for i in range(3):
         tickets = game.get_detective_tickets(i)
         print(f"Detective {i+1}: {tickets}")
     
-    mr_x_tickets = game.get_mr_x_tickets()
-    print(f"Mr. X: {mr_x_tickets}")
+    MrX_tickets = game.get_MrX_tickets()
+    print(f"Mr. X: {MrX_tickets}")
 
 def demo_simple_shadow_chase():
     """Demonstrate simplified Shadow Chase game"""
@@ -259,20 +259,20 @@ def demo_test_shadow_chase():
     
     # Initialize with specific positions
     detective_positions = [1, 3]
-    mr_x_position = 8
+    MrX_position = 8
     
-    game.initialize_shadow_chase_game(detective_positions, mr_x_position)
+    game.initialize_shadow_chase_game(detective_positions, MrX_position)
     
     print(f"Detectives at: {detective_positions}")
-    print(f"Mr. X at: {mr_x_position}")
+    print(f"Mr. X at: {MrX_position}")
     
     # Show ticket counts
     for i in range(2):
         tickets = game.get_detective_tickets(i)
         print(f"Detective {i+1}: {tickets}")
     
-    mr_x_tickets = game.get_mr_x_tickets()
-    print(f"Mr. X: {mr_x_tickets}")
+    MrX_tickets = game.get_MrX_tickets()
+    print(f"Mr. X: {MrX_tickets}")
     
     visualizer = GameVisualizer(game)
     visualizer.run()
@@ -312,9 +312,9 @@ def demo_extracted_board_game(num_detectives: int = 3, auto_init: bool = True):
         
         sample = random.sample(valid_starting_cards, num_detectives + 1)
         detective_positions = sample[1:num_detectives+1]        
-        mr_x_position = sample[0]
+        MrX_position = sample[0]
         
-        positions = detective_positions + [mr_x_position]
+        positions = detective_positions + [MrX_position]
     else:
         positions = None
 
@@ -323,10 +323,10 @@ def demo_extracted_board_game(num_detectives: int = 3, auto_init: bool = True):
     
     # # Set game mode to human vs human by default (can be changed in UI)
     # mode_map = {
-    #     "human_vs_human": {'detectives': 'Human', 'mr_x': 'Human'},
-    #     "human_det_vs_ai_mrx": {'detectives': 'Human', 'mr_x': 'AI'},
-    #     "ai_det_vs_human_mrx": {'detectives': 'AI', 'mr_x': 'Human'},
-    #     "ai_vs_ai": {'detectives': 'AI', 'mr_x': 'AI'}
+    #     "human_vs_human": {'detectives': 'Human', 'MrX': 'Human'},
+    #     "human_det_vs_ai_mrx": {'detectives': 'Human', 'MrX': 'AI'},
+    #     "ai_det_vs_human_mrx": {'detectives': 'AI', 'MrX': 'Human'},
+    #     "ai_vs_ai": {'detectives': 'AI', 'MrX': 'AI'}
     # }
     # visualizer.game_mode = mode_map['ai_vs_ai']
     

@@ -1,6 +1,9 @@
 import tkinter as tk
 from tkinter import ttk
 
+# Import enhanced components
+from .enhanced_components import VisualTicketDisplay, EnhancedTurnDisplay, EnhancedMovesDisplay
+
 class ScrollableFrame(ttk.Frame):
     """A scrollable frame widget"""
     def __init__(self, container, *args, **kwargs):
@@ -100,11 +103,21 @@ class InfoDisplay(ttk.Frame):
             padx=8,
             pady=6
         )
-        self.text_widget.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
         
         # Add scrollbar for text widget
         self.scrollbar = ttk.Scrollbar(self.label_frame, orient="vertical", command=self.text_widget.yview)
         self.text_widget.configure(yscrollcommand=self.scrollbar.set)
+        
+        # Pack text widget and scrollbar
+        self.text_widget.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(5, 0), pady=5)
+        self.scrollbar.pack(side=tk.RIGHT, fill=tk.Y, padx=(0, 5), pady=5)
+        
+        # Add mouse wheel scrolling support
+        self.text_widget.bind("<MouseWheel>", self._on_mousewheel)
+    
+    def _on_mousewheel(self, event):
+        """Handle mouse wheel scrolling"""
+        self.text_widget.yview_scroll(int(-1*(event.delta/120)), "units")
     
     def clear(self):
         """Clear the text widget"""

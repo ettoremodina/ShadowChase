@@ -39,10 +39,10 @@ from ShadowChase.services.cache_system import get_global_cache, CacheNamespace
 
 class GameStateHash(NamedTuple):
     """Hashable representation of game state for caching."""
-    mr_x_position: Optional[int]
+    MrX_position: Optional[int]
     detective_positions: Tuple[int, ...]
     turn: int
-    mr_x_tickets: Tuple[int, ...]  # (taxi, bus, underground, black, double)
+    MrX_tickets: Tuple[int, ...]  # (taxi, bus, underground, black, double)
     detective_tickets: Tuple[Tuple[int, ...], ...]  # Nested tuple for each detective
     reveal_turns: Tuple[int, ...]
     current_player: str
@@ -78,10 +78,10 @@ class GameStateCache:
         
         # Create hashable representation
         hash_data = GameStateHash(
-            mr_x_position=state.MrX_position,
+            MrX_position=state.MrX_position,
             detective_positions=tuple(state.detective_positions),
             turn=state.turn,
-            mr_x_tickets=tuple(state.mr_x_tickets.values()) if hasattr(state, 'mr_x_tickets') else (0, 0, 0, 0, 0),
+            MrX_tickets=tuple(state.MrX_tickets.values()) if hasattr(state, 'MrX_tickets') else (0, 0, 0, 0, 0),
             detective_tickets=tuple(tuple(tickets.values()) if hasattr(tickets, 'values') else (0, 0, 0) 
                                   for tickets in (getattr(state, 'detective_tickets', []) or [])),
             reveal_turns=tuple(getattr(state, 'reveal_turns', [])),
@@ -316,7 +316,7 @@ class OptimizedMCTSNode:
         if current_player == Player.MRX:
             # Mr. X move
             dest, transport, use_double = move
-            new_state.make_move(mr_x_moves=[(dest, transport)], use_double_move=use_double)
+            new_state.make_move(MrX_moves=[(dest, transport)], use_double_move=use_double)
         else:
             # Detective move - need to construct full move list
             detective_moves = []
@@ -340,7 +340,7 @@ class OptimizedMCTSNode:
         Run a random simulation from this node to a terminal state.
         
         Returns:
-            Winner of the simulation ('mr_x', 'detectives', or 'timeout')
+            Winner of the simulation ('MrX', 'detectives', or 'timeout')
         """
         simulation_state = self._efficient_copy_game(self.game_state)
         
@@ -355,7 +355,7 @@ class OptimizedMCTSNode:
                 if not valid_moves:
                     break
                 dest, transport = random.choice(valid_moves)
-                simulation_state.make_move(mr_x_moves=[(dest, transport)])
+                simulation_state.make_move(MrX_moves=[(dest, transport)])
             else:
                 # Detective moves - simplified random moves
                 detective_moves = []
@@ -375,7 +375,7 @@ class OptimizedMCTSNode:
         # Determine winner
         if simulation_state.is_game_over():
             winner = simulation_state.get_winner()
-            return "mr_x" if winner == Player.MRX else "detectives"
+            return "MrX" if winner == Player.MRX else "detectives"
         else:
             return "timeout"
     
@@ -384,13 +384,13 @@ class OptimizedMCTSNode:
         Backpropagate simulation result up the tree.
         
         Args:
-            result: Simulation result ('mr_x', 'detectives', or 'timeout')
+            result: Simulation result ('MrX', 'detectives', or 'timeout')
             perspective: Player perspective for calculating wins
         """
         self.visits += 1
         
         # Update wins based on perspective
-        if perspective == Player.MRX and result == "mr_x":
+        if perspective == Player.MRX and result == "MrX":
             self.wins += 1
         elif perspective == Player.DETECTIVES and result == "detectives":
             self.wins += 1
@@ -482,7 +482,7 @@ class OptimizedMCTSAgent:
             turn_count=game_state.game_state.turn_count,
             mrx_turn_count=game_state.game_state.MrX_turn_count,
             detective_tickets=[(k, tuple(v.items())) for k, v in game_state.game_state.detective_tickets.items()],
-            mr_x_tickets=tuple(game_state.game_state.mr_x_tickets.items())
+            MrX_tickets=tuple(game_state.game_state.MrX_tickets.items())
         )
         
         # Check persistent cache first for quick lookup

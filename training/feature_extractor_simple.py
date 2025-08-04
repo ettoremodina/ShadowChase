@@ -130,15 +130,15 @@ class GameFeatureExtractor:
         features = [0.0] * self.config.max_nodes
         
         # Mr. X position (if visible or if we're Mr. X)
-        if hasattr(game.game_state, 'mr_x_visible') and game.game_state.mr_x_visible:
-            mr_x_pos = game.game_state.MrX_position
-            if 0 <= mr_x_pos < self.config.max_nodes:
-                features[mr_x_pos] = 1.0
+        if hasattr(game.game_state, 'MrX_visible') and game.game_state.MrX_visible:
+            MrX_pos = game.game_state.MrX_position
+            if 0 <= MrX_pos < self.config.max_nodes:
+                features[MrX_pos] = 1.0
         elif player == Player.MRX:
             # If we are Mr. X, we always know our position
-            mr_x_pos = game.game_state.MrX_position
-            if 0 <= mr_x_pos < self.config.max_nodes:
-                features[mr_x_pos] = 1.0
+            MrX_pos = game.game_state.MrX_position
+            if 0 <= MrX_pos < self.config.max_nodes:
+                features[MrX_pos] = 1.0
         
         # Detective positions (negative values to distinguish from Mr. X)
         for i, detective_pos in enumerate(game.game_state.detective_positions):
@@ -152,7 +152,7 @@ class GameFeatureExtractor:
         features = []
         
         # Get positions
-        mr_x_pos = game.game_state.MrX_position
+        MrX_pos = game.game_state.MrX_position
         detective_positions = game.game_state.detective_positions
         
         # Distance from Mr. X to each detective (padded to 5 detectives)
@@ -161,7 +161,7 @@ class GameFeatureExtractor:
             if i < len(detective_positions):
                 det_pos = detective_positions[i]
                 try:
-                    dist = self.heuristics.calculate_shortest_distance(mr_x_pos, det_pos)
+                    dist = self.heuristics.calculate_shortest_distance(MrX_pos, det_pos)
                     distances.append(min(dist / self.config.distance_normalization, 1.0))
                 except:
                     distances.append(0.5)  # Default if distance calculation fails
@@ -177,12 +177,12 @@ class GameFeatureExtractor:
         features = []
         
         # Mr. X tickets (normalized by typical starting amounts)
-        mr_x_tickets = getattr(game.game_state, 'mr_x_tickets', {})
-        features.append(mr_x_tickets.get(TicketType.TAXI, 0) / 4.0)
-        features.append(mr_x_tickets.get(TicketType.BUS, 0) / 3.0)
-        features.append(mr_x_tickets.get(TicketType.UNDERGROUND, 0) / 3.0)
-        features.append(mr_x_tickets.get(TicketType.BLACK, 0) / 5.0)
-        features.append(mr_x_tickets.get(TicketType.DOUBLE_MOVE, 0) / 2.0)
+        MrX_tickets = getattr(game.game_state, 'MrX_tickets', {})
+        features.append(MrX_tickets.get(TicketType.TAXI, 0) / 4.0)
+        features.append(MrX_tickets.get(TicketType.BUS, 0) / 3.0)
+        features.append(MrX_tickets.get(TicketType.UNDERGROUND, 0) / 3.0)
+        features.append(MrX_tickets.get(TicketType.BLACK, 0) / 5.0)
+        features.append(MrX_tickets.get(TicketType.DOUBLE_MOVE, 0) / 2.0)
         
         # Detective tickets (padded to 5 detectives)
         detective_tickets = getattr(game.game_state, 'detective_tickets', {})
@@ -282,7 +282,7 @@ class GameFeatureExtractor:
         
         try:
             # Get possible Mr. X positions from heuristics
-            possible_positions = self.heuristics.get_possible_mr_x_positions()
+            possible_positions = self.heuristics.get_possible_MrX_positions()
             
             # Number of possible positions (normalized)
             features.append(min(len(possible_positions) / 50.0, 1.0))
@@ -332,7 +332,7 @@ class GameFeatureExtractor:
         names = []
         
         if self.config.include_game_phase:
-            names.extend(['turn_normalized', 'mr_x_visible', 'early_game', 'mid_game', 'late_game'])
+            names.extend(['turn_normalized', 'MrX_visible', 'early_game', 'mid_game', 'late_game'])
         
         if self.config.include_board_state:
             names.extend([f'position_{i}' for i in range(self.config.max_nodes)])

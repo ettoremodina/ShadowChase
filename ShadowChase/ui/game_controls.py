@@ -1,6 +1,6 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
-from .ui_components import StyledButton, InfoDisplay
+from .ui_components import StyledButton, InfoDisplay, EnhancedTurnDisplay, EnhancedMovesDisplay
 from ..core.game import Player, ShadowChaseGame, TicketType
 
 class GameControls:
@@ -17,7 +17,11 @@ class GameControls:
         # Mr. X special moves state
         self.use_black_ticket = tk.BooleanVar()
         self.double_move_requested = False
-        self.mr_x_selections = []
+        self.MrX_selections = []
+        
+        # Transport selection state
+        self.pending_move = None  # (node, available_transports)
+        self.selected_transport = None
         
     def create_controls_section(self, parent):
         """Create the main game controls section"""
@@ -32,8 +36,8 @@ class GameControls:
         button_frame.pack(fill=tk.X, padx=10, pady=8)
         
         # Human player buttons
-        self.move_button = StyledButton(button_frame, "✅ Make Move", 
-                                       command=self.make_manual_move, 
+        self.move_button = StyledButton(button_frame, "📤 Make Move", 
+                                       command=self.send_move, 
                                        style_type="primary", state=tk.DISABLED)
         self.move_button.pack(fill=tk.X, pady=3)
         
@@ -57,7 +61,7 @@ class GameControls:
             # Reset UI state after AI move
             self.visualizer.selected_positions = []
             self.visualizer.detective_selections = []
-            self.mr_x_selections = []
+            self.MrX_selections = []
             self.visualizer.current_detective_index = 0
             self.visualizer.selected_nodes = []
             
@@ -124,7 +128,7 @@ class GameControls:
                 self.move_button.config(state=tk.DISABLED)
         else:
             # Mr. X turn
-            if self.mr_x_selections or self.visualizer.selected_positions:
+            if self.MrX_selections or self.visualizer.selected_positions:
                 self.move_button.config(state=tk.NORMAL)
             else:
                 self.move_button.config(state=tk.DISABLED)
@@ -155,13 +159,13 @@ class GameControls:
         return self.mrx_section
     
     def create_turn_display(self, parent):
-        """Create the current turn information display"""
-        self.turn_display = InfoDisplay(parent, "📋 Current Turn", height=4)
+        """Create the enhanced current turn information display"""
+        self.turn_display = EnhancedTurnDisplay(parent, "📋 Current Turn")
         return self.turn_display
     
     def create_moves_display(self, parent):
-        """Create the available moves display"""
-        self.moves_display = InfoDisplay(parent, "🎯 Available Moves", height=6)
+        """Create the enhanced available moves display"""
+        self.moves_display = EnhancedMovesDisplay(parent, "🎯 Available Moves")
         return self.moves_display
     
     def create_tickets_display(self, parent):
@@ -171,12 +175,13 @@ class GameControls:
    
     
     def update_turn_display(self):
-        """Update current turn information"""
+        """Update current turn information using enhanced display"""
         if not self.turn_display:
             return
             
         if self.visualizer.setup_mode:
-            self.turn_display.set_text("Setup Phase - Click nodes to select positions")
+            # For setup mode, the enhanced component will handle this
+            self.turn_display.update_display(None, self.visualizer.game)
             return
         
         if not self.visualizer.game.game_state:
@@ -185,142 +190,152 @@ class GameControls:
         # Update button visibility first
         self.update_button_visibility()
         
-        is_shadow_chase = isinstance(self.visualizer.game, ShadowChaseGame)
-        current_player = self.visualizer.game.game_state.turn
-        is_ai_turn = self.visualizer.is_current_player_ai()
+        # Use the enhanced component's update method
+        self.turn_display.update_display(
+            self.visualizer.game.game_state,
+            self.visualizer.game,
+            current_detective_index=getattr(self.visualizer, 'current_detective_index', 0),
+            detective_selections=getattr(self.visualizer, 'detective_selections', []),
+            is_ai_turn=self.visualizer.is_current_player_ai(),
+            double_move_requested=getattr(self, 'double_move_requested', False)
+        )
         
-        turn_text = ""
-        
-        if current_player == Player.DETECTIVES:
-            player_type = "🤖 AI" if is_ai_turn else "👤 Human"
-            if is_shadow_chase:
-                if not is_ai_turn and self.visualizer.current_detective_index < self.visualizer.game.num_detectives:
-                    det_pos = self.visualizer.game.game_state.detective_positions[self.visualizer.current_detective_index]
-                    turn_text = f"🕵️ DETECTIVE {self.visualizer.current_detective_index + 1}'S TURN ({player_type})\n"
-                    turn_text += f"📍 Moving from position {det_pos}\n"
-                    turn_text += f"📊 Progress: {len(self.visualizer.detective_selections)}/{self.visualizer.game.num_detectives}"
-                else:
-                    turn_text = f"🕵️ DETECTIVES' TURN ({player_type})\n"
-                    if is_ai_turn:
-                        turn_text += "🤖 Click 'Continue' to let AI make moves"
-                    else:
-                        turn_text += "✅ All detectives selected - make move"
-            else:
-                if not is_ai_turn and self.visualizer.current_detective_index < self.visualizer.game.num_detectives:
-                    detective_pos = self.visualizer.game.game_state.detective_positions[self.visualizer.current_detective_index]
-                    turn_text = f"👮 detective {self.visualizer.current_detective_index + 1}'S TURN ({player_type})\n"
-                    turn_text += f"📍 Moving from position {detective_pos}\n"
-                    turn_text += f"📊 Progress: {len(self.visualizer.detective_selections)}/{self.visualizer.game.num_detectives}"
-                else:
-                    turn_text = f"👮 detectives' TURN ({player_type})\n"
-                    if is_ai_turn:
-                        turn_text += "🤖 Click 'Continue' to let AI make moves"
-                    else:
-                        turn_text += "✅ All detectives selected - make move"
-        else:
-            player_type = "🤖 AI" if is_ai_turn else "👤 Human"
-            if is_shadow_chase:
-                double_status = ""
-                if not is_ai_turn:
-                    if self.double_move_requested:
-                        double_status = " (DOUBLE MOVE REQUESTED)"
-                    elif self.visualizer.game.game_state.double_move_active:
-                        double_status = " (SECOND MOVE)"
-                    
-                turn_text = f"🕵️‍♂️ MR. X'S TURN ({player_type}){double_status}\n"
-                if is_ai_turn:
-                    turn_text += "🤖 Click 'Continue' to let AI make move"
-                else:
-                    turn_text += "📍 Select new position"
-            else:
-                turn_text = f"🏃 MrX'S TURN ({player_type})\n"
-                if is_ai_turn:
-                    turn_text += "🤖 Click 'Continue' to let AI make move"
-                else:
-                    turn_text += "📍 Select new position"
-        
-        self.turn_display.set_text(turn_text)
+        # Update instructions
+        self._update_instructions()
     
     def update_moves_display(self):
-        """Update available moves display"""
+        """Update available moves display using enhanced component"""
         if not self.moves_display:
             return
             
         if self.visualizer.setup_mode or not self.visualizer.game.game_state:
+            self.moves_display.update_moves("")
             return
         
-        is_shadow_chase = isinstance(self.visualizer.game, ShadowChaseGame)
+        # Get moves text from the visualizer if available
+        if hasattr(self.visualizer, 'available_moves_text'):
+            moves_text = self.visualizer.available_moves_text
+        else:
+            moves_text = "Available moves will be shown here..."
         
+        self.moves_display.update_moves(moves_text)
+        
+        # Update skip button state based on available moves
         if not self.visualizer.current_player_moves:
-            self.moves_display.set_text("❌ No available moves")
+            # No moves available - enable skip button
+            if hasattr(self, 'skip_button'):
+                self.skip_button.config(state=tk.NORMAL)
+        else:
+            # Moves available - disable skip button
+            if hasattr(self, 'skip_button'):
+                self.skip_button.config(state=tk.DISABLED)
+        
+        # Update Mr. X controls if it's his turn
+        if (self.visualizer.game.game_state and 
+            self.visualizer.game.game_state.turn == Player.MRX):
+            self.update_mrx_controls()
+    
+    
+    def show_transport_selection(self, node, available_transports, can_use_black=False):
+        """Show transport selection buttons for the given node and transports"""
+        self.pending_move = (node, available_transports)
+        self.selected_transport = None
+        
+        # Use the enhanced turn display to show transport buttons
+        if self.turn_display:
+            self.turn_display.show_transport_selection(
+                available_transports, 
+                node, 
+                self.on_transport_selected,
+                can_use_black
+            )
+        
+        # Update instructions
+        self._update_instructions()
+    
+    def on_transport_selected(self, transport):
+        """Handle transport selection from buttons"""
+        self.selected_transport = transport
+        
+        if self.pending_move:
+            node, _ = self.pending_move
+            
+            # Add the move with selected transport
+            current_player = self.visualizer.game.game_state.turn
+            
+            if current_player == Player.DETECTIVES:
+                # Add detective move
+                self.visualizer.detective_selections.append((node, transport))
+                self.visualizer.current_detective_index += 1
+                
+                # Clear pending move
+                self.pending_move = None
+                self.selected_transport = None
+                self.turn_display.hide_transport_selection()
+                
+                # Check if all detectives have moved
+                if len(self.visualizer.detective_selections) == self.visualizer.game.num_detectives:
+                    self.move_button.config(state=tk.NORMAL)
+                
+            else:  # Mr. X turn
+                # Add Mr. X move
+                self.MrX_selections.append((node, transport))
+                
+                # Clear pending move
+                self.pending_move = None
+                self.selected_transport = None
+                self.turn_display.hide_transport_selection()
+                
+                # Enable send button
+                self.move_button.config(state=tk.NORMAL)
+            
+            # Update display and redraw graph
+            self.update_turn_display()
+            self.visualizer.draw_graph()
+    
+    def cancel_transport_selection(self):
+        """Cancel current transport selection"""
+        self.pending_move = None
+        self.selected_transport = None
+        if self.turn_display:
+            self.turn_display.hide_transport_selection()
+        self._update_instructions()
+    
+    def _update_instructions(self):
+        """Update instruction text based on current state"""
+        if not self.turn_display:
             return
         
-        moves_text = ""
-        
-        # Show current detective's moves or MrX/Mr. X moves
-        if (self.visualizer.game.game_state.turn == Player.DETECTIVES and 
-            self.visualizer.current_detective_index < self.visualizer.game.num_detectives):
-            
-            detective_pos = self.visualizer.game.game_state.detective_positions[self.visualizer.current_detective_index]
-            if detective_pos in self.visualizer.current_player_moves:
-                moves = self.visualizer.current_player_moves[detective_pos]
-                if not moves:
-                    moves_text = "⚠️ No available moves. Click 'Skip Turn'."
-                    self.skip_button.config(state=tk.NORMAL)
+        if self.pending_move:
+            node, _ = self.pending_move
+            instruction_text = f"Select transport type for destination {node}"
+        elif self.visualizer.game.game_state:
+            current_player = self.visualizer.game.game_state.turn
+            if current_player == Player.DETECTIVES:
+                if len(self.visualizer.detective_selections) < self.visualizer.game.num_detectives:
+                    instruction_text = "Click on destination nodes for detectives"
                 else:
-                    self.skip_button.config(state=tk.DISABLED)
-
-                player_name = f"Detective {self.visualizer.current_detective_index + 1}" if is_shadow_chase else f"detective {self.visualizer.current_detective_index + 1}"
-                moves_text += f"🎯 {player_name} from position {detective_pos}:\n"
-                for target_pos, transports in moves.items():
-                    if is_shadow_chase:
-                        transport_names = []
-                        for t in transports:
-                            if t == 1: transport_names.append("🚕 Taxi")
-                            elif t == 2: transport_names.append("🚌 Bus") 
-                            elif t == 3: transport_names.append("🚇 Underground")
-                            elif t == 4: transport_names.append("⚫ Black")
-                        moves_text += f"  ➡️ {target_pos} ({', '.join(transport_names)})\n"
-                    else:
-                        moves_text += f"  ➡️ {target_pos}\n"
+                    instruction_text = "All detectives ready - click Make Move"
+            else:
+                if not self.MrX_selections:
+                    instruction_text = "Click on destination node for Mr. X"
+                else:
+                    instruction_text = "Move selected - click Make Move"
         else:
-            self.skip_button.config(state=tk.DISABLED)
-            self.update_mrx_controls()
-            # MrX/Mr. X moves
-            for source_pos, moves in self.visualizer.current_player_moves.items():
-                player_name = "🕵️‍♂️ Mr. X" if is_shadow_chase else "🏃 MrX"
-                moves_text += f"🎯 {player_name} from position {source_pos}:\n"
-                for target_pos, transports in moves.items():
-                    if is_shadow_chase:
-                        transport_names = []
-                        for t in sorted(set(transports)):
-                            if t == 1: transport_names.append("🚕 Taxi")
-                            elif t == 2: transport_names.append("🚌 Bus") 
-                            elif t == 3: transport_names.append("🚇 Underground")
-                            elif t == 4: transport_names.append("⚫ Black")
-                        moves_text += f"  ➡️ {target_pos} ({', '.join(transport_names)})\n"
-                    else:
-                        moves_text += f"  ➡️ {target_pos}\n"
+            instruction_text = "Select moves for current player"
         
-        self.moves_display.set_text(moves_text)
-    
-    
-    def toggle_double_move(self):
-        """Request double move for the next Mr. X turn."""
-        self.double_move_requested = not self.double_move_requested
-        if self.double_move_requested:
-            self.double_move_button.configure(text="⚡ Cancel Double Move")
-        else:
-            self.double_move_button.configure(text="⚡ Use Double Move")
+        # Update the instruction label in turn display
+        if hasattr(self.turn_display, 'instructions'):
+            self.turn_display.instructions.config(text=instruction_text)
     
     def update_mrx_controls(self):
         """Updates the state of Mr. X's special move controls."""
         if (self.visualizer.game.game_state and 
             self.visualizer.game.game_state.turn == Player.MRX):
-            mr_x_tickets = self.visualizer.game.get_mr_x_tickets()
+            MrX_tickets = self.visualizer.game.get_MrX_tickets()
             
             # Don't allow double move activation if already in progress
-            double_move_available = (mr_x_tickets.get(TicketType.DOUBLE_MOVE, 0) > 0 and 
+            double_move_available = (MrX_tickets.get(TicketType.DOUBLE_MOVE, 0) > 0 and 
                                    not self.visualizer.game.game_state.double_move_active)
             
             if double_move_available:
@@ -334,12 +349,21 @@ class GameControls:
             self.double_move_requested = False
             self.double_move_button.configure(text="⚡ Use Double Move")
     
-    def make_manual_move(self):
-        """Make a manual move by sending selected moves to the game object."""
+    def toggle_double_move(self):
+        """Request double move for the next Mr. X turn."""
+        self.double_move_requested = not self.double_move_requested
+        if self.double_move_requested:
+            self.double_move_button.configure(text="⚡ Cancel Double Move")
+        else:
+            self.double_move_button.configure(text="⚡ Use Double Move")
+    
+    
+    def send_move(self):
+        """Send the selected moves to the game engine."""
         if ((self.visualizer.game.game_state.turn == Player.DETECTIVES and 
              len(self.visualizer.detective_selections) != self.visualizer.game.num_detectives) or 
             (self.visualizer.game.game_state.turn == Player.MRX and 
-             not self.mr_x_selections and not self.visualizer.selected_positions)):
+             not self.MrX_selections and not self.visualizer.selected_positions)):
             messagebox.showwarning("Invalid Selection", "A move must be selected for all players.")
             return
     
@@ -357,11 +381,11 @@ class GameControls:
                     # For Shadow Chase, check if this is a double move scenario
                     if self.double_move_requested and not self.visualizer.game.game_state.double_move_active:
                         # Starting a double move - make first move
-                        success = self.visualizer.game.make_move(mr_x_moves=self.mr_x_selections,
+                        success = self.visualizer.game.make_move(MrX_moves=self.MrX_selections,
                                                                use_double_move=True)
                         if success:
                             # Reset selections for second move but keep double move button state
-                            self.mr_x_selections = []
+                            self.MrX_selections = []
                             self.visualizer.selected_nodes = []
                             self.move_button.config(state=tk.DISABLED)
                             self.use_black_ticket.set(False)
@@ -370,7 +394,7 @@ class GameControls:
                             return
                     else:
                         # Regular move or second move of double move
-                        success = self.visualizer.game.make_move(mr_x_moves=self.mr_x_selections,
+                        success = self.visualizer.game.make_move(MrX_moves=self.MrX_selections,
                                                                use_double_move=False)
                         if success and self.visualizer.game.game_state.double_move_active:
                             # This was the second move of a double move, reset the flag
@@ -385,7 +409,7 @@ class GameControls:
             # Reset UI state after move attempt
             self.visualizer.selected_positions = []
             self.visualizer.detective_selections = []
-            self.mr_x_selections = []
+            self.MrX_selections = []
             self.visualizer.current_detective_index = 0
             self.visualizer.selected_nodes = []
             self.move_button.config(state=tk.DISABLED)
@@ -421,7 +445,7 @@ class GameControls:
             # Reset UI state on error
             self.visualizer.selected_positions = []
             self.visualizer.detective_selections = []
-            self.mr_x_selections = []
+            self.MrX_selections = []
             self.visualizer.current_detective_index = 0
             self.visualizer.selected_nodes = []
             self.move_button.config(state=tk.DISABLED)

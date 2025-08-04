@@ -13,7 +13,7 @@ class SetupControls:
         self.heuristics_enabled = tk.BooleanVar(value=False)  # New heuristics toggle
         
         # Agent selection variables
-        self.mr_x_agent_type = tk.StringVar(value="random")
+        self.MrX_agent_type = tk.StringVar(value="random")
         self.detective_agent_type = tk.StringVar(value="random")
         
     def create_setup_section(self, parent):
@@ -46,17 +46,17 @@ class SetupControls:
         self.agent_frame = ttk.LabelFrame(self.setup_section, text="🤖 AI Agent Selection")
         
         # Mr. X agent selection
-        mr_x_subframe = ttk.Frame(self.agent_frame)
-        mr_x_subframe.pack(fill=tk.X, padx=10, pady=5)
-        ttk.Label(mr_x_subframe, text="Mr. X AI Agent:", font=('Arial', 9, 'bold')).pack(anchor="w")
+        MrX_subframe = ttk.Frame(self.agent_frame)
+        MrX_subframe.pack(fill=tk.X, padx=10, pady=5)
+        ttk.Label(MrX_subframe, text="Mr. X AI Agent:", font=('Arial', 9, 'bold')).pack(anchor="w")
         
         # Import locally to avoid circular import
         from agents import AgentSelector
         agent_choices = AgentSelector.get_agent_choices_for_ui()
-        self.mr_x_agent_combo = ttk.Combobox(mr_x_subframe, textvariable=self.mr_x_agent_type,
+        self.MrX_agent_combo = ttk.Combobox(MrX_subframe, textvariable=self.MrX_agent_type,
                                            values=[choice[1] for choice in agent_choices],
                                            state="readonly")
-        self.mr_x_agent_combo.pack(fill=tk.X, pady=(2, 0))
+        self.MrX_agent_combo.pack(fill=tk.X, pady=(2, 0))
         
         # Detective agent selection
         det_subframe = ttk.Frame(self.agent_frame)
@@ -125,18 +125,18 @@ class SetupControls:
         game_mode = self.game_mode.get()
         
         # Determine which AI agents are needed
-        needs_mr_x_ai = game_mode in ["human_det_vs_ai_mrx", "ai_vs_ai"]
+        needs_MrX_ai = game_mode in ["human_det_vs_ai_mrx", "ai_vs_ai"]
         needs_detective_ai = game_mode in ["ai_det_vs_human_mrx", "ai_vs_ai"]
         
-        if needs_mr_x_ai or needs_detective_ai:
+        if needs_MrX_ai or needs_detective_ai:
             # Show agent selection frame
             self.agent_frame.pack(fill=tk.X, padx=10, pady=8)
             
             # Show/hide individual agent selections based on need
-            if needs_mr_x_ai:
-                self.mr_x_agent_combo.pack_info()  # Make sure it's visible
+            if needs_MrX_ai:
+                self.MrX_agent_combo.pack_info()  # Make sure it's visible
             else:
-                self.mr_x_agent_combo.pack_forget()  # Hide it
+                self.MrX_agent_combo.pack_forget()  # Hide it
             
             if needs_detective_ai:
                 self.detective_agent_combo.pack_info()  # Make sure it's visible
@@ -218,11 +218,11 @@ class SetupControls:
             agent_choices = AgentSelector.get_agent_choices_for_ui()
             agent_value_map = {choice[1]: choice[0] for choice in agent_choices}
             
-            mr_x_display_name = self.mr_x_agent_type.get()
+            MrX_display_name = self.MrX_agent_type.get()
             detective_display_name = self.detective_agent_type.get()
             
-            if mr_x_display_name in agent_value_map:
-                self.visualizer.mr_x_agent_type = AgentType(agent_value_map[mr_x_display_name])
+            if MrX_display_name in agent_value_map:
+                self.visualizer.MrX_agent_type = AgentType(agent_value_map[MrX_display_name])
             
             if detective_display_name in agent_value_map:
                 self.visualizer.detective_agent_type = AgentType(agent_value_map[detective_display_name])

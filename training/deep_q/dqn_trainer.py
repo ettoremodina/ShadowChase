@@ -39,7 +39,7 @@ class DQNTrainer(BaseTrainer):
     """
     
     def __init__(self, 
-                 player_role: str = "mr_x",  # "mr_x" or "detectives"
+                 player_role: str = "MrX",  # "MrX" or "detectives"
                  config_path: str = "training/configs/dqn_config.json",
                  save_dir: str = "training_results",
                  device=None):
@@ -47,7 +47,7 @@ class DQNTrainer(BaseTrainer):
         Initialize DQN trainer.
         
         Args:
-            player_role: Which player the agent will control ("mr_x" or "detectives")
+            player_role: Which player the agent will control ("MrX" or "detectives")
             config_path: Path to DQN configuration file
             save_dir: Directory to save training results
             device: PyTorch device to use (if None, will auto-detect)
@@ -111,7 +111,7 @@ class DQNTrainer(BaseTrainer):
         self.config['feature_extraction']['input_size'] = feature_size
         
         # Set action size based on player role
-        if self.player_role == "mr_x":
+        if self.player_role == "MrX":
             action_size = 3  # (destination, transport, use_double_move)
         else:  # detectives
             action_size = 2  # (destination, transport)
@@ -172,10 +172,10 @@ class DQNTrainer(BaseTrainer):
         # Create baseline opponent
         registry = get_agent_registry()
         
-        if self.player_role == "mr_x":
+        if self.player_role == "MrX":
             opponent_agent = registry.create_multi_detective_agent(AgentType.RANDOM, num_detectives)
         else:
-            opponent_agent = registry.create_mr_x_agent(AgentType.RANDOM)
+            opponent_agent = registry.create_MrX_agent(AgentType.RANDOM)
         
         print(f"\n🚀 Starting DQN Training for {self.player_role.upper()}")
         print("=" * 80)
@@ -188,7 +188,7 @@ class DQNTrainer(BaseTrainer):
         for episode in range(num_episodes):
             # if we are after X% of episodes the opponent becomes the heuristic agent
             # if episode >= int(num_episodes * 0.9):  
-            #     opponent_agent = registry.create_multi_detective_agent(AgentType.HEURISTIC, num_detectives) if self.player_role == "mr_x" else registry.create_mr_x_agent(AgentType.HEURISTIC)
+            #     opponent_agent = registry.create_multi_detective_agent(AgentType.HEURISTIC, num_detectives) if self.player_role == "MrX" else registry.create_MrX_agent(AgentType.HEURISTIC)
 
             episode_reward = self._train_episode(env, opponent_agent)
             self.episode_rewards.append(episode_reward)
@@ -263,7 +263,7 @@ class DQNTrainer(BaseTrainer):
         episode_reward = 0.0
         
         # Create our training agent
-        if self.player_role == "mr_x":
+        if self.player_role == "MrX":
             our_agent = DQNMrXAgent(trainer=self)
             # Run episode without collecting environment experiences
             result, _ = env.run_episode(our_agent, opponent_agent, collect_experience=False)
@@ -298,14 +298,14 @@ class DQNTrainer(BaseTrainer):
         turn_factor = max(0.5, min(2.0, result.total_turns / 12.0))  # Normalize around 12 turns
         
         if result.winner == self.player_role.replace("_", ""):
-            if self.player_role == "mr_x":
+            if self.player_role == "MrX":
                 # Mr. X: bonus for surviving longer
                 outcome = base_win_reward * turn_factor
             else:
                 # Detectives: bonus for catching Mr. X quickly
                 outcome = base_win_reward / turn_factor
         else:
-            if self.player_role == "mr_x":
+            if self.player_role == "MrX":
                 # Mr. X: less penalty if survived longer
                 outcome = base_loss_reward / turn_factor
             else:
@@ -314,12 +314,12 @@ class DQNTrainer(BaseTrainer):
         
         # Distance-based shaping
         shaping = 0.0
-        if hasattr(result, 'mr_x_min_distances') and result.mr_x_min_distances:
-            valid_distances = [d for d in result.mr_x_min_distances if d >= 0]
+        if hasattr(result, 'MrX_min_distances') and result.MrX_min_distances:
+            valid_distances = [d for d in result.MrX_min_distances if d >= 0]
             if valid_distances:
                 avg_min_dist = np.mean(valid_distances)
                 # Mr. X: reward being far from detectives; Detectives: reward being close
-                if self.player_role == "mr_x":
+                if self.player_role == "MrX":
                     shaping = 0.3 * avg_min_dist  # Reward staying far
                 else:
                     shaping = -0.3 * avg_min_dist  # Reward staying close
@@ -400,7 +400,7 @@ class DQNTrainer(BaseTrainer):
                     dest = np.random.randint(1, 200)
                     transport = np.random.choice(list(TransportType))
                     
-                    if self.player_role == "mr_x":
+                    if self.player_role == "MrX":
                         # Mr. X uses (destination, transport, use_double_move)
                         use_double_move = np.random.choice([True, False])
                         action = (dest, transport, use_double_move)

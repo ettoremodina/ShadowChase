@@ -77,7 +77,7 @@ class CachePerformanceAnalyzer:
             verbosity=VerbosityLevel.BASIC,
             auto_save=True,
             max_turns=24,
-            mr_x_agent_type=AgentType.OPTIMIZED_MCTS,
+            MrX_agent_type=AgentType.OPTIMIZED_MCTS,
             detective_agent_type=AgentType.OPTIMIZED_MCTS,
             save_dir=self.save_dir
         )
@@ -161,7 +161,7 @@ class CachePerformanceAnalyzer:
                 num_detectives=5,
                 verbosity=VerbosityLevel.SILENT,  # Silent for batch processing
                 max_turns=24,
-                mr_x_agent_type=AgentType.RANDOM,
+                MrX_agent_type=AgentType.RANDOM,
                 detective_agent_type=AgentType.RANDOM,
                 save_dir=self.save_dir
             )

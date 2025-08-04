@@ -1,6 +1,6 @@
 # 🕵️ Shadow Chase - AI Agent Training & Evaluation Platform
 
-> **⚖️ Legal Notice**: This is an independent educational/research implementation inspired by the Shadow Chase board game. This project is not affiliated with or endorsed by Ravensburger AG (owners of Shadow Chase trademark). For educational and research use only.
+> **⚖️ Legal Notice**: This is an independent educational/research implementation inspired by the Scotland Yard board game. This project is not affiliated with or endorsed by Ravensburger AG (owners of Scotland Yard trademark). For educational and research use only.
 
 A comprehensive implementation of the MrX Chase pursuit-evasion game with multiple AI agents for research, learning, and experimentation with reinforcement learning and game theory techniques.
 
@@ -18,7 +18,7 @@ MrX Chase is an asymmetric pursuit-evasion game with inperfect information, insp
 
 - **The MrX (1 player)**: The fugitive who moves secretly around the city using taxi, bus, underground, and black tickets. The MrX becomes visible only on certain turns (3, 8, 13, 18, 24) and has special abilities like double moves.
 
-- **Detectives (2-5 players)**: Work together to capture the MrX by landing on their position. They have limited transport tickets and their movements are always visible.
+- **Detectives (5 players)**: Work together to capture the MrX by landing on their position. They have limited transport tickets and their movements are always visible.
 
 - **Victory Conditions**:
   - **Detectives win**: If any agent lands on the MrX's position
@@ -193,7 +193,7 @@ We welcome contributions! Areas where help is especially needed:
 ## 📚 References
 
 The `papers/` directory contains relevant research literature on:
-- Pursuit-evasion games, Shadow Chase, and strategy analysis
+- Pursuit-evasion games, Scotland Yard, and strategy analysis
 - Monte Carlo Tree Search applications
 - Deep reinforcement learning for multi-agent systems
 - Game theory and optimal strategies
@@ -204,12 +204,12 @@ The `papers/` directory contains relevant research literature on:
 This project's **source code** is open source under the MIT License. See LICENSE file for details.
 
 ### Important Legal Disclaimer
-This is an **independent implementation** inspired by the Shadow Chase board game, created for educational and research purposes. This project:
+This is an **independent implementation** inspired by the Scotland Yard board game, created for educational and research purposes. This project:
 - ✅ **Educational/Research purposes only** - Not for commercial use
 - ✅ **Independent implementation** - Original code and AI research
 - ✅ **Open source** - Freely available for academic use
-- ✅ **Inspired by Shadow Chase** - Acknowledges the original game concept
-- ❌ **NOT affiliated** with Ravensburger AG or official Shadow Chase
+- ✅ **Inspired by Scotland Yard** - Acknowledges the original game concept
+- ❌ **NOT affiliated** with Ravensburger AG or official Scotland Yard
 - ❌ **Does NOT include** any copyrighted artwork or official assets
 
 ### Usage Restrictions

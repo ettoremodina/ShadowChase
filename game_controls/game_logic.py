@@ -14,7 +14,7 @@ class GameController:
     """Handles game logic and flow"""
     
     def __init__(self, game: ShadowChaseGame, display: GameDisplay, 
-                 mr_x_agent_type: AgentType = AgentType.RANDOM, 
+                 MrX_agent_type: AgentType = AgentType.RANDOM, 
                  detective_agent_type: AgentType = AgentType.RANDOM):
         self.game = game
         self.display = display
@@ -24,7 +24,7 @@ class GameController:
         # Initialize agents using the registry
         registry = get_agent_registry()
         num_detectives = len(game.game_state.detective_positions)
-        self.agent_mrx = registry.create_mr_x_agent(mr_x_agent_type)
+        self.agent_mrx = registry.create_MrX_agent(MrX_agent_type)
         self.agent_detectives = registry.create_multi_detective_agent(detective_agent_type, num_detectives)
     
     def make_all_detective_moves(self) -> bool:
@@ -150,7 +150,7 @@ class GameController:
             
             return (dest, transport)
     
-    def make_mr_x_move(self) -> bool:
+    def make_MrX_move(self) -> bool:
         """Handle Mr. X move"""
         available_moves = self.display.print_available_moves(self.game, Player.MRX)
         if not available_moves:
@@ -200,8 +200,8 @@ class GameController:
             
             if use_black:
                 # Check if black ticket is available
-                mr_x_tickets = self.game.get_mr_x_tickets()
-                if mr_x_tickets.get(TicketType.BLACK, 0) > 0:
+                MrX_tickets = self.game.get_MrX_tickets()
+                if MrX_tickets.get(TicketType.BLACK, 0) > 0:
                     chosen_transport = TransportType.BLACK
                 else:
                     self.display.print_error("No black tickets available")
@@ -236,7 +236,7 @@ class GameController:
             
             # Make move
             use_double_move = self.double_move_first
-            success = self.game.make_move(mr_x_moves=[(dest, chosen_transport)], use_double_move=use_double_move)
+            success = self.game.make_move(MrX_moves=[(dest, chosen_transport)], use_double_move=use_double_move)
             
             if success:
                 move_desc = f"Mr. X moved to position {dest}"
@@ -276,7 +276,7 @@ class GameController:
         else:  # Player.MRX
             dest, transport, use_double  = self.agent_mrx.choose_move(self.game)
             if dest is not None and transport is not None:
-                success = self.game.make_move(mr_x_moves=[(dest, transport)], use_double_move=use_double)
+                success = self.game.make_move(MrX_moves=[(dest, transport)], use_double_move=use_double)
                 if success:
                     self.display.print_move_result(True, "AI Mr. X moved")
                     return True
@@ -326,8 +326,8 @@ class GameSetup:
     def initialize_test_positions(game: ShadowChaseGame) -> None:
         """Initialize with predefined test positions"""
         detective_positions = [1, 2]
-        mr_x_position = 9
-        game.initialize_shadow_chase_game(detective_positions, mr_x_position)
+        MrX_position = 9
+        game.initialize_shadow_chase_game(detective_positions, MrX_position)
     
     
     @staticmethod
@@ -344,9 +344,9 @@ class GameSetup:
         sample = random.sample(starting_cards, num_detectives+1)
 
         detective_positions = sample[1:num_detectives+1]        
-        mr_x_position = sample[0]  # First position is Mr. X
+        MrX_position = sample[0]  # First position is Mr. X
         
-        game.initialize_shadow_chase_game(detective_positions, mr_x_position)
+        game.initialize_shadow_chase_game(detective_positions, MrX_position)
 
 
 def get_game_mode() -> Tuple[str, str, int, AgentType, AgentType]:
@@ -410,18 +410,18 @@ def get_game_mode() -> Tuple[str, str, int, AgentType, AgentType]:
             print("❌ Please enter 1, 2, 3, or 4")
     
     # Get agent configurations for AI players
-    mr_x_agent_type = AgentType.RANDOM
+    MrX_agent_type = AgentType.RANDOM
     detective_agent_type = AgentType.RANDOM
     
     if play_mode in ["human_det_vs_ai_mrx", "ai_vs_ai"]:
         print(f"\n🤖 Select AI Agent for Mr. X:")
-        mr_x_agent_type = AgentSelector.get_user_agent_choice("Choose Mr. X AI agent type")
+        MrX_agent_type = AgentSelector.get_user_agent_choice("Choose Mr. X AI agent type")
     
     if play_mode in ["ai_det_vs_human_mrx", "ai_vs_ai"]:
         print(f"\n🕵️ Select AI Agent for Detectives:")
         detective_agent_type = AgentSelector.get_user_agent_choice("Choose Detective AI agent type")
     
-    return map_size, play_mode, num_detectives, mr_x_agent_type, detective_agent_type
+    return map_size, play_mode, num_detectives, MrX_agent_type, detective_agent_type
 
 
 def get_agent_configuration() -> Tuple[AgentType, AgentType]:
@@ -430,12 +430,12 @@ def get_agent_configuration() -> Tuple[AgentType, AgentType]:
     print("=" * 50)
     
     print(f"\n🤖 Select AI Agent for Mr. X:")
-    mr_x_agent_type = AgentSelector.get_user_agent_choice("Choose Mr. X AI agent type")
+    MrX_agent_type = AgentSelector.get_user_agent_choice("Choose Mr. X AI agent type")
     
     print(f"\n🕵️ Select AI Agent for Detectives:")
     detective_agent_type = AgentSelector.get_user_agent_choice("Choose Detective AI agent type")
     
-    return mr_x_agent_type, detective_agent_type
+    return MrX_agent_type, detective_agent_type
 
 
 def get_verbosity_level() -> int:

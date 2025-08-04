@@ -79,7 +79,7 @@ class HeuristicMrXAgent(MrXAgent):
             return False
         
         # Use double move if closest detective is within 3 steps
-        min_distance = self.heuristics.get_minimum_distance_to_mr_x()
+        min_distance = self.heuristics.get_minimum_distance_to_MrX()
         return min_distance >= 0 and min_distance <= 3
     
     def _should_use_black_ticket(self, game: ShadowChaseGame, required_transport: TransportType) -> bool:
@@ -94,7 +94,7 @@ class HeuristicMrXAgent(MrXAgent):
         # Use black ticket if detectives are close (within 2 steps) and we have black tickets
         if tickets.get(TicketType.BLACK, 0) > 0:
             if self.heuristics:
-                min_distance = self.heuristics.get_minimum_distance_to_mr_x()
+                min_distance = self.heuristics.get_minimum_distance_to_MrX()
                 if min_distance >= 0 and min_distance <= 2:
                     return random.random() < 0.7  # 70% chance when close
         
@@ -120,7 +120,7 @@ class HeuristicMultiDetectiveAgent(MultiDetectiveAgent):
         
         # Get Mr. X's last known position or possible positions
         target_position = None
-        if game.game_state.mr_x_visible:
+        if game.game_state.MrX_visible:
             target_position = game.game_state.MrX_position
         elif hasattr(game, 'last_visible_position') and game.last_visible_position is not None:
             target_position = game.last_visible_position

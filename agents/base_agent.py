@@ -106,7 +106,7 @@ class MrXAgent(Agent):
     
     def get_available_tickets(self, game: ShadowChaseGame) -> dict:
         """Get available tickets for Mr. X"""
-        return game.get_mr_x_tickets()
+        return game.get_MrX_tickets()
     
     def can_use_double_move(self, game: ShadowChaseGame) -> bool:
         """Check if Mr. X can use double move"""

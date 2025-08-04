@@ -2,7 +2,15 @@
 
 > **⚖️ Legal Notice**: This is an independent educational/research implementation inspired by the Scotland Yard board game. This project is not affiliated with or endorsed by Ravensburger AG (owners of Scotland Yard trademark). For educational and research use only.
 
-A comprehensive implementation of the MrX Chase pursuit-evasion game with multiple AI agents for research, learning, and experimentation with reinforcement learning and game theory techniques.
+## 🔗 Quick Links
+
+**🚀 Getting Started:** [Installation](#installation) • [Quick Start](#quick-start) • [Usage Examples](#-usage-examples)  
+**📚 Documentation:** [Terminal Guide](game_controls/README.md) • [API Reference](other/FUNCTION_DOCUMENTATION.md) • [Configuration](#️-configuration)  
+**🤖 Development:** [Training](#-train-new-dqn-agents) • [Contributing](#-contributing) • [Troubleshooting](#-troubleshooting--support)
+
+---
+
+A comprehensive implementation of the Shadow Chase pursuit-evasion game with multiple AI agents for research, learning, and experimentation with reinforcement learning and game theory techniques.
 
 ## 🎯 Project Overview
 
@@ -12,16 +20,50 @@ This project aims to provide a platform for:
 - **Exploring game theory** in pursuit-evasion scenarios
 - **Benchmarking different agent implementations** against each other
 
-## 🎲 How MrX Chase Works
+## 📋 Table of Contents
 
-MrX Chase is an asymmetric pursuit-evasion game with inperfect information, inspired by Shadow Chase:
+### 🚀 Getting Started
+- [How Shadow Chase Works](#-how-shadow-chase-works)
+- [Quick Start](#-quick-start)
+  - [Prerequisites](#prerequisites)
+  - [Installation](#installation)
+  - [Three Main Ways to Use This Project](#three-main-ways-to-use-this-project)
 
-- **The MrX (1 player)**: The fugitive who moves secretly around the city using taxi, bus, underground, and black tickets. The MrX becomes visible only on certain turns (3, 8, 13, 18, 24) and has special abilities like double moves.
+### 🏗️ Project Structure & Documentation
+- [Project Structure](#️-project-structure)
+- [Available Agent Types](#-available-agent-types)
+- [Configuration](#-configuration)
+
+### 🎮 Usage & Examples
+- [Usage Examples](#-usage-examples)
+- [Examples & Tutorials](#-examples--tutorials)
+- [Terminal Interface Guide](game_controls/README.md)
+- [Function Documentation](other/FUNCTION_DOCUMENTATION.md)
+
+### 🤖 Development & Training
+- [Configuration](#️-configuration)
+- [Training Configuration Files](#training-configuration-files)
+- [Troubleshooting & Support](#-troubleshooting--support)
+- [Future Development & Improvements](#-future-development--improvements)
+- [Contributing](#-contributing)
+
+### 📚 Research & Legal
+- [References](#-references)
+- [License & Legal Notice](#-license--legal-notice)
+- [How to Cite This Work](#-how-to-cite-this-work)
+
+---
+
+## 🎲 How Shadow Chase Works
+
+Shadow Chase is an asymmetric pursuit-evasion game with imperfect information, inspired by Shadow Chase:
+
+- **MrX (1 player)**: The fugitive who moves secretly around the city using taxi, bus, underground, and black tickets. MrX becomes visible only on certain turns and has special abilities like double moves.
 
 - **Detectives (5 players)**: Work together to capture the MrX by landing on their position. They have limited transport tickets and their movements are always visible.
 
 - **Victory Conditions**:
-  - **Detectives win**: If any agent lands on the MrX's position
+  - **Detectives win**: If any agent lands on MrX's position
   - **MrX wins**: If they evade capture for 24 turns or if Detectives run out of moves
 
 - **Transport Network**: Players move through the city using three transport types:
@@ -34,7 +76,9 @@ MrX Chase is an asymmetric pursuit-evasion game with inperfect information, insp
 
 ### Prerequisites
 - Python 3.8+
+- 8GB+ RAM (recommended for DQN training)
 - CUDA-compatible GPU (optional, for faster DQN training)
+- Git (for cloning the repository)
 
 ### Installation
 ```bash
@@ -46,7 +90,7 @@ pip install -r requirements.txt
 ### Three Main Ways to Use This Project
 
 #### 1. 🎮 Interactive Play (Graphical Interface)
-Play MrX Chase with a visual interface - control Detectives manually or watch AI agents play:
+Play Shadow Chase with a visual interface - control Detectives manually or watch AI agents play:
 ```bash
 python main.py
 ```
@@ -67,7 +111,7 @@ python test_agents.py
 Train your own Deep Q-Learning agents:
 ```bash
 python train_dqn.py --role MrX --episodes 10000
-python train_dqn.py --role agents --episodes 10000
+python train_dqn.py --role detectives --episodes 10000
 ```
 - Train either MrX or agent teams
 - Supports CPU and GPU training
@@ -76,7 +120,7 @@ python train_dqn.py --role agents --episodes 10000
 ## 🏗️ Project Structure
 
 ```
-MrXChase/
+ShadowChase/
 ├── 📁 agents/                    # AI agent implementations
 │   ├── base_agent.py            # Abstract base classes
 │   ├── random_agent.py          # Random baseline agents
@@ -92,7 +136,7 @@ MrXChase/
 │   ├── deep_q/                  # DQN-specific components
 │   ├── feature_extractor.py     # State representation
 │   └── training_environment.py  # Standardized training interface
-├── 📁 MrXChase/              # Core game engine
+├── 📁 ShadowChase/              # Core game engine
 │   ├── core/                    # Game logic and rules
 │   ├── ui/                      # Graphical interface
 │   └── services/                # Utilities and caching
@@ -100,13 +144,30 @@ MrXChase/
 └── 📁 papers/                   # Research literature
 ```
 
+### Key Files
+
+#### Main Entry Points
+- **[main.py](main.py)**: Interactive graphical interface
+- **[test_agents.py](test_agents.py)**: Agent testing and comparison
+- **[train_dqn.py](train_dqn.py)**: Deep Q-Learning training
+- **[game_controls/simple_game.py](game_controls/simple_game.py)**: Terminal interface
+
+#### Configuration & Data
+- **[training/configs/](training/configs/)**: Training configuration files
+- **[data/](data/)**: Board data and game configurations
+- **[requirements.txt](requirements.txt)**: Project dependencies
+
+#### Documentation
+- **[game_controls/README.md](game_controls/README.md)**: Terminal interface guide
+- **[other/FUNCTION_DOCUMENTATION.md](other/FUNCTION_DOCUMENTATION.md)**: Complete API reference
+
 ## 🤖 Available Agent Types
 
 ### Basic Agents
 - **Random Agent**: Makes random valid moves (baseline)
 - **Heuristic Agent**: Uses distance-based strategies
   - MrX: Maximizes distance from closest agent
-  - Agents: Minimize distance to MrX's last known position
+  - Detectives: Minimize distance to MrX's last known position
 
 ### Advanced AI Agents
 - **MCTS Agent**: Monte Carlo Tree Search with random simulations
@@ -118,6 +179,9 @@ MrXChase/
 - **Cache system works well for MCTS** agents, providing significant speedup
 - **Game method caching** is less effective (retrieval cost > recalculation cost)
 - **DQN training** benefits from GPU acceleration but runs fine on CPU
+- **Memory requirements**: 8GB+ RAM recommended for large training sessions
+- **Training time**: DQN training can take several hours for 10,000+ episodes
+
 
 ## 🎮 Usage Examples
 
@@ -143,7 +207,32 @@ python train_dqn.py --role detectives --episodes 5000 --save-dir my_training
 python game_controls/simple_game.py --batch 50 --map-size extracted --detectives 5
 ```
 
-## 🔧 Configuration
+## � Examples & Tutorials
+
+### Quick Start Examples
+- **[main.py](main.py)**: Interactive graphical gameplay with manual or AI control
+- **[test_agents.py](test_agents.py)**: Systematic agent comparison and benchmarking
+- **[train_dqn.py](train_dqn.py)**: Deep Q-Learning agent training
+
+### Terminal Interface Examples
+- **[simple_game.py](game_controls/simple_game.py)**: Command-line gameplay
+- **[Terminal Guide](game_controls/README.md)**: Complete terminal interface documentation
+
+### Advanced Examples
+- **[Example Games](ShadowChase/examples/example_games.py)**: Different game configurations
+- **[Board Creation](other/createBoard.py)**: Interactive board creation tool
+- **[Performance Analysis](other/profile_mcts_agent.py)**: MCTS agent profiling
+
+## �🔧 Configuration
+
+### Training Configuration Files
+
+The project includes several configuration files to customize training and game parameters:
+
+- **[DQN Configuration](training/configs/dqn_config.json)**: Deep Q-Learning network architecture, training parameters, and hyperparameters
+- **[MCTS Configuration](training/configs/mcts_config.json)**: Monte Carlo Tree Search parameters and optimization settings
+- **[Board Metadata](data/board_metadata.json)**: Game board configuration and transport network settings
+- **[Transport Colors](data/transport_colors.json)**: Visualization colors for different transport types
 
 ### Training Configuration
 Edit `training/configs/dqn_config.json` to adjust:
@@ -154,18 +243,50 @@ Edit `training/configs/dqn_config.json` to adjust:
 ### Cache Settings
 The caching system can be configured in your scripts:
 ```python
-from MrXChase.services.cache_system import *
+from ShadowChase.services.cache_system import *
 
 enable_cache()
 enable_namespace_cache(CacheNamespace.MCTS_NODES)      # Good for MCTS
 disable_namespace_cache(CacheNamespace.GAME_METHODS)   # Not helpful
 ```
 
-## 🚧 Future Development & Improvements
+### Game Configuration
+You can customize game parameters in several ways:
+- **Map size**: Choose between test (10 nodes), full (199 nodes), or extracted board
+- **Number of detectives**: Typically 2-5 detectives
+- **Agent types**: Select from Random, Heuristic, MCTS, or DQN agents
+- **Verbosity levels**: Control output detail in terminal mode
+
+## � Troubleshooting & Support
+
+### Common Issues
+
+#### Installation Problems
+- **CUDA Issues**: DQN training works fine on CPU if GPU is unavailable
+- **Missing Dependencies**: Run `pip install -r requirements.txt` to ensure all packages are installed
+- **Python Version**: Requires Python 3.8+
+
+#### Performance Issues
+- **Slow MCTS**: Enable caching with `enable_namespace_cache(CacheNamespace.MCTS_NODES)`
+- **Memory Usage**: Large replay buffers in DQN training may require 8GB+ RAM
+- **Training Speed**: Use `--episodes` parameter to control training length
+
+#### Gameplay Issues
+- **Invalid Moves**: Check transport type availability and ticket counts
+- **Game Not Starting**: Ensure starting positions don't overlap
+- **Save/Load Errors**: Check that `saved_games/` directory exists and is writable
+
+### Getting Help
+- **Function Documentation**: See [FUNCTION_DOCUMENTATION.md](other/FUNCTION_DOCUMENTATION.md) for detailed API reference
+- **Terminal Interface**: See [game_controls/README.md](game_controls/README.md) for command-line usage
+- **Configuration**: Check configuration files in `training/configs/` and `data/`
+- **Examples**: Look at files in `ShadowChase/examples/` for usage patterns
+
+## �🚧 Future Development & Improvements
 
 ### High Priority Improvements Needed
 - **🎨 User Interface Overhaul**: The current GUI needs significant improvement for better usability
-- **🤝 Adversarial Training**: Implement self-play and adversarial learning for DQN detectives
+- **🤝 Adversarial Training**: Implement adversarial learning to train Deep Learning based agents
 - **🔄 Advanced RL Techniques**: Add PPO, A3C, or other modern RL algorithms
 - **📊 Better Evaluation**: More sophisticated metrics and analysis tools
 
@@ -178,7 +299,6 @@ disable_namespace_cache(CacheNamespace.GAME_METHODS)   # Not helpful
 ### Research Opportunities
 - **Game Theory Analysis**: Nash equilibria and optimal strategies
 - **Transfer Learning**: Adapting agents to different map sizes
-- **Explainable AI**: Understanding agent decision-making processes
 
 ## 🤝 Contributing
 
@@ -187,7 +307,7 @@ We welcome contributions! Areas where help is especially needed:
 1. **UI/UX Improvements**: The current interface needs major enhancements
 2. **Advanced RL Algorithms**: Implementing state-of-the-art techniques
 3. **Performance Optimization**: Speeding up training and evaluation
-4. **Documentation**: Tutorials, examples, and API documentation
+4. **Documentation**: Tutorials, examples, and general documentation
 5. **Testing**: Unit tests and integration tests
 
 ## 📚 References
@@ -235,7 +355,7 @@ If you use this project in your research or academic work, please cite it as:
 ```bibtex
 @software{modina2025MrXchase,
   author = {Modina, Ettore},
-  title = {MrX Chase: AI Agent Training \& Evaluation Platform},
+  title = {Shadow Chase: AI Agent Training \& Evaluation Platform},
   year = {2025},
   url = {https://github.com/ettoremodina/ShadowChase},
   note = {Educational implementation inspired by Shadow Chase for reinforcement learning and game theory research}
@@ -243,10 +363,10 @@ If you use this project in your research or academic work, please cite it as:
 ```
 
 ### APA Style
-Modina, E. (2025). *MrX Chase: AI Agent Training & Evaluation Platform* [Computer software]. https://github.com/ettoremodina/ShadowChase
+Modina, E. (2025). *Shadow Chase: AI Agent Training & Evaluation Platform* [Computer software]. https://github.com/ettoremodina/ShadowChase
 
 ### IEEE Style
-E. Modina, "MrX Chase: AI Agent Training & Evaluation Platform," 2025. [Online]. Available: https://github.com/ettoremodina/ShadowChase
+E. Modina, "Shadow Chase: AI Agent Training & Evaluation Platform," 2025. [Online]. Available: https://github.com/ettoremodina/ShadowChase
 
 
 ---

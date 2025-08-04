@@ -9,7 +9,6 @@ import matplotlib.pyplot as plt
 from training.training_environment import TrainingEnvironment
 from agents.dqn_agent import DQNMrXAgent, DQNMultiDetectiveAgent
 import argparse
-from ShadowChase.core.game import TransportType
 from training.deep_q.dqn_trainer import DQNTrainer
 from agents import AgentType, get_agent_registry
 

@@ -157,10 +157,6 @@ ShadowChase/
 - **[data/](data/)**: Board data and game configurations
 - **[requirements.txt](requirements.txt)**: Project dependencies
 
-#### Documentation
-- **[game_controls/README.md](game_controls/README.md)**: Terminal interface guide
-- **[other/FUNCTION_DOCUMENTATION.md](other/FUNCTION_DOCUMENTATION.md)**: Complete API reference
-
 ## 🤖 Available Agent Types
 
 ### Basic Agents
@@ -197,7 +193,7 @@ python test_agents.py
 # Train MrX agent for 5000 episodes
 python train_dqn.py --role MrX --episodes 5000 --map extracted
 
-# Train agent team
+# Train detective agents for 5000 episodes
 python train_dqn.py --role detectives --episodes 5000 --save-dir my_training
 ```
 
@@ -207,7 +203,7 @@ python train_dqn.py --role detectives --episodes 5000 --save-dir my_training
 python game_controls/simple_game.py --batch 50 --map-size extracted --detectives 5
 ```
 
-## � Examples & Tutorials
+## 🚧 Examples & Tutorials
 
 ### Quick Start Examples
 - **[main.py](main.py)**: Interactive graphical gameplay with manual or AI control
@@ -223,7 +219,7 @@ python game_controls/simple_game.py --batch 50 --map-size extracted --detectives
 - **[Board Creation](other/createBoard.py)**: Interactive board creation tool
 - **[Performance Analysis](other/profile_mcts_agent.py)**: MCTS agent profiling
 
-## �🔧 Configuration
+## ⚙️ Configuration
 
 ### Training Configuration Files
 
@@ -276,13 +272,7 @@ You can customize game parameters in several ways:
 - **Game Not Starting**: Ensure starting positions don't overlap
 - **Save/Load Errors**: Check that `saved_games/` directory exists and is writable
 
-### Getting Help
-- **Function Documentation**: See [FUNCTION_DOCUMENTATION.md](other/FUNCTION_DOCUMENTATION.md) for detailed API reference
-- **Terminal Interface**: See [game_controls/README.md](game_controls/README.md) for command-line usage
-- **Configuration**: Check configuration files in `training/configs/` and `data/`
-- **Examples**: Look at files in `ShadowChase/examples/` for usage patterns
-
-## �🚧 Future Development & Improvements
+## 🚧 Future Development & Improvements
 
 ### High Priority Improvements Needed
 - **🎨 User Interface Overhaul**: The current GUI needs significant improvement for better usability
@@ -307,7 +297,7 @@ We welcome contributions! Areas where help is especially needed:
 1. **UI/UX Improvements**: The current interface needs major enhancements
 2. **Advanced RL Algorithms**: Implementing state-of-the-art techniques
 3. **Performance Optimization**: Speeding up training and evaluation
-4. **Documentation**: Tutorials, examples, and general documentation
+4. **Documentation**: Tutorials, examples, and general documentation are still lacking
 5. **Testing**: Unit tests and integration tests
 
 ## 📚 References

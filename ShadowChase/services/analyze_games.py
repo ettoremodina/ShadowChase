@@ -129,7 +129,7 @@ class GameStatistics:
         
         total_games = len(self.games)
         detective_wins = sum(1 for g in self.games if g.get('winner') == 'detectives')
-        MrX_wins = sum(1 for g in self.games if g.get('winner') == 'MrX')
+        MrX_wins = sum(1 for g in self.games if g.get('winner') != 'detectives' )
         incomplete_games = total_games - detective_wins - MrX_wins
         
         # Calculate confidence intervals for win rates

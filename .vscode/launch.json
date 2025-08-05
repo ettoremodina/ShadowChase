@@ -4,6 +4,7 @@
     // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
+    
 
         {
             "name": "TESTAGENTS",
@@ -25,6 +26,13 @@
             "request": "launch",
             "program": "main.py",
             "console": "integratedTerminal"
-        }
+        },
+        {
+            "name": "PETTINGZOO",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "pettingzoo_integration/example_usage.py",
+            "console": "integratedTerminal"
+        },
     ]
 }

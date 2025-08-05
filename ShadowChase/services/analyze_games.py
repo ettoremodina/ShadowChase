@@ -26,7 +26,7 @@ AGENT_NAME_MAPPING = {
     "epsilon_greedy_mcts": "eps-Greedy MCTS",
     "deep_q": "Deep Q-Network"
 }
-increase = 2
+increase = 7
 # Font size configuration variables for easy debugging and testing
 FONT_SIZE_LARGE_TITLE = 24   +increase       # Main titles and suptitles
 FONT_SIZE_TITLE = 20         +increase           # Plot titles
@@ -43,6 +43,13 @@ FONT_SIZE_PIE_PERCENT = 12   +increase    # Pie chart percentages
 def get_display_name(agent_name: str) -> str:
     """Convert internal agent name to display name"""
     return AGENT_NAME_MAPPING.get(agent_name, agent_name.replace("_", " ").title())
+
+
+def add_line_breaks_to_name(name: str) -> str:
+    """Add line breaks at spaces in long agent names to prevent overlap"""
+    if ' ' in name:
+        return name.replace(' ', '\n')
+    return name
 
 
 def calculate_proportion_confidence_interval(successes: int, total: int, confidence: float = 0.95) -> Tuple[float, float]:
@@ -812,60 +819,135 @@ class GameAnalyzer:
         if not summary:
             return
         
-        fig = plt.figure(figsize=(30, 22))
+        fig = plt.figure(figsize=(32, 24))
         
-        # Create a grid layout with more space for the new chart
-        gs = fig.add_gridspec(3, 6, hspace=0.35, wspace=0.35)
+        # Create a simple 2x2 grid layout
+        gs = fig.add_gridspec(2, 2, hspace=0.3, wspace=0.3)
         
-        # Overall statistics (top left)
-        ax1 = fig.add_subplot(gs[0, :2])
+        # TOP LEFT: Theoretical Games per Minute for same-type agents
+        ax1 = fig.add_subplot(gs[0, 0])
+        if self.statistics.execution_times:
+            # Filter for same-type agent combinations
+            same_type_exec_combinations = []
+            same_type_games_per_min = []
+            
+            for combo in self.statistics.execution_times.keys():
+                if "_vs_" in combo:
+                    MrX_agent, detective_agent = combo.split("_vs_")
+                    if MrX_agent == detective_agent and self.statistics.execution_times[combo]:  # Same type of agent
+                        avg_time = np.mean(self.statistics.execution_times[combo])
+                        gpm = 60 / avg_time if avg_time > 0 else 0
+                        same_type_exec_combinations.append(combo)
+                        same_type_games_per_min.append(gpm)
+            
+            if same_type_exec_combinations and same_type_games_per_min:
+                display_combinations = [add_line_breaks_to_name(get_display_name(combo.split('_vs_')[0])) for combo in same_type_exec_combinations]
+                
+                bars = ax1.bar(range(len(same_type_exec_combinations)), same_type_games_per_min,
+                              color=sns.color_palette("plasma", len(same_type_exec_combinations)))
+                ax1.set_title('Theoretical Games per Minute\n(Same-Type Agent Combinations)', 
+                             fontsize=FONT_SIZE_TITLE, fontweight='bold', pad=25)
+                ax1.set_xlabel('Agent Type (Both Players)', fontsize=FONT_SIZE_LABEL)
+                ax1.set_ylabel('Games per Minute', fontsize=FONT_SIZE_LABEL)
+                ax1.set_xticks(range(len(same_type_exec_combinations)))
+                ax1.set_xticklabels(display_combinations, fontsize=FONT_SIZE_TICK)
+                ax1.tick_params(axis='y', labelsize=FONT_SIZE_TICK)
+                
+                # Add value labels
+                for bar, gpm in zip(bars, same_type_games_per_min):
+                    height = bar.get_height()
+                    ax1.text(bar.get_x() + bar.get_width()/2., height + height*0.01,
+                            f'{gpm:.1f}', ha='center', va='bottom', fontsize=FONT_SIZE_ANNOTATION, fontweight='bold')
         
-        # Get confidence intervals
-        detective_ci = summary.get('detective_win_rate_ci', (0, 0))
-        MrX_ci = summary.get('MrX_win_rate_ci', (0, 0))
-        completion_ci = summary.get('completion_rate_ci', (0, 0))
-        length_ci = summary.get('average_game_length_ci', (0, 0))
+        # BOTTOM LEFT: Game Length Distribution for same-type agents
+        ax2 = fig.add_subplot(gs[1, 0])
+        if self.statistics.game_lengths:
+            # Filter for same-type agent combinations
+            same_type_combinations = []
+            same_type_lengths_data = []
+            
+            for combo, lengths in self.statistics.game_lengths.items():
+                if "_vs_" in combo:
+                    MrX_agent, detective_agent = combo.split("_vs_")
+                    if MrX_agent == detective_agent:  # Same type of agent
+                        same_type_combinations.append(combo)
+                        same_type_lengths_data.append(lengths)
+            
+            if same_type_combinations and same_type_lengths_data:
+                display_combinations = [add_line_breaks_to_name(get_display_name(combo.split('_vs_')[0])) for combo in same_type_combinations]
+                
+                box_plot = ax2.boxplot(same_type_lengths_data, labels=display_combinations, patch_artist=True)
+                colors = sns.color_palette("viridis", len(same_type_combinations))
+                for patch, color in zip(box_plot['boxes'], colors):
+                    patch.set_facecolor(color)
+                
+                ax2.set_title('Game Length Distribution\n(Same-Type Agent Combinations)', 
+                             fontsize=FONT_SIZE_TITLE, fontweight='bold', pad=25)
+                ax2.set_xlabel('Agent Type (Both Players)', fontsize=FONT_SIZE_LABEL)
+                ax2.set_ylabel('Game Length (turns)', fontsize=FONT_SIZE_LABEL)
+                ax2.tick_params(axis='x', labelsize=FONT_SIZE_TICK)
+                ax2.tick_params(axis='y', labelsize=FONT_SIZE_TICK)
         
-        stats_text = f"""
-OVERALL STATISTICS
-==================
-Total Games: {summary['total_games']:,}
-Completed Games: {summary['total_games'] - summary['incomplete_games']:,}
-Completion Rate: {summary['completion_rate']:.1f}%
-  [95% CI: {completion_ci[0]:.1f}%-{completion_ci[1]:.1f}%]
-
-WINNER BREAKDOWN (with 95% CI)
-===============================
-Detective Wins: {summary['detective_wins']:,} ({summary['detective_win_rate']:.1f}%)
-  [95% CI: {detective_ci[0]:.1f}%-{detective_ci[1]:.1f}%]
-Mr. X Wins: {summary['MrX_wins']:,} ({summary['MrX_win_rate']:.1f}%)
-  [95% CI: {MrX_ci[0]:.1f}%-{MrX_ci[1]:.1f}%]
-Incomplete: {summary['incomplete_games']:,}
-
-GAME METRICS
-============
-Average Game Length: {summary['average_game_length']:.1f} turns
-  [95% CI: {length_ci[0]:.1f}-{length_ci[1]:.1f}]
-        """
-        ax1.text(0.05, 0.95, stats_text, transform=ax1.transAxes, fontsize=FONT_SIZE_TEXT_STATS,
-                verticalalignment='top', fontfamily='monospace',
-                bbox=dict(boxstyle='round', facecolor='lightblue', alpha=0.8))
-        ax1.axis('off')
+        # TOP RIGHT: Performance Heatmap
+        ax3 = fig.add_subplot(gs[0, 1])
+        if self.statistics.agent_combinations:
+            # Extract agent types for heatmap
+            MrX_agents = set()
+            detective_agents = set()
+            
+            for combo in self.statistics.agent_combinations.keys():
+                if "_vs_" in combo:
+                    MrX, detective = combo.split("_vs_")
+                    MrX_agents.add(MrX)
+                    detective_agents.add(detective)
+            
+            MrX_agents = sorted(list(MrX_agents))
+            detective_agents = sorted(list(detective_agents), reverse=True)
+            
+            if MrX_agents and detective_agents:
+                # Convert to display names
+                MrX_display = [get_display_name(agent) for agent in MrX_agents]
+                detective_display = [get_display_name(agent) for agent in detective_agents]
+                
+                # Create Mr. X win rate matrix
+                MrX_matrix = np.zeros((len(MrX_agents), len(detective_agents)))
+                
+                for i, MrX in enumerate(MrX_agents):
+                    for j, detective in enumerate(detective_agents):
+                        combo = f"{MrX}_vs_{detective}"
+                        if combo in self.statistics.agent_combinations:
+                            stats = self.statistics.agent_combinations[combo]
+                            MrX_matrix[i, j] = stats['MrX_win_rate']
+                
+                # Create heatmap
+                sns.heatmap(MrX_matrix, annot=True, fmt='.1f', 
+                           xticklabels=detective_display, yticklabels=MrX_display,
+                           cmap='RdYlBu_r', ax=ax3, cbar_kws={'label': 'Mr. X Win Rate (%)'}, 
+                           annot_kws={'fontsize': FONT_SIZE_HEATMAP_ANNOT, 'fontweight': 'bold'})
+                ax3.set_title('Mr. X Win Rate Matrix', fontsize=FONT_SIZE_TITLE, fontweight='bold', pad=25)
+                ax3.set_xlabel('Detective Agent', fontsize=FONT_SIZE_LABEL)
+                ax3.set_ylabel('Mr. X Agent', fontsize=FONT_SIZE_LABEL)
+                ax3.tick_params(axis='x', labelsize=FONT_SIZE_TICK, rotation=30)
+                ax3.tick_params(axis='y', labelsize=FONT_SIZE_TICK)
         
-        # Win distribution pie chart (top middle)
-        ax2 = fig.add_subplot(gs[0, 2:4])
+        # BOTTOM RIGHT: Pie Charts (split into top and bottom halves)
+        # Create a sub-grid for the pie charts
+        gs_pie = gs[1, 1].subgridspec(2, 1, hspace=0.4)
+        
+        # Game Outcomes pie chart (top half of bottom right)
+        ax4 = fig.add_subplot(gs_pie[0])
         if summary['detective_wins'] > 0 or summary['MrX_wins'] > 0:
             sizes = [summary['detective_wins'], summary['MrX_wins']]
             labels = ['Detective Wins', 'Mr. X Wins']
-            colors = ['lightcoral', 'lightskyblue']
+            colors = ['royalblue', 'crimson']  # Blue for detectives, red for MrX
             
             if summary['incomplete_games'] > 0:
                 sizes.append(summary['incomplete_games'])
                 labels.append('Incomplete')
                 colors.append('lightgray')
             
-            wedges, texts, autotexts = ax2.pie(sizes, labels=labels, colors=colors, autopct='%1.1f%%', startangle=90)
-            ax2.set_title('Game Outcomes Distribution', pad=20, fontsize=FONT_SIZE_TITLE, fontweight='bold')
+            wedges, texts, autotexts = ax4.pie(sizes, labels=labels, colors=colors, autopct='%1.1f%%', startangle=90)
+            ax4.set_title('Game Outcomes Distribution', fontsize=FONT_SIZE_TITLE, fontweight='bold', pad=15)
             
             # Improve text readability
             for text in texts:
@@ -876,8 +958,8 @@ Average Game Length: {summary['average_game_length']:.1f} turns
                 autotext.set_fontweight('bold')
                 autotext.set_fontsize(FONT_SIZE_PIE_PERCENT)
         
-        # Agent Strength Distribution (top right) - NEW PIE CHART
-        ax6 = fig.add_subplot(gs[0, 4:])
+        # Agent Strength Distribution pie chart (bottom half of bottom right)
+        ax5 = fig.add_subplot(gs_pie[1])
         agent_strength = self._calculate_agent_strength()
         if agent_strength:
             agents = list(agent_strength.keys())
@@ -890,90 +972,20 @@ Average Game Length: {summary['average_game_length']:.1f} turns
                 display_agents = [get_display_name(agent) for agent in agents]
                 colors_strength = sns.color_palette("Set3", len(agents))
                 
-                wedges, texts, autotexts = ax6.pie(total_wins, labels=display_agents, colors=colors_strength, 
+                wedges, texts, autotexts = ax5.pie(total_wins, labels=display_agents, colors=colors_strength, 
                                                   autopct='%1.1f%%', startangle=90)
-                ax6.set_title('Agent Strength Distribution\n(Total Wins Across All Roles)', pad=20, fontsize=FONT_SIZE_TITLE, fontweight='bold')
+                ax5.set_title('Agent Strength Distribution\n(Total Wins Across All Roles)', fontsize=FONT_SIZE_TITLE, fontweight='bold', pad=15)
                 
                 # Improve text readability
                 for text in texts:
-                    text.set_fontsize(FONT_SIZE_PIE_LABEL-1)
+                    text.set_fontsize(FONT_SIZE_PIE_LABEL)
                     text.set_fontweight('bold')
                 for autotext in autotexts:
                     autotext.set_color('black')
                     autotext.set_fontweight('bold')
                     autotext.set_fontsize(FONT_SIZE_PIE_PERCENT)
         
-        # Agent combination performance (middle)
-        if self.statistics.agent_combinations:
-            ax3 = fig.add_subplot(gs[1, :])
-            combinations = list(self.statistics.agent_combinations.keys())[:10]  # Top 10
-            display_combinations = [f"{get_display_name(combo.split('_vs_')[0])}\nvs\n{get_display_name(combo.split('_vs_')[1])}" 
-                                  if "_vs_" in combo else combo for combo in combinations]
-            detective_rates = [self.statistics.agent_combinations[combo]['detective_win_rate'] 
-                             for combo in combinations]
-            MrX_rates = [self.statistics.agent_combinations[combo]['MrX_win_rate'] 
-                         for combo in combinations]
-            
-            x = np.arange(len(combinations))
-            width = 0.35
-            
-            bars1 = ax3.bar(x - width/2, detective_rates, width, label='Detective Win Rate', 
-                           color='lightcoral', alpha=0.8)
-            bars2 = ax3.bar(x + width/2, MrX_rates, width, label='Mr. X Win Rate', 
-                           color='lightskyblue', alpha=0.8)
-            
-            ax3.set_title('Win Rates by Agent Combination', fontsize=FONT_SIZE_TITLE, fontweight='bold', pad=25)
-            ax3.set_xlabel('Agent Combination', fontsize=FONT_SIZE_LABEL)
-            ax3.set_ylabel('Win Rate (%)', fontsize=FONT_SIZE_LABEL)
-            ax3.set_xticks(x)
-            ax3.set_xticklabels(display_combinations, fontsize=FONT_SIZE_TICK-1)
-            ax3.legend(fontsize=FONT_SIZE_LEGEND)
-            ax3.set_ylim(0, 100)
-            ax3.tick_params(axis='y', labelsize=FONT_SIZE_TICK)
-        
-        # Game length distribution (bottom left)
-        if self.statistics.game_lengths:
-            ax4 = fig.add_subplot(gs[2, :3])
-            all_lengths = [length for lengths in self.statistics.game_lengths.values() 
-                          for length in lengths]
-            if all_lengths:
-                ax4.hist(all_lengths, bins=20, alpha=0.7, color='mediumseagreen', edgecolor='black')
-                ax4.set_title('Game Length Distribution', fontsize=FONT_SIZE_TITLE, fontweight='bold', pad=25)
-                ax4.set_xlabel('Game Length (turns)', fontsize=FONT_SIZE_LABEL)
-                ax4.set_ylabel('Frequency', fontsize=FONT_SIZE_LABEL)
-                ax4.axvline(np.mean(all_lengths), color='red', linestyle='--', linewidth=2,
-                           label=f'Mean: {np.mean(all_lengths):.1f}')
-                ax4.legend(fontsize=FONT_SIZE_LEGEND)
-                ax4.tick_params(axis='x', labelsize=FONT_SIZE_TICK)
-                ax4.tick_params(axis='y', labelsize=FONT_SIZE_TICK)
-        
-        # Agent performance summary (bottom right)
-        ax5 = fig.add_subplot(gs[2, 3:])
-        if self.statistics.win_rates.get('MrX') and self.statistics.win_rates.get('detective'):
-            MrX_agents = list(self.statistics.win_rates['MrX'].keys())
-            MrX_display = [get_display_name(agent) for agent in MrX_agents]
-            MrX_rates = [self.statistics.win_rates['MrX'][agent]['win_rate'] for agent in MrX_agents]
-            
-            detective_agents = list(self.statistics.win_rates['detective'].keys())
-            detective_display = [get_display_name(agent) for agent in detective_agents]
-            detective_rates = [self.statistics.win_rates['detective'][agent]['win_rate'] 
-                             for agent in detective_agents]
-            
-            x1 = np.arange(len(MrX_agents))
-            x2 = np.arange(len(detective_agents)) + len(MrX_agents) + 0.5
-            
-            bars1 = ax5.bar(x1, MrX_rates, color='lightskyblue', alpha=0.8, label='Mr. X Agents')
-            bars2 = ax5.bar(x2, detective_rates, color='lightcoral', alpha=0.8, label='Detective Agents')
-            
-            ax5.set_title('Agent Type Performance', fontsize=FONT_SIZE_TITLE, fontweight='bold', pad=25)
-            ax5.set_ylabel('Win Rate (%)', fontsize=FONT_SIZE_LABEL)
-            ax5.set_xticks(list(x1) + list(x2))
-            ax5.set_xticklabels(MrX_display + detective_display, fontsize=FONT_SIZE_TICK-1)
-            ax5.legend(fontsize=FONT_SIZE_LEGEND)
-            ax5.set_ylim(0, 100)
-            ax5.tick_params(axis='y', labelsize=FONT_SIZE_TICK)
-        
-        plt.suptitle('Shadow Chase Game Analysis Dashboard', fontsize=FONT_SIZE_LARGE_TITLE, y=0.98, fontweight='bold')
+        plt.suptitle('Shadow Chase Game Analysis Dashboard', fontsize=FONT_SIZE_LARGE_TITLE, y=0.95, fontweight='bold')
         plt.savefig(self.graphs_dir / "comprehensive_dashboard.jpg", dpi=300, bbox_inches='tight')
         plt.close()
         print("   📊 Generated: comprehensive_dashboard.jpg")

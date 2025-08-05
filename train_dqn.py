@@ -4,72 +4,13 @@ Improved DQN training script with better monitoring and diagnostics.
 
 import torch
 import numpy as np
-import matplotlib.pyplot as plt
 
 from training.training_environment import TrainingEnvironment
 from agents.dqn_agent import DQNMrXAgent, DQNMultiDetectiveAgent
 import argparse
 from training.deep_q.dqn_trainer import DQNTrainer
 from agents import AgentType, get_agent_registry
-
-
-def plot_training_metrics(trainer, save_path="training_results/training_metrics.png", 
-                         plotting_every=1000):
-    """Plot training metrics to monitor progress."""
-    if len(trainer.episode_rewards) < 10:
-        return
-    
-    fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(15, 10))
-    
-    # Episode rewards
-    episodes = range(len(trainer.episode_rewards))
-    ax1.plot(episodes, trainer.episode_rewards, alpha=0.3, label='Raw')
-    if len(trainer.episode_rewards) > 50:
-        window_size = min(50, len(trainer.episode_rewards) // 10)
-        smoothed = np.convolve(trainer.episode_rewards, 
-                              np.ones(window_size)/window_size, mode='valid')
-        ax1.plot(episodes[window_size-1:], smoothed, label=f'Smoothed ({window_size})')
-    ax1.set_title('Episode Rewards')
-    ax1.set_xlabel('Episode')
-    ax1.set_ylabel('Reward')
-    ax1.legend()
-    ax1.grid(True)
-    
-    # Training losses
-    if trainer.losses:
-        ax2.plot(trainer.losses, alpha=0.7)
-        ax2.set_title('Training Loss')
-        ax2.set_xlabel('Training Step')
-        ax2.set_ylabel('MSE Loss')
-        ax2.set_yscale('log')
-        ax2.grid(True)
-    
-    # Epsilon decay
-    epsilons = [step.get('epsilon', 0) for step in trainer.training_history]
-    if epsilons:
-        ax3.plot(epsilons)
-        ax3.set_title('Epsilon Decay')
-        ax3.set_xlabel('Episode')
-        ax3.set_ylabel('Epsilon')
-        ax3.grid(True)
-    
-    # Q-value monitoring (if available)
-    if hasattr(trainer, 'q_value_samples'):
-        for i, q_vals in enumerate(trainer.q_value_samples):
-            ax4.hist(q_vals, alpha=0.5, bins=30, label=f'Episode {i*plotting_every}')
-        ax4.set_title('Q-value Distributions')
-        ax4.set_xlabel('Q-value')
-        ax4.set_ylabel('Frequency')
-        ax4.legend()
-        ax4.grid(True)
-    
-    plt.tight_layout()
-    plt.savefig(save_path, dpi=150, bbox_inches='tight')
-    
-    # Show plot for 1 second then close automatically
-    plt.show(block=False)
-    plt.pause(1.0)
-    plt.close('all')
+from training.plot_utils import plot_training_metrics
 
 
 def train_with_monitoring(player_role="MrX", num_episodes=5000, plotting_every=1000, device=None):
@@ -103,7 +44,9 @@ def train_with_monitoring(player_role="MrX", num_episodes=5000, plotting_every=1
         # Plot progress periodically
         if current_episode % plotting_every == 0 and current_episode > 0:
             print(f"📈 Generating training progress plot...")
-            plot_training_metrics(trainer, f"training_results/training_progress_{player_role}_{current_episode}.png", plotting_every)
+            plot_training_metrics(trainer, 
+                                f"training_results/training_progress_{player_role}_{current_episode}.png", 
+                                plotting_every, show_plot=True)
         
         return episode_reward
     
@@ -111,7 +54,6 @@ def train_with_monitoring(player_role="MrX", num_episodes=5000, plotting_every=1
     
     # Start training
     result = trainer.train(
-        num_episodes=num_episodes,
         map_size="extended",  # Start with smaller map
         num_detectives=5,
         max_turns_per_game=24,
@@ -120,7 +62,9 @@ def train_with_monitoring(player_role="MrX", num_episodes=5000, plotting_every=1
     
     # Final plots
     print(f"📈 Generating final training plots...")
-    plot_training_metrics(trainer, f"training_results/final_training_metrics_{player_role}.png", plotting_every)
+    plot_training_metrics(trainer, 
+                         f"training_results/final_training_metrics_{player_role}.png", 
+                         plotting_every, show_plot=True)
     
     print(f"\n🎉 Training Complete!")
     print("=" * 60)
@@ -228,6 +172,7 @@ if __name__ == "__main__":
     
     # detective_result, detective_trainer = train_with_monitoring("detectives", 9000, plotting_every=100, device=device)
     MrX_result, MrX_trainer = train_with_monitoring("MrX", 9000, plotting_every=3000, device=device)
+    # MrX_result, MrX_trainer = train_with_monitoring("MrX", 400, plotting_every=200, device=device)
     
     # # Evaluate the trained agents
     # print("\n=== Detective Evaluation ===")

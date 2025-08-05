@@ -7,7 +7,7 @@
     "dropout_rate": 0.1
   },
   "training_parameters": {
-    "num_episodes": 15000,
+    "num_episodes": 9001,
     "batch_size": 64,
     "learning_rate": 0.003,
     "gamma": 0.95,

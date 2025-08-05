@@ -72,6 +72,7 @@ class DQNTrainer(BaseTrainer):
         self.epsilon_decay = training_params.get('epsilon_decay', 0.995)
         self.target_update_frequency = training_params.get('target_update_frequency', 100)
         self.min_replay_size = training_params.get('min_replay_buffer_size', 100)
+        self.num_episodes = training_params.get('num_episodes', 10000)
         
         # Set device
         if device is None:
@@ -136,7 +137,7 @@ class DQNTrainer(BaseTrainer):
         print(f"Initialized DQN with {sum(p.numel() for p in self.main_network.parameters())} parameters")
     
     def train(self, 
-              num_episodes: int,
+              num_episodes: int = None,
               map_size: str = "test",
               num_detectives: int = 2,
               max_turns_per_game: int = 24,
@@ -155,6 +156,8 @@ class DQNTrainer(BaseTrainer):
             TrainingResult with training metrics
         """
         start_time = time.time()
+        if num_episodes is None:
+            num_episodes = self.num_episodes
         
         # Create training environment
         env = TrainingEnvironment(

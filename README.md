@@ -279,6 +279,7 @@ You can customize game parameters in several ways:
 - **🤝 Adversarial Training**: Implement adversarial learning to train Deep Learning based agents
 - **🔄 Advanced RL Techniques**: Add PPO, A3C, or other modern RL algorithms
 - **📊 Better Evaluation**: More sophisticated metrics and analysis tools
+- **🐧 PettingZoo Integration**: *Currently in development* - Adding PettingZoo library support for standardized multi-agent reinforcement learning environments
 
 ### Potential Enhancements
 - **🎯 Curriculum Learning**: Progressive difficulty in training scenarios

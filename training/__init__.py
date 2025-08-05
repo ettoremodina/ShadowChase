@@ -16,6 +16,7 @@ Package structure:
 # Main training infrastructure
 from .base_trainer import BaseTrainer, TrainingResult, EvaluationResult
 from .feature_extractor_simple import GameFeatureExtractor 
+from .plot_utils import plot_training_metrics, create_comparison_plot
 
 __all__ = [
     # Core training infrastructure
@@ -24,5 +25,7 @@ __all__ = [
     'EvaluationResult',
     'GameFeatureExtractor',
     'FeatureConfig',
-
+    # Visualization utilities
+    'plot_training_metrics',
+    'create_comparison_plot',
 ]

@@ -32,7 +32,7 @@ class GameReplayWindow(BaseVisualizer):
     def show(self):
         """Show the replay window"""
         self.window = tk.Toplevel(self.parent)
-        self.window.title(f"🎬 Game Replay - {self.game_id}")
+        self.window.title(f"🎬  Game Replay - {self.game_id}")
         self.window.geometry("1400x900")
         self.window.configure(bg="#f8f9fa")
         
@@ -282,7 +282,7 @@ class GameReplayWindow(BaseVisualizer):
         turn_count = getattr(historical_state, 'turn_count', self.current_step)
         current_turn = self._normalize_turn(historical_state)
         turn_info = f"Turn {turn_count} - {current_turn.title()}'s Turn"
-        self.ax.set_title(f"🎬 Game Replay - {turn_info}", fontsize=12, fontweight='bold')
+        self.ax.set_title(f"Game Replay - {turn_info}", fontsize=12, fontweight='bold')
         
         # Use base class method for legend
         self.draw_transport_legend()

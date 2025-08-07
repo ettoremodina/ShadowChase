@@ -26,7 +26,7 @@ AGENT_NAME_MAPPING = {
     "epsilon_greedy_mcts": "eps-Greedy MCTS",
     "deep_q": "Deep Q-Network"
 }
-increase = 7
+increase = 3
 # Font size configuration variables for easy debugging and testing
 FONT_SIZE_LARGE_TITLE = 24   +increase       # Main titles and suptitles
 FONT_SIZE_TITLE = 20         +increase           # Plot titles
@@ -423,6 +423,7 @@ class GameAnalyzer:
         if self.statistics.win_rates.get('MrX'):
             MrX_data = self.statistics.win_rates['MrX']
             agents = [get_display_name(agent) for agent in MrX_data.keys()]
+            agents = [add_line_breaks_to_name(agent) for agent in agents]
             win_rates = [data['win_rate'] for data in MrX_data.values()]
             games = [data['games'] for data in MrX_data.values()]
             
@@ -457,6 +458,7 @@ class GameAnalyzer:
         if self.statistics.win_rates.get('detective'):
             detective_data = self.statistics.win_rates['detective']
             agents = [get_display_name(agent) for agent in detective_data.keys()]
+            agents = [add_line_breaks_to_name(agent) for agent in agents]
             win_rates = [data['win_rate'] for data in detective_data.values()]
             games = [data['games'] for data in detective_data.values()]
             

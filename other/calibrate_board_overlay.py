@@ -20,7 +20,7 @@ class BoardCalibrator:
         self.game = create_extracted_board_game(num_detectives=3)
         self.metadata = load_board_metadata()
         self.board_image = None
-        self.board_image_path = "data/board.png"
+        self.board_image_path = "data/board.jpg"
         
         # Calibration parameters
         self.x_offset = 0.0
@@ -40,11 +40,24 @@ class BoardCalibrator:
         self.calculate_positions()
         
     def load_board_image(self):
-        """Load the board image"""
+        """Load the board image and ensure it's in a displayable format."""
         try:
             if os.path.exists(self.board_image_path):
-                self.board_image = mpimg.imread(self.board_image_path)
-                print(f"Board image loaded: {self.board_image.shape}")
+                img = mpimg.imread(self.board_image_path)
+                
+                # Ensure image is in a standard RGB format (e.g., handle RGBA, grayscale)
+                if img.ndim == 2:  # Grayscale
+                    img = np.stack([img, img, img], axis=-1)
+                elif img.shape[2] == 4:  # RGBA
+                    img = img[:, :, :3]
+
+                # Normalize pixel values to the expected [0, 1] float range for display
+                if np.issubdtype(img.dtype, np.integer):
+                    img = img / 255.0
+                
+                self.board_image = np.clip(img, 0, 1) # Ensure values are valid
+
+                print(f"Board image loaded: {self.board_image.shape}, dtype: {self.board_image.dtype}, range: [{self.board_image.min():.2f}, {self.board_image.max():.2f}]")
                 print(f"Image dimensions: {self.board_image.shape[1]} x {self.board_image.shape[0]} pixels")
             else:
                 print(f"Board image not found at: {self.board_image_path}")

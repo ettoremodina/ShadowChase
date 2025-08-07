@@ -2,13 +2,6 @@
 
 > **⚖️ Legal Notice**: This is an independent educational/research implementation inspired by the Scotland Yard board game. This project is not affiliated with or endorsed by Ravensburger AG (owners of Scotland Yard trademark). For educational and research use only.
 
-## 🔗 Quick Links
-
-**🚀 Getting Started:** [Installation](#installation) • [Quick Start](#quick-start) • [Usage Examples](#-usage-examples)  
-**📚 Documentation:** [Terminal Guide](game_controls/README.md) • [API Reference](other/FUNCTION_DOCUMENTATION.md) • [Configuration](#️-configuration)  
-**🤖 Development:** [Training](#-train-new-dqn-agents) • [Contributing](#-contributing) • [Troubleshooting](#-troubleshooting--support)
-
----
 
 A comprehensive implementation of the Shadow Chase pursuit-evasion game with multiple AI agents for research, learning, and experimentation with reinforcement learning and game theory techniques.
 
@@ -76,9 +69,7 @@ Shadow Chase is an asymmetric pursuit-evasion game with imperfect information, i
 
 ### Prerequisites
 - Python 3.8+
-- 8GB+ RAM (recommended for DQN training)
 - CUDA-compatible GPU (optional, for faster DQN training)
-- Git (for cloning the repository)
 
 ### Installation
 ```bash
@@ -98,6 +89,8 @@ python main.py
 - Watch agent strategies in action
 - Great for understanding game dynamics
 
+![Shadow Chase Gameplay](IMMAGINI%20REPORT/image.png)
+
 #### 2. 🧪 Agent Testing & Comparison
 Systematically test different agent combinations and analyze their performance:
 ```bash
@@ -106,6 +99,9 @@ python test_agents.py
 - Runs all agent combinations automatically
 - Generates detailed performance analysis
 - Perfect for benchmarking and research
+
+![Agent Win Rates](IMMAGINI%20REPORT/win_rates_by_agent.jpg)
+![Comprehensive Dashboard](IMMAGINI%20REPORT/comprehensive_dashboard.jpg)
 
 #### 3. 🤖 Train New DQN Agents
 Train your own Deep Q-Learning agents:
@@ -116,6 +112,8 @@ python train_dqn.py --role detectives --episodes 10000
 - Train either MrX or agent teams
 - Supports CPU and GPU training
 - Saves models for later use
+
+![DQN Training Metrics](IMMAGINI%20REPORT/final_training_metrics_MrX.png)
 
 ## 🏗️ Project Structure
 
@@ -212,7 +210,6 @@ python game_controls/simple_game.py --batch 50 --map-size extracted --detectives
 
 ### Terminal Interface Examples
 - **[simple_game.py](game_controls/simple_game.py)**: Command-line gameplay
-- **[Terminal Guide](game_controls/README.md)**: Complete terminal interface documentation
 
 ### Advanced Examples
 - **[Example Games](ShadowChase/examples/example_games.py)**: Different game configurations
@@ -252,25 +249,6 @@ You can customize game parameters in several ways:
 - **Number of detectives**: Typically 2-5 detectives
 - **Agent types**: Select from Random, Heuristic, MCTS, or DQN agents
 - **Verbosity levels**: Control output detail in terminal mode
-
-## � Troubleshooting & Support
-
-### Common Issues
-
-#### Installation Problems
-- **CUDA Issues**: DQN training works fine on CPU if GPU is unavailable
-- **Missing Dependencies**: Run `pip install -r requirements.txt` to ensure all packages are installed
-- **Python Version**: Requires Python 3.8+
-
-#### Performance Issues
-- **Slow MCTS**: Enable caching with `enable_namespace_cache(CacheNamespace.MCTS_NODES)`
-- **Memory Usage**: Large replay buffers in DQN training may require 8GB+ RAM
-- **Training Speed**: Use `--episodes` parameter to control training length
-
-#### Gameplay Issues
-- **Invalid Moves**: Check transport type availability and ticket counts
-- **Game Not Starting**: Ensure starting positions don't overlap
-- **Save/Load Errors**: Check that `saved_games/` directory exists and is writable
 
 ## 🚧 Future Development & Improvements
 
@@ -344,7 +322,7 @@ If you use this project in your research or academic work, please cite it as:
 
 ### BibTeX
 ```bibtex
-@software{modina2025MrXchase,
+@software{modina2025ShadowChase,
   author = {Modina, Ettore},
   title = {Shadow Chase: AI Agent Training \& Evaluation Platform},
   year = {2025},

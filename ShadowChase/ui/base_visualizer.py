@@ -32,7 +32,7 @@ class BaseVisualizer:
         # Board image overlay settings
         self.show_board_image = True
         self.board_image = None
-        self.board_image_path = "data/board.png"
+        self.board_image_path = "data/board.jpg"
     
     def setup_graph_display(self, parent_frame):
         """Setup matplotlib graph display"""
@@ -103,8 +103,17 @@ class BaseVisualizer:
         """Load the board image for overlay"""
         try:
             if os.path.exists(self.board_image_path):
-                self.board_image = mpimg.imread(self.board_image_path)
-                print(f"Board image loaded: {self.board_image.shape}")
+                # Load image and ensure it's in RGB format
+                img = mpimg.imread(self.board_image_path)
+                if img.ndim == 2:  # Grayscale image
+                    # Convert grayscale to RGB by stacking the channel
+                    self.board_image = np.stack([img, img, img], axis=-1)
+                elif img.shape[2] == 4:  # RGBA image
+                    # Convert RGBA to RGB by discarding the alpha channel
+                    self.board_image = img[:, :, :3]
+                else:
+                    self.board_image = img
+                print(f"Board image loaded and converted to RGB: {self.board_image.shape}")
             else:
                 print(f"Board image not found at: {self.board_image_path}")
                 self.board_image = None

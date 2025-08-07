@@ -497,8 +497,8 @@ def main():
                         required=True,
                         help='Phase to run: nodes, taxi, bus, underground, or ferry')
     parser.add_argument('--image', 
-                        default='board.png',
-                        help='Path to the board image (default: board.png)')
+                        default='./data/board.jpg',
+                        help='Path to the board image (default: board.jpg)')
 
     args = parser.parse_args()
     

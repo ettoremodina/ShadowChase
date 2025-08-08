@@ -1,5 +1,6 @@
 # Saved games directory - contains large binary files and user data
 saved_games/
+other/
 # pettizoo_integration/
 
 # Python cache files

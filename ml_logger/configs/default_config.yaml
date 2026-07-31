@@ -1,0 +1,90 @@
+version: 2
+
+artifacts:
+  root_dir: artifacts
+  directories:
+    - logs
+    - metrics
+    - artifacts
+
+logging:
+  enabled: true
+  level: INFO
+  console: true
+  file: true
+
+terminal:
+  colors: true
+  timezone: "+02:00"
+  show_time: true
+  show_level: true
+  show_source: false
+  omit_repeated_times: true
+  rich_tracebacks: true
+
+saving:
+  enabled: true
+  params: true
+  metrics: true
+  results: true
+  artifacts: true
+  telemetry: true
+
+metrics:
+  include: ["*"]
+  exclude: []
+
+dashboard:
+  mode: auto
+  refresh_rate: 4
+  max_log_lines: 50
+  max_metrics: 16
+  screen: true
+  metrics:
+    include: ["*"]
+    exclude: []
+
+telemetry:
+  enabled: true
+  sample_interval_sec: 5
+  include_process: true
+  include_system: true
+  gpu_provider: auto
+
+report:
+  enabled: true
+  filename: run_report.html
+  visualization: auto
+  metrics:
+    include: ["*"]
+    exclude: []
+
+run_type_overrides: {}
+
+highlights:
+  - pattern: '\b(starting|started|complete|completed|saved)\b'
+    style: 'bold green'
+  - pattern: '\b(benchmark|summary)\b'
+    style: 'bold magenta'
+  - pattern: '\b(CPU|CUDA|GPU)\b'
+    style: 'bold cyan'
+  - pattern: '\b(on|true)\b'
+    style: green
+  - pattern: '\b(off|false)\b'
+    style: dim
+  - pattern: '\b(epoch|step)\b'
+    style: 'bold magenta'
+  - pattern: '\bloss\b'
+    style: yellow
+  - pattern: '\b(accuracy|acc|f1)\b'
+    style: green
+  - pattern: '\b(val|valid)\b'
+    style: cyan
+  - pattern: '\b(warn|warning)\b'
+    style: 'bold yellow'
+  - pattern: '\b(error|fail)\b'
+    style: 'bold red'
+  - pattern: '\b(saved|checkpoint)\b'
+    style: 'bold green'
+  - pattern: '(?<![\w.])[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?(?![\w.])'
+    style: cyan

@@ -1,0 +1,1347 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark light">
+  <title>ml_logger — Guida visuale</title>
+  <script>
+    document.documentElement.classList.add("js");
+  </script>
+  <style>
+    :root {
+      --bg: #08111f;
+      --surface: #0e1b2d;
+      --surface-raised: #14243a;
+      --text: #e8f0fb;
+      --muted: #9cafc7;
+      --border: #29415f;
+      --primary: #3dd9b4;
+      --primary-soft: rgba(61, 217, 180, 0.13);
+      --secondary: #7fb1ff;
+      --secondary-soft: rgba(127, 177, 255, 0.13);
+      --warning: #ffc766;
+      --danger: #ff7f91;
+      --code: #07101c;
+      --shadow: 0 18px 50px rgba(0, 0, 0, 0.24);
+      --radius: 18px;
+      --mono: "Cascadia Code", "SFMono-Regular", Consolas, monospace;
+      --sans: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+        "Segoe UI", sans-serif;
+    }
+
+    @media (prefers-color-scheme: light) {
+      :root {
+        --bg: #f2f6fb;
+        --surface: #ffffff;
+        --surface-raised: #f7faff;
+        --text: #13243a;
+        --muted: #5a6e86;
+        --border: #cdd9e8;
+        --primary: #007e68;
+        --primary-soft: rgba(0, 126, 104, 0.10);
+        --secondary: #276ac6;
+        --secondary-soft: rgba(39, 106, 198, 0.10);
+        --warning: #9a6500;
+        --danger: #b32e45;
+        --code: #edf3fa;
+        --shadow: 0 18px 50px rgba(37, 66, 99, 0.12);
+      }
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      min-width: 320px;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 8% 0%, var(--primary-soft), transparent 28rem),
+        radial-gradient(circle at 92% 4%, var(--secondary-soft), transparent 30rem),
+        var(--bg);
+      font-family: var(--sans);
+      line-height: 1.6;
+    }
+
+    button,
+    select,
+    input {
+      font: inherit;
+    }
+
+    a {
+      color: var(--secondary);
+    }
+
+    code {
+      font-family: var(--mono);
+    }
+
+    .page {
+      width: min(1180px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 36px 0 64px;
+    }
+
+    .hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1.6fr) minmax(260px, 0.8fr);
+      gap: 28px;
+      align-items: end;
+      padding: 34px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: linear-gradient(
+        135deg,
+        var(--surface),
+        color-mix(in srgb, var(--surface) 78%, var(--primary) 22%)
+      );
+      box-shadow: var(--shadow);
+    }
+
+    .eyebrow {
+      margin: 0 0 8px;
+      color: var(--primary);
+      font-family: var(--mono);
+      font-size: 0.83rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    h1,
+    h2,
+    h3 {
+      line-height: 1.2;
+    }
+
+    h1 {
+      max-width: 760px;
+      margin: 0;
+      font-size: clamp(2.3rem, 6vw, 4.8rem);
+      letter-spacing: -0.045em;
+    }
+
+    h2 {
+      margin: 0 0 10px;
+      font-size: clamp(1.7rem, 3vw, 2.5rem);
+      letter-spacing: -0.025em;
+    }
+
+    h3 {
+      margin-top: 0;
+    }
+
+    .hero-copy {
+      max-width: 740px;
+      margin: 18px 0 0;
+      color: var(--muted);
+      font-size: 1.08rem;
+    }
+
+    .hero-rule {
+      padding-left: 18px;
+      border-left: 3px solid var(--primary);
+    }
+
+    .hero-rule strong {
+      display: block;
+      margin-bottom: 6px;
+      font-family: var(--mono);
+      color: var(--primary);
+    }
+
+    .hero-rule p {
+      margin: 0;
+      color: var(--muted);
+    }
+
+    .tabs {
+      display: flex;
+      gap: 8px;
+      margin: 28px 0;
+      padding: 8px;
+      overflow-x: auto;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      background: var(--surface);
+      box-shadow: var(--shadow);
+    }
+
+    .tab {
+      flex: 0 0 auto;
+      padding: 10px 16px;
+      color: var(--muted);
+      border: 1px solid transparent;
+      border-radius: 10px;
+      background: transparent;
+      cursor: pointer;
+      transition: color 160ms ease, background 160ms ease, border 160ms ease;
+    }
+
+    .tab:hover {
+      color: var(--text);
+      border-color: var(--border);
+    }
+
+    .tab:focus-visible {
+      outline: 3px solid color-mix(in srgb, var(--secondary) 55%, transparent);
+      outline-offset: 2px;
+    }
+
+    .tab[aria-selected="true"] {
+      color: var(--text);
+      border-color: color-mix(in srgb, var(--primary) 50%, var(--border));
+      background: var(--primary-soft);
+    }
+
+    .tab-panel {
+      margin-top: 28px;
+      animation: panel-in 180ms ease;
+    }
+
+    .js .tab-panel {
+      display: none;
+    }
+
+    .js .tab-panel.active {
+      display: block;
+    }
+
+    @keyframes panel-in {
+      from {
+        opacity: 0;
+        transform: translateY(4px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      html {
+        scroll-behavior: auto;
+      }
+
+      .tab-panel {
+        animation: none;
+      }
+    }
+
+    .section-intro {
+      display: grid;
+      grid-template-columns: minmax(0, 1.25fr) minmax(240px, 0.75fr);
+      gap: 24px;
+      align-items: end;
+      margin-bottom: 24px;
+    }
+
+    .section-intro p {
+      margin: 0;
+      color: var(--muted);
+    }
+
+    .grid-2,
+    .grid-3 {
+      display: grid;
+      gap: 18px;
+    }
+
+    .grid-2 {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .grid-3 {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .card {
+      min-width: 0;
+      padding: 22px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      box-shadow: var(--shadow);
+    }
+
+    .card p:last-child,
+    .card ul:last-child,
+    .card ol:last-child {
+      margin-bottom: 0;
+    }
+
+    .muted {
+      color: var(--muted);
+    }
+
+    .flow {
+      display: grid;
+      grid-template-columns: minmax(180px, 1fr) auto minmax(180px, 1fr) auto minmax(220px, 1.15fr);
+      gap: 14px;
+      align-items: stretch;
+      margin: 22px 0;
+    }
+
+    .flow-node {
+      padding: 22px;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      background: var(--surface);
+    }
+
+    .flow-node.core {
+      border-color: color-mix(in srgb, var(--primary) 62%, var(--border));
+      background: var(--primary-soft);
+    }
+
+    .flow-node strong {
+      display: block;
+      margin-bottom: 10px;
+      color: var(--text);
+    }
+
+    .flow-node ul {
+      margin: 0;
+      padding-left: 20px;
+      color: var(--muted);
+    }
+
+    .flow-arrow {
+      display: grid;
+      place-items: center;
+      color: var(--primary);
+      font-size: 1.6rem;
+    }
+
+    .callout {
+      margin: 20px 0;
+      padding: 18px 20px;
+      border-left: 4px solid var(--primary);
+      border-radius: 0 12px 12px 0;
+      background: var(--primary-soft);
+    }
+
+    .callout.warning {
+      border-left-color: var(--warning);
+      background: color-mix(in srgb, var(--warning) 11%, transparent);
+    }
+
+    .callout strong {
+      color: var(--text);
+    }
+
+    pre {
+      margin: 0;
+      padding: 20px;
+      overflow-x: auto;
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      background: var(--code);
+      font-family: var(--mono);
+      font-size: 0.9rem;
+      line-height: 1.55;
+      tab-size: 4;
+    }
+
+    .code-label {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 8px;
+      color: var(--muted);
+      font-family: var(--mono);
+      font-size: 0.82rem;
+    }
+
+    .steps {
+      display: grid;
+      gap: 14px;
+      padding: 0;
+      list-style: none;
+      counter-reset: guide-step;
+    }
+
+    .steps li {
+      display: grid;
+      grid-template-columns: 34px minmax(0, 1fr);
+      gap: 12px;
+      align-items: start;
+      counter-increment: guide-step;
+    }
+
+    .steps li::before {
+      content: counter(guide-step);
+      display: grid;
+      place-items: center;
+      width: 34px;
+      height: 34px;
+      color: var(--bg);
+      border-radius: 50%;
+      background: var(--primary);
+      font-family: var(--mono);
+      font-weight: 700;
+    }
+
+    .steps strong {
+      display: block;
+      margin-bottom: 3px;
+    }
+
+    .dashboard {
+      display: grid;
+      grid-template-columns: minmax(0, 1.8fr) minmax(240px, 1fr);
+      gap: 12px;
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--code);
+      box-shadow: var(--shadow);
+    }
+
+    .dash-panel {
+      min-width: 0;
+      padding: 16px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: var(--surface);
+    }
+
+    .dash-panel h3 {
+      margin: 0 0 14px;
+      text-align: center;
+      font-family: var(--mono);
+      font-size: 0.92rem;
+      font-weight: 500;
+    }
+
+    .dash-sidebar {
+      display: grid;
+      gap: 12px;
+    }
+
+    .log-line {
+      display: grid;
+      grid-template-columns: auto auto minmax(0, 1fr);
+      gap: 9px;
+      padding: 4px 0;
+      font-family: var(--mono);
+      font-size: 0.82rem;
+    }
+
+    .log-time {
+      color: var(--secondary);
+    }
+
+    .log-level {
+      color: var(--muted);
+    }
+
+    .log-new {
+      color: var(--primary);
+    }
+
+    .metric-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 14px;
+      padding: 7px 0;
+      border-bottom: 1px solid var(--border);
+      font-family: var(--mono);
+      font-size: 0.78rem;
+    }
+
+    .metric-row:last-child {
+      border-bottom: 0;
+    }
+
+    .metric-row span:last-child {
+      color: var(--primary);
+      text-align: right;
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      box-shadow: var(--shadow);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    th,
+    td {
+      padding: 14px 16px;
+      text-align: left;
+      vertical-align: top;
+      border-bottom: 1px solid var(--border);
+    }
+
+    th {
+      color: var(--muted);
+      background: var(--surface-raised);
+      font-size: 0.82rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    tr:last-child td {
+      border-bottom: 0;
+    }
+
+    td code {
+      color: var(--primary);
+    }
+
+    .tag {
+      display: inline-block;
+      padding: 3px 8px;
+      color: var(--secondary);
+      border: 1px solid color-mix(in srgb, var(--secondary) 40%, var(--border));
+      border-radius: 999px;
+      background: var(--secondary-soft);
+      font-family: var(--mono);
+      font-size: 0.76rem;
+    }
+
+    .tree {
+      color: var(--muted);
+    }
+
+    .boundary {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+      gap: 18px;
+      align-items: stretch;
+      margin-bottom: 20px;
+    }
+
+    .boundary-side {
+      padding: 24px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+    }
+
+    .boundary-side.generic {
+      border-color: color-mix(in srgb, var(--primary) 58%, var(--border));
+    }
+
+    .boundary-arrow {
+      display: grid;
+      place-items: center;
+      color: var(--primary);
+      font-size: 1.6rem;
+    }
+
+    .checklist {
+      padding-left: 22px;
+    }
+
+    .checklist li {
+      margin-bottom: 8px;
+    }
+
+    .footer {
+      display: flex;
+      justify-content: space-between;
+      gap: 18px;
+      margin-top: 36px;
+      padding: 22px 4px 0;
+      color: var(--muted);
+      border-top: 1px solid var(--border);
+      font-size: 0.9rem;
+    }
+
+    .noscript {
+      margin: 18px 0;
+      padding: 14px;
+      color: var(--text);
+      border: 1px solid var(--warning);
+      border-radius: 12px;
+      background: color-mix(in srgb, var(--warning) 10%, transparent);
+    }
+
+    @media (max-width: 850px) {
+      .hero,
+      .section-intro,
+      .grid-2,
+      .grid-3,
+      .dashboard,
+      .boundary {
+        grid-template-columns: 1fr;
+      }
+
+      .flow {
+        grid-template-columns: 1fr;
+      }
+
+      .flow-arrow,
+      .boundary-arrow {
+        transform: rotate(90deg);
+      }
+    }
+
+    @media (max-width: 560px) {
+      .page {
+        width: min(100% - 20px, 1180px);
+        padding-top: 10px;
+      }
+
+      .hero,
+      .card {
+        padding: 20px;
+      }
+
+      .tabs {
+        margin-block: 16px;
+      }
+
+      .log-line {
+        grid-template-columns: auto minmax(0, 1fr);
+      }
+
+      .log-level {
+        display: none;
+      }
+
+      .footer {
+        display: block;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="hero">
+      <div>
+        <p class="eyebrow">ml_logger / guida visuale</p>
+        <h1>Una run.<br>Una timeline.<br>Più viste.</h1>
+        <p class="hero-copy">
+          Il logger raccoglie log, metriche, parametri, artifact e telemetria
+          attraverso una piccola API stabile. Il progetto cambia; il core rimane.
+        </p>
+      </div>
+      <div class="hero-rule">
+        <strong>REGOLA DI CONFINE</strong>
+        <p>
+          Tutto ciò che è generico vive in <code>ml_logger</code>.
+          Tutto ciò che appartiene al dominio vive in un adapter del progetto.
+        </p>
+      </div>
+    </header>
+
+    <noscript>
+      <div class="noscript">
+        JavaScript è disattivato: le tab non saranno interattive, ma tutte le
+        sezioni della guida rimangono visibili in sequenza.
+      </div>
+    </noscript>
+
+    <nav class="tabs" role="tablist" aria-label="Sezioni della guida">
+      <button class="tab" type="button" role="tab" id="tab-architettura"
+        aria-controls="architettura" aria-selected="true"
+        data-panel="architettura">Architettura</button>
+      <button class="tab" type="button" role="tab" id="tab-quickstart"
+        aria-controls="quickstart" aria-selected="false"
+        data-panel="quickstart">Quickstart</button>
+      <button class="tab" type="button" role="tab" id="tab-dashboard"
+        aria-controls="dashboard" aria-selected="false"
+        data-panel="dashboard">Dashboard</button>
+      <button class="tab" type="button" role="tab" id="tab-configurazione"
+        aria-controls="configurazione" aria-selected="false"
+        data-panel="configurazione">Configurazione</button>
+      <button class="tab" type="button" role="tab" id="tab-funzionalita"
+        aria-controls="funzionalita" aria-selected="false"
+        data-panel="funzionalita">Funzionalità</button>
+      <button class="tab" type="button" role="tab" id="tab-adapter"
+        aria-controls="adapter" aria-selected="false"
+        data-panel="adapter">Adapter</button>
+    </nav>
+
+    <main>
+      <section class="tab-panel active" id="architettura" role="tabpanel"
+        aria-labelledby="tab-architettura">
+        <div class="section-intro">
+          <div>
+            <p class="eyebrow">01 / come funziona</p>
+            <h2>Un ingresso comune, destinazioni indipendenti</h2>
+          </div>
+          <p>
+            Il codice applicativo pubblica eventi. Storage, dashboard e report
+            li consumano senza conoscere il training loop.
+          </p>
+        </div>
+
+        <div class="flow" aria-label="Flusso dei dati nel logger">
+          <div class="flow-node">
+            <strong>Codice ML</strong>
+            <ul>
+              <li><code>logger.info()</code></li>
+              <li><code>log_metrics()</code></li>
+              <li><code>log_artifact()</code></li>
+            </ul>
+          </div>
+          <div class="flow-arrow" aria-hidden="true">→</div>
+          <div class="flow-node core">
+            <strong>RunContext</strong>
+            <ul>
+              <li>lifecycle della run</li>
+              <li>filtri e configurazione</li>
+              <li>EventBus interno</li>
+            </ul>
+          </div>
+          <div class="flow-arrow" aria-hidden="true">→</div>
+          <div class="flow-node">
+            <strong>Output</strong>
+            <ul>
+              <li>SQLite e JSONL</li>
+              <li>dashboard terminale</li>
+              <li>report HTML</li>
+              <li>artifact e telemetria</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="grid-3">
+          <article class="card">
+            <span class="tag">START</span>
+            <h3>1. Apri una run</h3>
+            <p class="muted">
+              Nome, tipo, configurazione e metadati definiscono il contesto
+              dell’esperimento.
+            </p>
+          </article>
+          <article class="card">
+            <span class="tag">STREAM</span>
+            <h3>2. Pubblica eventi</h3>
+            <p class="muted">
+              Ogni evento viene prima salvato e poi inviato alle viste attive.
+            </p>
+          </article>
+          <article class="card">
+            <span class="tag">END</span>
+            <h3>3. Finalizza</h3>
+            <p class="muted">
+              Il context manager chiude servizi, export e stato della run,
+              anche in caso di errore.
+            </p>
+          </article>
+        </div>
+
+        <div class="callout">
+          <strong>Perché è riutilizzabile:</strong>
+          una nuova visualizzazione ascolta gli stessi eventi. Non richiede
+          modifiche al training né allo storage.
+        </div>
+      </section>
+
+      <section class="tab-panel" id="quickstart" role="tabpanel"
+        aria-labelledby="tab-quickstart">
+        <div class="section-intro">
+          <div>
+            <p class="eyebrow">02 / come usarlo</p>
+            <h2>Due import e un context manager</h2>
+          </div>
+          <p>
+            <code>run</code> gestisce il lifecycle; <code>get_logger</code>
+            restituisce un normale logger Python.
+          </p>
+        </div>
+
+        <div class="grid-2">
+          <div class="card">
+            <div class="code-label">
+              <span>installazione</span>
+              <span>terminale</span>
+            </div>
+            <pre><code>python -m pip install -e .</code></pre>
+
+            <div class="code-label" style="margin-top: 20px">
+              <span>training.py</span>
+              <span>API consigliata</span>
+            </div>
+            <pre><code>from ml_logger import get_logger, run
+
+logger = get_logger(__name__)
+
+with run(
+    "training",
+    name="baseline",
+    config={"learning_rate": 1e-3},
+) as experiment:
+    experiment.log_params({
+        "optimizer": "adam",
+        "seed": 42,
+    })
+
+    for epoch in range(10):
+        loss = train_one_epoch()
+        accuracy = evaluate()
+
+        experiment.log_metrics(epoch, {
+            "train/loss": loss,
+            "eval/accuracy": accuracy,
+        })
+        experiment.log_progress(
+            epoch + 1, 10, "Training"
+        )
+        logger.info(
+            "Epoch %d completata", epoch
+        )
+
+    experiment.log_artifact(
+        "model.pt", kind="model"
+    )</code></pre>
+          </div>
+
+          <div class="card">
+            <h3>Cosa avviene automaticamente</h3>
+            <ol class="steps">
+              <li>
+                <div>
+                  <strong>Inizializzazione</strong>
+                  Cartelle, manifest, catalogo, handler e viste.
+                </div>
+              </li>
+              <li>
+                <div>
+                  <strong>Esecuzione</strong>
+                  Log, metriche e telemetria condividono la stessa run.
+                </div>
+              </li>
+              <li>
+                <div>
+                  <strong>Successo</strong>
+                  Stato <code>completed</code>, export JSONL e report.
+                </div>
+              </li>
+              <li>
+                <div>
+                  <strong>Eccezione</strong>
+                  Stato <code>failed</code>, errore registrato e risorse chiuse.
+                </div>
+              </li>
+            </ol>
+
+            <div class="callout warning">
+              <strong>Firma corretta:</strong>
+              <code>log_metrics(step, metrics_dict)</code>. Registra insieme
+              le metriche relative allo stesso step.
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="tab-panel" id="dashboard" role="tabpanel"
+        aria-labelledby="tab-dashboard">
+        <div class="section-intro">
+          <div>
+            <p class="eyebrow">03 / vista runtime</p>
+            <h2>Log, metriche e sistema in tempo reale</h2>
+          </div>
+          <p>
+            I pannelli hanno sorgenti e frequenze diverse. Capire questa
+            distinzione rende immediata la diagnosi di una box vuota.
+          </p>
+        </div>
+
+        <div class="dashboard" aria-label="Anteprima della dashboard ml_logger">
+          <div class="dash-panel">
+            <h3>Log Stream — ultime righe visibili</h3>
+            <div class="log-line">
+              <span class="log-time">19:29:07</span>
+              <span class="log-level">[INFO]</span>
+              <span>Self-play game 30/100</span>
+            </div>
+            <div class="log-line">
+              <span class="log-time">19:29:21</span>
+              <span class="log-level">[INFO]</span>
+              <span>Self-play game 40/100</span>
+            </div>
+            <div class="log-line">
+              <span class="log-time">19:29:36</span>
+              <span class="log-level">[INFO]</span>
+              <span>Self-play game 50/100</span>
+            </div>
+            <div class="log-line">
+              <span class="log-time">19:29:50</span>
+              <span class="log-level">[INFO]</span>
+              <span class="log-new">Self-play game 60/100 ← più recente</span>
+            </div>
+          </div>
+
+          <div class="dash-sidebar">
+            <div class="dash-panel">
+              <h3>Metrics</h3>
+              <div class="metric-row">
+                <span>self_play/games_completed</span><span>60</span>
+              </div>
+              <div class="metric-row">
+                <span>self_play/win_rate</span><span>0.1167</span>
+              </div>
+              <div class="metric-row">
+                <span>self_play/total_samples</span><span>2214</span>
+              </div>
+            </div>
+            <div class="dash-panel">
+              <h3>System</h3>
+              <div class="metric-row">
+                <span>system/cpu_percent</span><span>88.3%</span>
+              </div>
+              <div class="metric-row">
+                <span>system/memory_percent</span><span>92.1%</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid-3" style="margin-top: 18px">
+          <article class="card">
+            <h3>Log Stream</h3>
+            <p class="muted">
+              Mantiene fino a <code>max_log_lines</code> messaggi. Il renderer
+              misura anche le righe mandate a capo e mostra sempre la coda che
+              entra nello spazio del terminale.
+            </p>
+          </article>
+          <article class="card">
+            <h3>Metrics</h3>
+            <p class="muted">
+              Si aggiorna soltanto quando il codice chiama
+              <code>log_metrics</code> e il nome supera i filtri della
+              dashboard.
+            </p>
+          </article>
+          <article class="card">
+            <h3>System</h3>
+            <p class="muted">
+              È alimentato dal sampler in background ogni
+              <code>sample_interval_sec</code>, indipendentemente dal refresh
+              Rich.
+            </p>
+          </article>
+        </div>
+
+        <div class="callout warning">
+          <strong>Metrics è vuoto?</strong>
+          Verifica due cose: la fase corrente deve pubblicare metriche
+          intermedie e <code>dashboard.metrics.include</code> deve includerne
+          i nomi. AlphaZero ora pubblica un aggiornamento all’avvio e ogni
+          10 partite di self-play.
+        </div>
+      </section>
+
+      <section class="tab-panel" id="configurazione" role="tabpanel"
+        aria-labelledby="tab-configurazione">
+        <div class="section-intro">
+          <div>
+            <p class="eyebrow">04 / configurazione</p>
+            <h2>Scegli cosa salvare e cosa mostrare</h2>
+          </div>
+          <p>
+            I filtri di persistenza e quelli della dashboard sono separati:
+            nascondere una metrica non significa necessariamente perderla.
+          </p>
+        </div>
+
+        <div class="grid-2">
+          <div class="card">
+            <div class="code-label">
+              <span>logger_config.yaml</span>
+              <span>esempio completo ridotto</span>
+            </div>
+            <pre><code>logging:
+  enabled: true
+  level: INFO
+  console: true
+  file: true
+
+saving:
+  enabled: true
+  params: true
+  metrics: true
+  results: true
+  artifacts: true
+  telemetry: true
+
+metrics:
+  include: ["*"]
+  exclude: ["debug/*"]
+
+dashboard:
+  mode: auto
+  refresh_rate: 4
+  max_log_lines: 50
+  max_metrics: 16
+  screen: true
+  metrics:
+    include:
+      - "self_play/*"
+      - "train/*"
+      - "eval/*"
+    exclude: ["debug/*"]
+
+telemetry:
+  enabled: true
+  sample_interval_sec: 5
+
+report:
+  enabled: true
+  visualization: auto</code></pre>
+          </div>
+
+          <div class="card">
+            <h3>Ordine di risoluzione</h3>
+            <ol class="steps">
+              <li>
+                <div>
+                  <strong>Parametro esplicito</strong>
+                  <code>logger_config_path</code> passato a <code>run</code>.
+                </div>
+              </li>
+              <li>
+                <div>
+                  <strong>Variabile d’ambiente</strong>
+                  <code>ML_LOGGER_CONFIG</code>.
+                </div>
+              </li>
+              <li>
+                <div>
+                  <strong>File del progetto</strong>
+                  <code>logger_config.yaml</code> nella directory corrente.
+                </div>
+              </li>
+              <li>
+                <div>
+                  <strong>Default del package</strong>
+                  Configurazione distribuita con <code>ml_logger</code>.
+                </div>
+              </li>
+              <li>
+                <div>
+                  <strong>Override del workflow</strong>
+                  <code>run_type_overrides.&lt;run_type&gt;</code> viene
+                  applicato per ultimo.
+                </div>
+              </li>
+            </ol>
+          </div>
+        </div>
+
+        <div class="table-wrap" style="margin-top: 18px">
+          <table>
+            <thead>
+              <tr>
+                <th>Impostazione</th>
+                <th>Controlla</th>
+                <th>Valori tipici</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>dashboard.mode</code></td>
+                <td>Tipo di visualizzazione terminale</td>
+                <td><code>auto</code>, <code>live</code>, <code>compact</code>, <code>off</code></td>
+              </tr>
+              <tr>
+                <td><code>saving.*</code></td>
+                <td>Categorie persistite</td>
+                <td>boolean per metriche, risultati, artifact e telemetria</td>
+              </tr>
+              <tr>
+                <td><code>metrics.include/exclude</code></td>
+                <td>Metriche salvate</td>
+                <td>pattern <code>fnmatch</code>, per esempio <code>train/*</code></td>
+              </tr>
+              <tr>
+                <td><code>dashboard.metrics</code></td>
+                <td>Metriche visibili nella box live</td>
+                <td>filtri indipendenti dalla visualizzazione del report</td>
+              </tr>
+              <tr>
+                <td><code>report.visualization</code></td>
+                <td>Grafici nel report finale</td>
+                <td><code>auto</code>, <code>line</code>, <code>table</code></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="tab-panel" id="funzionalita" role="tabpanel"
+        aria-labelledby="tab-funzionalita">
+        <div class="section-intro">
+          <div>
+            <p class="eyebrow">05 / funzionalità</p>
+            <h2>API piccola, output prevedibili</h2>
+          </div>
+          <p>
+            SQLite è la fonte canonica. JSONL e report sono output portabili
+            costruiti dalla stessa timeline di eventi.
+          </p>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>API</th>
+                <th>A cosa serve</th>
+                <th>Dove arriva</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>get_logger(name)</code></td>
+                <td>Log applicativi standard</td>
+                <td>Console, Log Stream, <code>logs/run.log</code></td>
+              </tr>
+              <tr>
+                <td><code>log_params(dict)</code></td>
+                <td>Iperparametri e setup</td>
+                <td>Manifest ed eventi SQLite</td>
+              </tr>
+              <tr>
+                <td><code>log_metrics(step, dict)</code></td>
+                <td>Misure nel tempo</td>
+                <td>Dashboard, SQLite, JSONL e report</td>
+              </tr>
+              <tr>
+                <td><code>log_progress(done, total, label)</code></td>
+                <td>Avanzamento frequente</td>
+                <td>Footer live, non persistito</td>
+              </tr>
+              <tr>
+                <td><code>log_artifact(path, kind)</code></td>
+                <td>Modelli, immagini e dataset</td>
+                <td>Copia nella run e catalogo</td>
+              </tr>
+              <tr>
+                <td><code>save_result(name, data)</code></td>
+                <td>Risultati JSON strutturati</td>
+                <td>File nella run ed evento</td>
+              </tr>
+              <tr>
+                <td><code>subscribe(view)</code></td>
+                <td>Vista o integrazione personalizzata</td>
+                <td>EventBus in-process</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="grid-2" style="margin-top: 18px">
+          <div class="card">
+            <h3>Layout della run</h3>
+            <pre class="tree"><code>artifacts/
+├── catalog.sqlite
+└── runs/YYYY-MM-DD/&lt;run-id&gt;/
+    ├── manifest.json
+    ├── config.json
+    ├── logs/run.log
+    ├── metrics/metrics.jsonl
+    ├── metrics/telemetry.jsonl
+    ├── artifacts/
+    └── reports/run_report.html</code></pre>
+          </div>
+
+          <div class="card">
+            <h3>Multiprocessing</h3>
+            <pre><code># Processo padre
+descriptor = experiment.descriptor()
+
+# Worker
+worker = RunContext.attach(**descriptor)
+worker.log_metrics(step, {
+    "worker/throughput": value,
+})</code></pre>
+            <p class="muted">
+              I worker scrivono su SQLite WAL. Il padre materializza i JSONL
+              alla chiusura, evitando append concorrenti sullo stesso file.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section class="tab-panel" id="adapter" role="tabpanel"
+        aria-labelledby="tab-adapter">
+        <div class="section-intro">
+          <div>
+            <p class="eyebrow">06 / adattamento</p>
+            <h2>Il progetto traduce; il logger registra</h2>
+          </div>
+          <p>
+            L’adapter converte concetti specifici del dominio in metriche,
+            artifact o eventi senza contaminare il package generico.
+          </p>
+        </div>
+
+        <div class="boundary">
+          <div class="boundary-side">
+            <span class="tag">PROGETTO</span>
+            <h3>Concetti del dominio</h3>
+            <ul class="checklist">
+              <li>partita o episodio</li>
+              <li>dataset split</li>
+              <li>checkpoint promosso</li>
+              <li>confusion matrix</li>
+              <li>replay specifico</li>
+            </ul>
+          </div>
+          <div class="boundary-arrow" aria-hidden="true">→</div>
+          <div class="boundary-side generic">
+            <span class="tag">ML_LOGGER</span>
+            <h3>Primitivi generici</h3>
+            <ul class="checklist">
+              <li>metriche e parametri</li>
+              <li>artifact e risultati</li>
+              <li>log applicativi</li>
+              <li>eventi e viste</li>
+              <li>lifecycle della run</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div class="card">
+            <h3>Struttura consigliata</h3>
+            <pre><code>project/
+├── integrations/
+│   └── project_logging.py
+├── logger_config.yaml
+└── training.py</code></pre>
+            <p class="muted">
+              In Regicide questo ruolo è svolto da
+              <code>integrations/regicide_logging.py</code>.
+            </p>
+          </div>
+
+          <div class="card">
+            <h3>Adapter minimo</h3>
+            <pre><code>class DatasetRecorder:
+    def __init__(self, context):
+        self.context = context
+
+    def save_split(self, path, split, rows):
+        self.context.log_metrics(rows, {
+            f"dataset/{split}/rows": rows,
+        })
+        return self.context.log_artifact(
+            path,
+            kind=f"dataset-{split}",
+        )</code></pre>
+          </div>
+        </div>
+
+        <div class="card" style="margin-top: 18px">
+          <h3>Checklist per un nuovo progetto</h3>
+          <ol class="checklist">
+            <li>Installa il package senza aggiungere classi del dominio.</li>
+            <li>Crea <code>logger_config.yaml</code> nella nuova repository.</li>
+            <li>Apri una sola run nel comando principale.</li>
+            <li>Definisci nomi metrici gerarchici prima del training.</li>
+            <li>Pubblica valori intermedi durante le fasi lunghe.</li>
+            <li>Crea un adapter solo per ciò che non è già una metrica o un artifact.</li>
+          </ol>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <span>ml_logger · documentazione standalone</span>
+      <span>Nessun server o dipendenza esterna richiesta.</span>
+    </footer>
+  </div>
+
+  <script>
+    (function () {
+      "use strict";
+
+      var tabs = Array.from(document.querySelectorAll("[role='tab']"));
+      var panels = Array.from(document.querySelectorAll("[role='tabpanel']"));
+
+      function panelExists(panelId) {
+        return panels.some(function (panel) {
+          return panel.id === panelId;
+        });
+      }
+
+      function activate(panelId, updateHash) {
+        if (!panelExists(panelId)) {
+          return;
+        }
+
+        tabs.forEach(function (tab) {
+          var selected = tab.dataset.panel === panelId;
+          tab.setAttribute("aria-selected", String(selected));
+          tab.tabIndex = selected ? 0 : -1;
+        });
+
+        panels.forEach(function (panel) {
+          var selected = panel.id === panelId;
+          panel.classList.toggle("active", selected);
+          panel.hidden = !selected;
+        });
+
+        if (updateHash && window.location.hash !== "#" + panelId) {
+          window.location.hash = panelId;
+        }
+      }
+
+      function focusRelativeTab(currentIndex, offset) {
+        var nextIndex = (currentIndex + offset + tabs.length) % tabs.length;
+        tabs[nextIndex].focus();
+        activate(tabs[nextIndex].dataset.panel, true);
+      }
+
+      tabs.forEach(function (tab, index) {
+        tab.addEventListener("click", function () {
+          activate(tab.dataset.panel, true);
+        });
+
+        tab.addEventListener("keydown", function (event) {
+          if (event.key === "ArrowRight") {
+            event.preventDefault();
+            focusRelativeTab(index, 1);
+          } else if (event.key === "ArrowLeft") {
+            event.preventDefault();
+            focusRelativeTab(index, -1);
+          } else if (event.key === "Home") {
+            event.preventDefault();
+            tabs[0].focus();
+            activate(tabs[0].dataset.panel, true);
+          } else if (event.key === "End") {
+            event.preventDefault();
+            tabs[tabs.length - 1].focus();
+            activate(tabs[tabs.length - 1].dataset.panel, true);
+          }
+        });
+      });
+
+      var requestedPanel = window.location.hash.slice(1);
+      var initialPanel = panelExists(requestedPanel)
+        ? requestedPanel
+        : tabs[0].dataset.panel;
+      activate(initialPanel, false);
+
+      window.addEventListener("hashchange", function () {
+        var panelId = window.location.hash.slice(1);
+        if (panelExists(panelId)) {
+          activate(panelId, false);
+        }
+      });
+    }());
+  </script>
+</body>
+</html>

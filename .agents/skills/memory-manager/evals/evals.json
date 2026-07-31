@@ -1,0 +1,38 @@
+{
+  "skill_name": "memory-manager",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Ricordati per questo progetto che le API pubbliche devono mantenere compatibilità retroattiva. Salvalo nella memoria corretta e mantieni aggiornati tutti gli indici.",
+      "expected_output": "Creates a project-local durable decision through the memory script and validates hierarchical indexes.",
+      "files": [],
+      "assertions": [
+        "The record is routed to project-local memory, not global memory.",
+        "The deterministic script is used to create or reindex the hierarchy.",
+        "The result reports a successful index validation."
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Voglio ricordare in tutti i progetti che preferisco spiegazioni tecniche concise con esempi concreti. Non esiste ancora una categoria adatta: creala senza lasciare indici incompleti.",
+      "expected_output": "Creates or reuses a focused global category, adds the preference, and updates every INDEX.md.",
+      "files": [],
+      "assertions": [
+        "The record is routed to global memory.",
+        "Any new directory receives its own INDEX.md.",
+        "Parent indexes include the new directory or record."
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "AGENTS.md contiene ormai una lunga procedura di release usata solo quando pubblico. Organizzala senza perdere le regole e controlla che AGENTS.md resti entro il budget.",
+      "expected_output": "Moves conditional project-specific detail to a guide, leaves a precise trigger in AGENTS.md, and runs the budget check.",
+      "files": [],
+      "assertions": [
+        "Conditional project-only guidance is moved to docs/agent-guides rather than memory.",
+        "AGENTS.md retains an explicit trigger for reading the guide.",
+        "The AGENTS.md budget check is run."
+      ]
+    }
+  ]
+}

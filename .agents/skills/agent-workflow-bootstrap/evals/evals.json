@@ -1,0 +1,23 @@
+{
+  "skill_name": "agent-workflow-bootstrap",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Connect this existing React repository to my agent workflow. Keep the setup quick, preserve its AGENTS.md, and add only clearly relevant skills.",
+      "expected_output": "The project is connected through the Project Control Center, the existing AGENTS.md content is preserved, and only a small evidence-based skill set is selected.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "Initialize a new Python project folder with global and local memory and a basic AGENTS.md. I only have a one-sentence project description so far.",
+      "expected_output": "A useful first-pass structure is created from templates/base-project/AGENTS.md, with discovered project context replacing placeholders and reusable template guidance retained, without requiring a deep project analysis or inventing unknown commands and constraints.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "Refresh the agent workflow in this already configured repository after I changed its purpose. Do not overwrite its local notes or local skills.",
+      "expected_output": "The managed AGENTS.md context is refreshed while existing local memory, local skills, and user-authored instructions remain intact.",
+      "files": []
+    }
+  ]
+}

@@ -1,0 +1,35 @@
+{
+  "schemaVersion": 2,
+  "projectId": "c64e5e37-6e10-493b-828a-53380f40624a",
+  "projectName": "ScotlandYardRL",
+  "sourceRepository": "C:\\Users\\modin\\Desktop\\programming\\LIFE\\AgentWorkflow",
+  "connectedAtUtc": "2026-07-31T23:04:03.3727241Z",
+  "workflow": {
+    "version": "1.6.0",
+    "appliedAtUtc": "2026-07-31T23:04:03.3727335Z"
+  },
+  "providers": [
+    "codex"
+  ],
+  "skills": [
+    {
+      "name": "agent-workflow-bootstrap",
+      "sourcePath": ".agents/skills/agent-workflow-bootstrap/SKILL.md",
+      "scope": "shared"
+    },
+    {
+      "name": "memory-manager",
+      "sourcePath": ".agents/skills/memory-manager/SKILL.md",
+      "scope": "shared"
+    },
+    {
+      "name": "frontend-design",
+      "sourcePath": ".agents/skills/frontend-design/SKILL.md",
+      "scope": "shared"
+    }
+  ],
+  "memory": {
+    "global": true,
+    "local": true
+  }
+}

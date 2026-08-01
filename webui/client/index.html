@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Shadow Chase</title>
+    <link rel="stylesheet" href="/static/css/tokens.css" />
+    <link rel="stylesheet" href="/static/css/board.css" />
+    <link rel="stylesheet" href="/static/css/app.css" />
+  </head>
+  <body>
+    <div class="shell">
+      <!-- Rail: the places you can go, in the order you use them. -->
+      <nav class="rail" aria-label="Main">
+        <svg class="rail-mark" viewBox="0 0 40 40" aria-label="Shadow Chase">
+          <circle cx="20" cy="20" r="13" fill="none" stroke="#e4483c" stroke-width="5" />
+          <rect x="3" y="17" width="34" height="6" fill="#0c1119" />
+          <rect x="4" y="17.5" width="32" height="5" fill="#e9e6dc" />
+        </svg>
+
+        <button class="rail-btn" id="rail-board" aria-label="New game" data-label="New game">
+          <svg viewBox="0 0 24 24"><path d="M3 6l6-3 6 3 6-3v15l-6 3-6-3-6 3z"/><path d="M9 3v15M15 6v15"/></svg>
+        </button>
+        <button class="rail-btn" id="rail-replays" aria-label="Saved games" data-label="Saved games">
+          <svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/><path d="M12 8v4l3 2"/></svg>
+        </button>
+        <button class="rail-btn" id="rail-export" aria-label="Export video" data-label="Export video">
+          <svg viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="1"/><path d="M2 9h20M7 5v4M17 5v4"/><path d="M11 12.5l4 2.2-4 2.3z"/></svg>
+        </button>
+
+        <div class="rail-rule"></div>
+
+        <button class="rail-btn" id="rail-photo" aria-label="Toggle board photo" data-label="Board photo" aria-pressed="false">
+          <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="1"/><circle cx="9" cy="10" r="2"/><path d="M3 17l5-4 4 3 3-2 6 4"/></svg>
+        </button>
+        <button class="rail-btn" id="rail-suspects" aria-label="Toggle suspect stations" data-label="Suspect stations" aria-pressed="false">
+          <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6"/><path d="M15.5 15.5L21 21M11 8v6M8 11h6"/></svg>
+        </button>
+
+        <div class="rail-spacer"></div>
+
+        <button class="rail-btn" id="rail-training" aria-label="Training setup, available after the refactor" data-label="Training — after the refactor" disabled>
+          <svg viewBox="0 0 24 24"><path d="M4 21v-7M4 10V3M12 21v-11M12 6V3M20 21v-4M20 13V3"/><path d="M1 14h6M9 6h6M17 17h6"/></svg>
+        </button>
+      </nav>
+
+      <!-- Stage: the map, with the reveal schedule above it. -->
+      <main class="stage">
+        <header class="stage-top">
+          <div class="stage-id">
+            <span class="eyebrow" id="stage-kind">Board</span>
+            <b id="stage-board">London</b>
+          </div>
+
+          <div class="ruler">
+            <div class="ruler-head">
+              <span class="eyebrow">Mr. X surfaces on</span>
+              <span class="eyebrow num" id="ruler-caption">&mdash;</span>
+            </div>
+            <div class="ruler-track" id="ruler" role="img" aria-label="Reveal schedule"></div>
+          </div>
+
+          <div class="stage-state">
+            <span class="badge" id="badge-turn">Turn <b>0</b></span>
+            <span class="badge" id="badge-mrx">Not started</span>
+          </div>
+        </header>
+
+        <div class="board-wrap" id="board-wrap">
+          <svg class="board-svg" id="board" role="application" aria-label="Game board"></svg>
+        </div>
+
+        <footer class="stage-foot">
+          <div class="legend" id="legend"></div>
+          <div class="zoom">
+            <button id="zoom-out" title="Zoom out">&minus;</button>
+            <button id="zoom-in" title="Zoom in">+</button>
+            <button id="zoom-fit" title="Fit the board">Fit</button>
+          </div>
+        </footer>
+      </main>
+
+      <!-- Panel: what you can do right now. -->
+      <aside class="panel">
+        <div class="panel-scroll" id="panel"></div>
+        <div class="panel-actions" id="actions"></div>
+      </aside>
+    </div>
+
+    <div class="toasts" id="toasts" aria-live="polite"></div>
+
+    <!-- New game -->
+    <div class="scrim" id="modal-board" hidden>
+      <div class="modal" role="dialog" aria-modal="true" aria-labelledby="board-title">
+        <div class="modal-head">
+          <div>
+            <h2 id="board-title">New game</h2>
+            <p>Pick a board and a squad size. This clears the game in progress.</p>
+          </div>
+          <button class="icon-btn" data-close="modal-board" aria-label="Close">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="choice-list" id="board-options"></div>
+          <div class="field">
+            <label class="eyebrow" for="board-detectives">Detectives</label>
+            <select class="select" id="board-detectives"></select>
+          </div>
+        </div>
+        <div class="modal-foot">
+          <button class="btn btn-ghost" data-close="modal-board">Cancel</button>
+          <button class="btn btn-primary" id="board-create">Open board</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Saved games -->
+    <div class="scrim" id="modal-saves" hidden>
+      <div class="modal" role="dialog" aria-modal="true" aria-labelledby="saves-title">
+        <div class="modal-head">
+          <div>
+            <h2 id="saves-title">Saved games</h2>
+            <p>Newest first. Opening one starts a replay in a new window.</p>
+          </div>
+          <button class="icon-btn" data-close="modal-saves" aria-label="Close">&times;</button>
+        </div>
+        <div class="modal-body">
+          <input class="input" id="saves-search" type="search"
+                 placeholder="Filter by game id or matchup folder" />
+          <div style="height: 12px"></div>
+          <table class="data-table">
+            <thead>
+              <tr><th>Game</th><th>Folder</th><th>Saved</th></tr>
+            </thead>
+            <tbody id="saves-rows"></tbody>
+          </table>
+          <p class="section-note" id="saves-note" style="margin-top: 12px"></p>
+        </div>
+        <div class="modal-foot">
+          <button class="btn btn-ghost" data-close="modal-saves">Cancel</button>
+          <button class="btn btn-primary" id="saves-open" disabled>Open replay</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Video export -->
+    <div class="scrim" id="modal-export" hidden>
+      <div class="modal" role="dialog" aria-modal="true" aria-labelledby="export-title">
+        <div class="modal-head">
+          <div>
+            <h2 id="export-title">Export video</h2>
+            <p>Renders a saved game to MP4 in the exports folder.</p>
+          </div>
+          <button class="icon-btn" data-close="modal-export" aria-label="Close">&times;</button>
+        </div>
+        <div class="modal-body">
+          <input class="input" id="export-search" type="search"
+                 placeholder="Filter by game id or matchup folder" />
+          <div style="height: 12px"></div>
+          <table class="data-table">
+            <thead>
+              <tr><th>Game</th><th>Folder</th><th>Saved</th></tr>
+            </thead>
+            <tbody id="export-rows"></tbody>
+          </table>
+
+          <div class="section-head" style="margin-top: 22px">
+            <span class="eyebrow">Settings</span>
+          </div>
+          <div class="grid-2">
+            <div class="field" style="margin: 0">
+              <label class="eyebrow" for="export-duration">Seconds per turn</label>
+              <input class="input" id="export-duration" type="number" min="0.1" max="10" step="0.1" value="1" />
+            </div>
+            <div class="field" style="margin: 0">
+              <label class="eyebrow" for="export-delay">Hold on final frame</label>
+              <input class="input" id="export-delay" type="number" min="0" max="30" step="0.5" value="3" />
+            </div>
+          </div>
+          <div class="field">
+            <label class="eyebrow" for="export-name">File name</label>
+            <input class="input" id="export-name" type="text" placeholder="Pick a game above" />
+          </div>
+          <div id="export-progress" hidden>
+            <p class="section-note" id="export-message">Starting</p>
+            <div class="progress"><i id="export-bar" style="width: 0%"></i></div>
+          </div>
+        </div>
+        <div class="modal-foot">
+          <button class="btn btn-ghost" data-close="modal-export">Close</button>
+          <button class="btn btn-primary" id="export-start" disabled>Export video</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Result -->
+    <div class="scrim" id="modal-result" hidden>
+      <div class="result" id="result-card">
+        <span class="eyebrow" id="result-eyebrow">Game over</span>
+        <h2 id="result-title">Detectives win</h2>
+        <p id="result-detail"></p>
+        <div class="btn-row">
+          <button class="btn btn-ghost" id="result-review">Review the board</button>
+          <button class="btn btn-primary" id="result-new">New game</button>
+        </div>
+        <span class="saved-as" id="result-saved"></span>
+      </div>
+    </div>
+
+    <script type="module" src="/static/js/app.js"></script>
+  </body>
+</html>

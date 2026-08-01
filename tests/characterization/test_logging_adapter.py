@@ -7,8 +7,10 @@ import pytest
 from ml_logger import get_logger, load_config, run
 from ShadowChase.core.game import TransportType
 from ShadowChase.integrations import (
+    AgentComparisonRecorder,
     GameRunRecorder,
     TrainingRunRecorder,
+    evaluation_summary,
     serialize_game_replay,
 )
 
@@ -141,6 +143,84 @@ def test_training_recorder_namespaces_metrics_and_copies_checkpoint(tmp_path):
     assert metric_record["train/epsilon"] == 0.9
     assert artifact_path.read_bytes() == checkpoint.read_bytes()
     assert summary == {"training/best_reward": 12.5}
+
+
+def test_evaluation_summary_strips_only_top_level_namespace_fields():
+    """Verify a child run's aggregate is readable without its nested blocks."""
+    summary = evaluation_summary(
+        {
+            "evaluation/games": 4,
+            "evaluation/mrx_win_rate": 0.25,
+            "evaluation/random_vs_random/games": 4,
+            "gameplay/games": 1,
+        }
+    )
+
+    assert summary == {"games": 4, "mrx_win_rate": 0.25}
+
+
+@pytest.mark.integration
+def test_comparison_recorder_aggregates_matchups_and_keeps_failures(tmp_path):
+    """Verify a comparison totals its child runs without hiding a failure."""
+    config_path = _write_adapter_test_config(tmp_path / "logger.yaml")
+
+    with run(
+        "comparison",
+        root_dir=tmp_path / "artifacts",
+        logger_config_path=config_path,
+    ) as context:
+        recorder = AgentComparisonRecorder(context)
+        recorder.record_matchup(
+            0,
+            "random_vs_heuristic",
+            {
+                "games": 4,
+                "mrx_wins": 1,
+                "detective_wins": 3,
+                "incomplete_games": 0,
+                "average_turns": 6.0,
+                "average_duration_seconds": 0.5,
+            },
+            run_id="evaluation-fixture-a",
+        )
+        recorder.record_matchup(
+            1,
+            "heuristic_vs_random",
+            {
+                "games": 2,
+                "mrx_wins": 2,
+                "detective_wins": 0,
+                "incomplete_games": 0,
+                "average_turns": 3.0,
+                "average_duration_seconds": 0.25,
+            },
+            run_id="evaluation-fixture-b",
+        )
+        recorder.record_failed_matchup(2, "deep_q_vs_random", "exit code 1")
+        summary = recorder.finalize()
+        run_dir = context.run_dir
+
+    metrics = [
+        json.loads(line)
+        for line in (run_dir / "metrics" / "metrics.jsonl")
+        .read_text(encoding="utf-8")
+        .splitlines()
+    ]
+
+    assert summary["comparison/games"] == 6
+    assert summary["comparison/mrx_wins"] == 3
+    assert summary["comparison/mrx_win_rate"] == 0.5
+    # Totals are weighted by games, not averaged across matchups.
+    assert summary["comparison/average_turns"] == 5.0
+    assert summary["comparison/matchups"] == 2
+    assert summary["comparison/failed_matchups"] == 1
+    assert summary["comparison/random_vs_heuristic/run_id"] == "evaluation-fixture-a"
+    assert summary["comparison/deep_q_vs_random/error"] == "exit code 1"
+
+    assert len(metrics) == 3
+    assert metrics[1]["comparison/heuristic_vs_random/games"] == 2
+    # Identifiers stay out of the metric series.
+    assert "comparison/random_vs_heuristic/run_id" not in metrics[0]
 
 
 @pytest.mark.integration

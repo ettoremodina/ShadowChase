@@ -36,6 +36,7 @@ metrics:
   include:
     - "game/*"
     - "evaluation/*"
+    - "comparison/*"
     - "train/*"
     - "validation/*"
     - "system/*"
@@ -51,6 +52,7 @@ dashboard:
     include:
       - "game/*"
       - "evaluation/*"
+      - "comparison/*"
       - "train/*"
       - "validation/*"
     exclude: []
@@ -70,6 +72,7 @@ report:
     include:
       - "game/*"
       - "evaluation/*"
+      - "comparison/*"
       - "train/*"
       - "validation/*"
     exclude: []
@@ -89,6 +92,11 @@ run_type_overrides:
   evaluation:
     dashboard:
       mode: compact
+  comparison:
+    dashboard:
+      mode: compact
+    telemetry:
+      enabled: false
   training:
     dashboard:
       mode: auto

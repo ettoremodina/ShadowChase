@@ -1,0 +1,12 @@
+{
+  "mode": "train",
+  "player_role": "MrX",
+  "episodes": 200,
+  "plotting_every": 50,
+  "map_size": "extended",
+  "num_detectives": 5,
+  "max_turns": 24,
+  "evaluation_games": 50,
+  "save_dir": "training_results",
+  "device": "cuda"
+}

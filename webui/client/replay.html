@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Replay — Shadow Chase</title>
+    <link rel="stylesheet" href="/static/css/tokens.css" />
+    <link rel="stylesheet" href="/static/css/board.css" />
+    <link rel="stylesheet" href="/static/css/app.css" />
+  </head>
+  <body>
+    <div class="shell shell-replay">
+      <main class="stage">
+        <header class="stage-top">
+          <div class="stage-id">
+            <span class="eyebrow">Replay</span>
+            <b id="replay-id">Loading</b>
+          </div>
+
+          <div class="ruler">
+            <div class="ruler-head">
+              <span class="eyebrow">Mr. X surfaces on</span>
+              <span class="eyebrow num" id="ruler-caption">&mdash;</span>
+            </div>
+            <div class="ruler-track" id="ruler" role="img" aria-label="Reveal schedule"></div>
+          </div>
+
+          <div class="stage-state">
+            <span class="badge" id="badge-turn">Turn <b>0</b></span>
+            <span class="badge" id="badge-mrx">&mdash;</span>
+          </div>
+        </header>
+
+        <div class="board-wrap" id="board-wrap">
+          <svg class="board-svg" id="board" role="application" aria-label="Game board"></svg>
+        </div>
+
+        <footer class="stage-foot">
+          <div class="legend" id="legend"></div>
+          <div class="zoom">
+            <button id="photo-toggle" title="Board photo">Photo</button>
+            <button id="zoom-out" title="Zoom out">&minus;</button>
+            <button id="zoom-in" title="Zoom in">+</button>
+            <button id="zoom-fit" title="Fit the board">Fit</button>
+          </div>
+        </footer>
+      </main>
+
+      <aside class="panel">
+        <div class="panel-scroll" id="panel"></div>
+        <div class="panel-actions">
+          <div class="timeline">
+            <input type="range" id="scrub" min="0" max="0" value="0" step="1"
+                   aria-label="Step through the game" />
+            <div class="timeline-read">
+              <span class="eyebrow">Step</span>
+              <span class="num" id="step-read">0 / 0</span>
+            </div>
+          </div>
+          <div class="btn-row">
+            <button class="btn btn-ghost" id="go-first" title="First step">&#8676;</button>
+            <button class="btn btn-ghost" id="go-prev" title="Previous step">&#8592;</button>
+            <button class="btn btn-primary" id="go-play">Play</button>
+            <button class="btn btn-ghost" id="go-next" title="Next step">&#8594;</button>
+            <button class="btn btn-ghost" id="go-last" title="Last step">&#8677;</button>
+          </div>
+        </div>
+      </aside>
+    </div>
+
+    <div class="toasts" id="toasts" aria-live="polite"></div>
+    <script type="module" src="/static/js/replay.js"></script>
+  </body>
+</html>

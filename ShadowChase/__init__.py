@@ -5,6 +5,12 @@ A comprehensive implementation of the detectives and MrXs pursuit-evasion game
 with flexible rules, solvers, and interactive visualization.
 """
 
+from .compat import install_legacy_aliases
+
+# Saved games record the module paths of the release that wrote them, so the
+# historical package names have to resolve before any pickle is read.
+install_legacy_aliases()
+
 from .core.game import (
     Game, GameState, Player,
     MovementRule, StandardMovement, DistanceKMovement,

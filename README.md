@@ -81,13 +81,20 @@ pip install -r requirements.txt
 ### Three Main Ways to Use This Project
 
 #### 1. 🎮 Interactive Play (Graphical Interface)
-Play Shadow Chase with a visual interface - control Detectives manually or watch AI agents play:
+Play Shadow Chase in the browser — control Detectives manually or watch AI agents play:
 ```bash
-python main.py
+python -m webui
 ```
 - Choose between human and AI players
 - Watch agent strategies in action
 - Great for understanding game dynamics
+
+The board is drawn as SVG over the scanned map, with pan and zoom. See
+[docs/webui.md](docs/webui.md) for the full tour. The original Tkinter board is
+still available while the refactor is in progress:
+```bash
+python main.py
+```
 
 ![Shadow Chase Gameplay](IMMAGINI%20REPORT/image.png)
 

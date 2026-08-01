@@ -8,6 +8,19 @@ class Player(Enum):
     DETECTIVES = "detectives"
     MRX = "MrX"  # Added for Shadow Chase
 
+    @classmethod
+    def _missing_(cls, value):
+        """Accept the player names written by earlier releases.
+
+        Saved games store the enum value, so a renamed value makes historical
+        files unreadable. See ShadowChase.compat for the module-level case.
+        """
+        return _LEGACY_PLAYER_VALUES.get(value)
+
+
+_LEGACY_PLAYER_VALUES = {"mr_x": Player.MRX, "robber": Player.MRX,
+                         "cop": Player.DETECTIVES, "cops": Player.DETECTIVES}
+
 class TransportType(Enum):
     TAXI = 1
     BUS = 2
@@ -635,4 +648,12 @@ class ShadowChaseGame(Game):
     def get_MrX_tickets(self) -> Dict[TicketType, int]:
         """Get Mr. X's ticket counts"""
         return self.game_state.MrX_tickets.copy()
+
+
+# Class names used by saved games from the ScotlandYard-era releases.
+# Unpickling resolves the name recorded at save time, so these aliases are what
+# keep those files loadable. See ShadowChase.compat for the module-level case.
+ScotlandYardMovement = ShadowChaseMovement
+ScotlandYardWinCondition = ShadowChaseWinCondition
+ScotlandYardGame = ShadowChaseGame
 

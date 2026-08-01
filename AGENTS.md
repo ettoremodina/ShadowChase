@@ -5,15 +5,15 @@
 
 ### Project context
 
-- **Project:** ScotlandYardRL / Shadow Chase
-- **Purpose:** A Python research and learning platform for pursuit-evasion gameplay, reinforcement-learning agents, evaluation, and an animated visualization of matches.
-- **Technology:** Python 3.8+, PyTorch, NetworkX, NumPy, OpenCV, Matplotlib
-- **Important commands:** pip install -r requirements.txt; python main.py; python test_agents.py; python train_dqn.py --role MrX --episodes 10000; python game_controls/simple_game.py --batch 50 --map-size extracted --detectives 5
-- **Important constraints:** Build an animation of gameplay; preserve existing user changes and generated artifacts; use original assets and avoid official Scotland Yard artwork or branding; CUDA is optional.
+- **Project:** ScotlandYardRL
+- **Purpose:** Not established yet
+- **Technology:** Not established yet
+- **Important commands:** Not established yet
+- **Important constraints:** Not established yet
 
 ### Connected capabilities
 
-- **Managed skills:** agent-workflow-bootstrap, frontend-design, memory-manager
+- **Managed skills:** agent-workflow-bootstrap, code-flow-explorer, frontend-design, html-output-viewer, memory-manager, paper-summarizer-visual, parallel-worktree-tasks, pdf, teach, webapp-testing
 - **Global memory index:** .agents/memory/global/INDEX.md
 - **Local memory index:** .agents/memory/local/INDEX.md
 

@@ -9,6 +9,10 @@ from typing import List, Optional, Dict, Any
 import os
 from pathlib import Path
 
+from ml_logger import get_logger
+
+logger = get_logger(__name__)
+
 # Set modern plotting style
 plt.style.use('seaborn-v0_8-darkgrid')
 sns.set_palette("husl")
@@ -64,21 +68,27 @@ def smooth_curve(data: List[float], window_size: Optional[int] = None) -> tuple:
 
 def plot_training_metrics(trainer, save_path: str = "training_results/training_metrics.png", 
                          plotting_every: int = 1000, show_plot: bool = True,
-                         figsize: tuple = (16, 12)) -> None:
+                         figsize: tuple = (16, 12)) -> Optional[str]:
     """
     Plot comprehensive training metrics with enhanced aesthetics.
-    
+
     Args:
         trainer: DQN trainer object with training history
         save_path: Path to save the plot
         plotting_every: Interval for Q-value sampling
         show_plot: Whether to display the plot
         figsize: Figure size (width, height)
+
+    Returns:
+        The written plot path, or None when there is too little data to plot.
     """
     if len(trainer.episode_rewards) < 10:
-        print("⚠️  Not enough data to generate meaningful plots (need at least 10 episodes)")
-        return
-    
+        logger.warning(
+            "Not enough data to generate meaningful plots (need at least 10 episodes)"
+        )
+        return None
+
+
     # Setup plot style
     setup_plot_style()
     
@@ -121,14 +131,16 @@ def plot_training_metrics(trainer, save_path: str = "training_results/training_m
     # Save plot
     os.makedirs(os.path.dirname(save_path), exist_ok=True)
     plt.savefig(save_path, dpi=300, bbox_inches='tight', facecolor='white')
-    print(f"Training metrics saved to: {save_path}")
-    
+    logger.info("Training metrics saved to: %s", save_path)
+
     if show_plot:
         plt.show(block=False)
         plt.pause(2.0)
         plt.close('all')
     else:
         plt.close('all')
+
+    return save_path
 
 def _plot_episode_rewards(ax, episode_rewards: List[float]) -> None:
     """Plot episode rewards with raw and smoothed curves."""
@@ -348,7 +360,7 @@ def create_comparison_plot(results_dict: Dict[str, List[float]],
     # Save plot
     os.makedirs(os.path.dirname(save_path), exist_ok=True)
     plt.savefig(save_path, dpi=300, bbox_inches='tight', facecolor='white')
-    print(f"Comparison plot saved to: {save_path}")
+    logger.info("Comparison plot saved to: %s", save_path)
     
     plt.show(block=False)
     plt.pause(2.0)

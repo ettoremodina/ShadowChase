@@ -1,0 +1,37 @@
+{
+  "skill_name": "html-output-viewer",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Invoke $html-output-viewer and turn my 12-section implementation plan in notes/platform-migration.md into a self-contained HTML document I can review offline.",
+      "expected_output": "A readable offline HTML file that preserves the plan and provides navigation for its sections.",
+      "files": ["notes/platform-migration.md"],
+      "expectations": [
+        "The output is a single HTML file with no remote scripts, stylesheets, fonts, or other network dependencies.",
+        "The rendered content preserves every source section and creates navigation links for headings.",
+        "The workflow uses scripts/render_html.py and reuses assets/reader-template.html instead of generating a new design."
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Use html-output-viewer for the architecture analysis you just wrote. Keep the tables, code snippets, and checklist intact, and call the result architecture-review.html.",
+      "expected_output": "A self-contained architecture-review.html artifact preserving tables, fenced code, and task lists.",
+      "files": [],
+      "expectations": [
+        "The output filename is architecture-review.html.",
+        "Markdown tables render as HTML tables, fenced code renders as escaped code blocks, and checklist state is preserved.",
+        "The source wording is not summarized or rewritten during conversion."
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Write a detailed rollout plan in the chat, but do not invoke any artifact or HTML skill.",
+      "expected_output": "A normal conversational response; html-output-viewer must not trigger because it was not explicitly invoked.",
+      "files": [],
+      "expectations": [
+        "The html-output-viewer skill is not loaded or used.",
+        "No HTML artifact is created."
+      ]
+    }
+  ]
+}

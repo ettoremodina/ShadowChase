@@ -1,0 +1,38 @@
+{
+  "skill_name": "teach",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Continue my urban mobility course in C:\\Users\\modin\\Desktop\\programming\\LEARNING\\UrbanMobility and teach the next topic that fits my current level.",
+      "expected_output": "The agent resolves only .agents/knowledge/urban-mobility, reads its mission and learning records, and writes the next lesson to the canonical linked subject without duplicating teaching files at the project root.",
+      "files": [],
+      "assertions": [
+        "After excluding reserved assets and templates links, the project exposes exactly one subject under .agents/knowledge.",
+        "The subject path is a junction to AgentWorkflow/knowledge/urban-mobility.",
+        "The skill instructs the agent to work through the subject link and avoid unrelated subjects."
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Set up a teaching workspace for causal inference in this already-bootstrapped project, but keep my other shared subjects out of view.",
+      "expected_output": "The agent previews and then scaffolds a canonical causal-inference subject, creates only the direct subject junction, and seeds the standard templates without linking the complete knowledge library.",
+      "files": [],
+      "assertions": [
+        "The connector requires a kebab-case subject name.",
+        "Preview mode performs no writes.",
+        "The connector links one subject plus the shared assets and templates rather than the complete knowledge root."
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Migrate this older teach workspace into the shared library. It has root-level MISSION.md, lessons, notes, and source PDFs; do not delete or replace anything.",
+      "expected_output": "The agent copies useful material into the canonical subject structure, preserves all legacy files, keeps raw sources immutable, and stops on conflicting project paths.",
+      "files": [],
+      "assertions": [
+        "The skill explicitly preserves legacy workspace files.",
+        "The connector refuses to replace an existing project subject path.",
+        "Raw-source files are treated as immutable."
+      ]
+    }
+  ]
+}

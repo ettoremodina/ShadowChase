@@ -1,0 +1,104 @@
+version: 2
+
+artifacts:
+  root_dir: artifacts
+  directories:
+    - logs
+    - metrics
+    - artifacts
+    - models
+    - replays
+
+logging:
+  enabled: true
+  level: INFO
+  console: true
+  file: true
+
+terminal:
+  colors: true
+  timezone: "+02:00"
+  show_time: true
+  show_level: true
+  show_source: false
+  omit_repeated_times: true
+  rich_tracebacks: true
+
+saving:
+  enabled: true
+  params: true
+  metrics: true
+  results: true
+  artifacts: true
+  telemetry: true
+
+metrics:
+  include:
+    - "game/*"
+    - "evaluation/*"
+    - "train/*"
+    - "validation/*"
+    - "system/*"
+  exclude: []
+
+dashboard:
+  mode: auto
+  refresh_rate: 4
+  max_log_lines: 50
+  max_metrics: 16
+  screen: true
+  metrics:
+    include:
+      - "game/*"
+      - "evaluation/*"
+      - "train/*"
+      - "validation/*"
+    exclude: []
+
+telemetry:
+  enabled: true
+  sample_interval_sec: 5
+  include_process: true
+  include_system: true
+  gpu_provider: auto
+
+report:
+  enabled: true
+  filename: run_report.html
+  visualization: auto
+  metrics:
+    include:
+      - "game/*"
+      - "evaluation/*"
+      - "train/*"
+      - "validation/*"
+    exclude: []
+
+integrations:
+  shadow_chase:
+    recording:
+      level: actions
+      save_replays: true
+
+run_type_overrides:
+  gameplay:
+    dashboard:
+      mode: compact
+    telemetry:
+      enabled: false
+  evaluation:
+    dashboard:
+      mode: compact
+  training:
+    dashboard:
+      mode: auto
+    telemetry:
+      enabled: true
+  test:
+    dashboard:
+      mode: off
+    telemetry:
+      enabled: false
+    report:
+      enabled: false
+

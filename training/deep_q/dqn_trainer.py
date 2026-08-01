@@ -7,7 +7,7 @@ This module implements the DQN training algorithm using the existing training in
 import json
 import time
 import numpy as np
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
 
 
 import torch
@@ -15,6 +15,7 @@ import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
 
+from ml_logger import get_logger
 from ShadowChase.core.game import ShadowChaseGame
 from training.base_trainer import BaseTrainer, TrainingResult
 from training.feature_extractor_simple import GameFeatureExtractor, FeatureConfig
@@ -31,6 +32,13 @@ from game_controls.game_utils import create_and_initialize_game
 from agents import AgentType, get_agent_registry
 from agents.dqn_agent import DQNMrXAgent, DQNMultiDetectiveAgent
 
+if TYPE_CHECKING:
+    from ShadowChase.integrations import TrainingRunRecorder
+
+
+logger = get_logger(__name__)
+
+
 class DQNTrainer(BaseTrainer):
     """
     Deep Q-Network trainer for Shadow Chase agents.
@@ -42,19 +50,21 @@ class DQNTrainer(BaseTrainer):
                  player_role: str = "MrX",  # "MrX" or "detectives"
                  config_path: str = "training/configs/dqn_config.json",
                  save_dir: str = "training_results",
-                 device=None):
+                 device=None,
+                 run_recorder: Optional["TrainingRunRecorder"] = None):
         """
         Initialize DQN trainer.
-        
+
         Args:
             player_role: Which player the agent will control ("MrX" or "detectives")
             config_path: Path to DQN configuration file
             save_dir: Directory to save training results
             device: PyTorch device to use (if None, will auto-detect)
+            run_recorder: Optional ml_logger recorder owned by the entry point
         """
-        super().__init__("dqn", save_dir)
-    
-        
+        super().__init__("dqn", save_dir, run_recorder=run_recorder)
+
+
         self.player_role = player_role
         self.config_path = config_path
         
@@ -79,7 +89,7 @@ class DQNTrainer(BaseTrainer):
             self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         else:
             self.device = device
-        print(f"Using device: {self.device}")
+        logger.info("Using device: %s", self.device)
         
         # Initialize feature extractor
         feature_config = FeatureConfig(**self.config.get('feature_extraction', {}))
@@ -103,8 +113,8 @@ class DQNTrainer(BaseTrainer):
         """Initialize the neural networks based on a sample game."""
         # Get feature size from a sample state
         feature_size = self.feature_extractor.get_feature_size(sample_game)
-        print(f"Feature vector size: {feature_size}")
-        
+        logger.info("Feature vector size: %d", feature_size)
+
         # Store feature size for monitoring
         self._feature_size = feature_size
         
@@ -118,8 +128,8 @@ class DQNTrainer(BaseTrainer):
             action_size = 2  # (destination, transport)
         
         self.config['network_parameters']['action_size'] = action_size
-        print(f"Action size for {self.player_role}: {action_size}")
-        
+        logger.info("Action size for %s: %d", self.player_role, action_size)
+
         # Create networks
         self.main_network = create_dqn_model(self.config).to(self.device)
         self.target_network = create_dqn_model(self.config).to(self.device)
@@ -133,9 +143,19 @@ class DQNTrainer(BaseTrainer):
         
         # Initialize replay buffer
         self.replay_buffer = create_replay_buffer(self.config)
-        
-        print(f"Initialized DQN with {sum(p.numel() for p in self.main_network.parameters())} parameters")
-    
+
+        parameter_count = sum(p.numel() for p in self.main_network.parameters())
+        logger.info("Initialized DQN with %d parameters", parameter_count)
+
+        if self.run_recorder is not None:
+            self.run_recorder.record_run_parameters({
+                'network/feature_size': feature_size,
+                'network/action_size': action_size,
+                'network/parameter_count': parameter_count,
+                'network/device': str(self.device),
+            })
+
+
     def train(self, 
               num_episodes: int = None,
               map_size: str = "test",
@@ -180,13 +200,43 @@ class DQNTrainer(BaseTrainer):
         else:
             opponent_agent = registry.create_MrX_agent(AgentType.RANDOM)
         
-        print(f"\n🚀 Starting DQN Training for {self.player_role.upper()}")
-        print("=" * 80)
-        print(f"Episodes: {num_episodes:,} │ Map: {map_size} │ Detectives: {num_detectives}")
-        print(f"Device: {self.device} │ Network: {sum(p.numel() for p in self.main_network.parameters()):,} params")
-        print(f"Learning Rate: {self.learning_rate} │ Batch Size: {self.batch_size}")
-        print("=" * 80)
-        
+        logger.info("Starting DQN training for %s", self.player_role.upper())
+        logger.info(
+            "Episodes: %d | Map: %s | Detectives: %d",
+            num_episodes,
+            map_size,
+            num_detectives,
+        )
+        logger.info(
+            "Device: %s | Network: %d params",
+            self.device,
+            sum(p.numel() for p in self.main_network.parameters()),
+        )
+        logger.info(
+            "Learning rate: %s | Batch size: %d",
+            self.learning_rate,
+            self.batch_size,
+        )
+
+        if self.run_recorder is not None:
+            self.run_recorder.record_run_parameters({
+                'training/algorithm': self.algorithm_name,
+                'training/player_role': self.player_role,
+                'training/episodes': num_episodes,
+                'training/map_size': map_size,
+                'training/num_detectives': num_detectives,
+                'training/max_turns_per_game': max_turns_per_game,
+                'training/batch_size': self.batch_size,
+                'training/learning_rate': self.learning_rate,
+                'training/gamma': self.gamma,
+                'training/epsilon_start': self.epsilon_start,
+                'training/epsilon_end': self.epsilon_end,
+                'training/target_update_frequency': self.target_update_frequency,
+                'training/min_replay_size': self.min_replay_size,
+                'training/config_path': self.config_path,
+            })
+
+
         # Training loop
         for episode in range(num_episodes):
             # if we are after X% of episodes the opponent becomes the heuristic agent
@@ -219,12 +269,26 @@ class DQNTrainer(BaseTrainer):
                 avg_loss = np.mean(self.losses[-100:]) if self.losses else 0
                 buffer_size = len(self.replay_buffer)
                 win_rate = sum(1 for r in self.episode_rewards[-100:] if r > 0) / min(100, len(self.episode_rewards))
-                
-                print(f"Episode {episode:5d} │ Reward: {avg_reward:7.2f} │ "
-                      f"ε: {self.current_epsilon:.3f} │ Loss: {avg_loss:8.4f} │ "
-                      f"Buffer: {buffer_size:5d} │ Win%: {win_rate:5.1%}")
-                
-            
+
+                logger.info(
+                    "Episode %5d | Reward: %7.2f | epsilon: %.3f | "
+                    "Loss: %8.4f | Buffer: %5d | Win: %5.1f%%",
+                    episode,
+                    avg_reward,
+                    self.current_epsilon,
+                    avg_loss,
+                    buffer_size,
+                    100 * win_rate,
+                )
+
+                if self.run_recorder is not None:
+                    self.run_recorder.record_metrics(episode, {
+                        'rolling_avg_reward': float(avg_reward),
+                        'rolling_avg_loss': float(avg_loss),
+                        'rolling_win_rate': float(win_rate),
+                    })
+                    self.run_recorder.record_progress(episode, num_episodes)
+
             # Log training step
             self._log_training_step(episode, {
                 'episode_reward': episode_reward,
@@ -243,15 +307,28 @@ class DQNTrainer(BaseTrainer):
             'final_buffer_size': len(self.replay_buffer)
         }
         
-        print(f"\n✅ Training Completed!")
-        print("=" * 80)
-        print(f"Duration: {training_duration:.1f}s │ Final Reward: {final_performance['avg_episode_reward']:.2f}")
-        print(f"Total Steps: {final_performance['total_steps']:,} │ Buffer Size: {final_performance['final_buffer_size']:,}")
-        print("=" * 80)
-        
+        logger.info("Training completed")
+        logger.info(
+            "Duration: %.1fs | Final reward: %.2f",
+            training_duration,
+            final_performance['avg_episode_reward'],
+        )
+        logger.info(
+            "Total steps: %d | Buffer size: %d",
+            final_performance['total_steps'],
+            final_performance['final_buffer_size'],
+        )
+
+        if self.run_recorder is not None:
+            self.run_recorder.record_progress(num_episodes, num_episodes)
+
         # Save model
         model_path = self.save_model()
-        
+
+        if self.run_recorder is not None:
+            self.run_recorder.record_checkpoint(model_path)
+
+
         return TrainingResult(
             algorithm="dqn",
             total_episodes=num_episodes,
@@ -418,18 +495,35 @@ class DQNTrainer(BaseTrainer):
                 self.q_value_samples.append(q_values)
                 
                 q_array = np.array(q_values)
-                print(f"\n📊 Q-Value Analysis (Episode {episode}):")
-                print(f"   Mean: {q_array.mean():8.3f} │ Std: {q_array.std():7.3f}")
-                print(f"   Range: [{q_array.min():7.3f}, {q_array.max():7.3f}]")
-                print(f"   Negative: {(q_array < 0).sum():3d}/{len(q_array)} ({100*(q_array < 0).mean():4.1f}%)")
-                print("─" * 60)
-                
+                logger.info(
+                    "Q-value analysis (episode %d): mean %.3f | std %.3f | "
+                    "range [%.3f, %.3f] | negative %d/%d",
+                    episode,
+                    q_array.mean(),
+                    q_array.std(),
+                    q_array.min(),
+                    q_array.max(),
+                    int((q_array < 0).sum()),
+                    len(q_array),
+                )
+
+                if self.run_recorder is not None:
+                    self.run_recorder.record_metrics(episode, {
+                        'q_mean': float(q_array.mean()),
+                        'q_std': float(q_array.std()),
+                        'q_min': float(q_array.min()),
+                        'q_max': float(q_array.max()),
+                        'q_negative_fraction': float((q_array < 0).mean()),
+                        'q_samples': int(q_array.size),
+                    })
+
                 # Put network back in training mode
                 self.main_network.train()
-            
+
             except Exception as e:
-                print(f"Warning: Could not monitor Q-values: {e}")
-    
+                logger.warning("Could not monitor Q-values: %s", e)
+
+
     def save_model(self, model_name: Optional[str] = None) -> str:
         """Save the trained model."""
         if model_name is None:
@@ -451,7 +545,7 @@ class DQNTrainer(BaseTrainer):
                 'q_value_samples': self.q_value_samples
             }
         }, model_path)
-        
-        print(f"Model saved to: {model_path}")
+
+        logger.info("Model saved to: %s", model_path)
         return str(model_path)
 

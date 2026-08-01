@@ -34,6 +34,17 @@ class RecordedGame:
     replay_path: Path | None
 
 
+@dataclass(frozen=True)
+class RecordedMatchup:
+    """Result returned after one agent matchup has been added to a comparison."""
+
+    matchup: str
+    metrics: dict[str, Any]
+    summary: dict[str, Any]
+    run_id: str | None
+    completed: bool
+
+
 @dataclass
 class _EvaluationAggregate:
     """Accumulate batch totals without exposing analysis policy to callers."""
@@ -65,21 +76,34 @@ class _EvaluationAggregate:
             self.duration_seconds += duration_seconds
             self.timed_games += 1
 
+    def merge(self, summary: Mapping[str, Any]) -> None:
+        """Merge an already aggregated batch, such as a child evaluation run."""
+        games = int(summary.get("games", 0))
+        self.games += games
+        self.mrx_wins += int(summary.get("mrx_wins", 0))
+        self.detective_wins += int(summary.get("detective_wins", 0))
+        self.incomplete_games += int(summary.get("incomplete_games", 0))
+        self.turns += round(float(summary.get("average_turns", 0.0)) * games)
+        average_duration = float(summary.get("average_duration_seconds", 0.0))
+        if average_duration:
+            self.duration_seconds += average_duration * games
+            self.timed_games += games
+
     def as_summary(self) -> dict[str, Any]:
-        """Return stable aggregate fields suitable for a run manifest."""
+        """Return stable aggregate fields, without a namespace prefix."""
         games = self.games
         timed_games = self.timed_games
         return {
-            "evaluation/games": games,
-            "evaluation/mrx_wins": self.mrx_wins,
-            "evaluation/detective_wins": self.detective_wins,
-            "evaluation/incomplete_games": self.incomplete_games,
-            "evaluation/mrx_win_rate": self.mrx_wins / games if games else 0.0,
-            "evaluation/detective_win_rate": (
+            "games": games,
+            "mrx_wins": self.mrx_wins,
+            "detective_wins": self.detective_wins,
+            "incomplete_games": self.incomplete_games,
+            "mrx_win_rate": self.mrx_wins / games if games else 0.0,
+            "detective_win_rate": (
                 self.detective_wins / games if games else 0.0
             ),
-            "evaluation/average_turns": self.turns / games if games else 0.0,
-            "evaluation/average_duration_seconds": (
+            "average_turns": self.turns / games if games else 0.0,
+            "average_duration_seconds": (
                 self.duration_seconds / timed_games if timed_games else 0.0
             ),
         }
@@ -181,13 +205,155 @@ class GameRunRecorder:
         )
         return RecordedGame(metrics=metrics, replay_path=replay_path)
 
-    def finalize(self, summary: Mapping[str, Any] | None = None) -> dict[str, Any]:
-        """Persist aggregate evaluation results and return the merged summary."""
+    def finalize(
+        self,
+        summary: Mapping[str, Any] | None = None,
+        namespace: str = "evaluation",
+    ) -> dict[str, Any]:
+        """Persist aggregate results below a namespace and return them.
+
+        An interactive gameplay command records a single game through the same
+        recorder, so it overrides the namespace instead of reporting its result
+        as batch evaluation output.
+        """
         merged = self._aggregate.as_summary()
         if summary:
-            merged.update(_prefix_metrics("evaluation", summary))
-        self.context.log_summary(merged)
-        return merged
+            merged.update(dict(summary))
+        namespaced = _prefix_metrics(namespace, merged)
+        self.context.log_summary(namespaced)
+        return namespaced
+
+
+class AgentComparisonRecorder:
+    """Record one run that compares agent matchups evaluated as child runs.
+
+    A comparison command delegates each matchup to the evaluation command,
+    which owns its own run and its own per-game metrics. This recorder turns
+    those child results into one comparison view instead of re-deriving game
+    data the child already recorded.
+    """
+
+    def __init__(self, context: RunContext) -> None:
+        """Bind the recorder to the single run owned by a comparison command."""
+        self.context = context
+        self._aggregate = _EvaluationAggregate()
+        self._matchups: dict[str, dict[str, Any]] = {}
+        self._failed: dict[str, str] = {}
+
+    def record_run_parameters(self, parameters: Mapping[str, Any]) -> None:
+        """Store the effective comparison configuration in the run manifest."""
+        self.context.log_params(dict(parameters))
+
+    def record_progress(
+        self,
+        completed: int,
+        total: int,
+        description: str = "Comparing agent matchups",
+    ) -> None:
+        """Publish transient matchup progress without persisting extra events."""
+        self.context.log_progress(completed, total, description)
+
+    def record_matchup(
+        self,
+        index: int,
+        matchup: str,
+        summary: Mapping[str, Any],
+        *,
+        run_id: str | None = None,
+    ) -> RecordedMatchup:
+        """Record one finished matchup and merge it into the comparison totals."""
+        if index < 0:
+            raise ValueError("index must be non-negative")
+        if matchup in self._matchups or matchup in self._failed:
+            raise ValueError(f"Matchup already recorded: {matchup}")
+
+        fields = dict(summary)
+        metrics = _prefix_metrics(
+            "comparison",
+            _prefix_metrics(matchup, _numeric_fields(fields)),
+        )
+        self.context.log_metrics(index, metrics)
+        self._aggregate.merge(fields)
+        if run_id is not None:
+            fields["run_id"] = run_id
+        self._matchups[matchup] = fields
+
+        logger.debug(
+            "Recorded matchup %s from run %s with %d metrics",
+            matchup,
+            run_id,
+            len(metrics),
+        )
+        return RecordedMatchup(
+            matchup=matchup,
+            metrics=metrics,
+            summary=fields,
+            run_id=run_id,
+            completed=True,
+        )
+
+    def record_failed_matchup(
+        self,
+        index: int,
+        matchup: str,
+        reason: str,
+    ) -> RecordedMatchup:
+        """Record a matchup that produced no evaluation result, and continue."""
+        if index < 0:
+            raise ValueError("index must be non-negative")
+        if matchup in self._matchups or matchup in self._failed:
+            raise ValueError(f"Matchup already recorded: {matchup}")
+
+        metrics = _prefix_metrics(
+            "comparison",
+            _prefix_metrics(matchup, {"failed": 1}),
+        )
+        self.context.log_metrics(index, metrics)
+        self._failed[matchup] = reason
+        logger.warning("Matchup %s failed: %s", matchup, reason)
+        return RecordedMatchup(
+            matchup=matchup,
+            metrics=metrics,
+            summary={"failed": 1, "error": reason},
+            run_id=None,
+            completed=False,
+        )
+
+    def record_artifact(
+        self,
+        source: str | Path,
+        *,
+        kind: str,
+        name: str | None = None,
+    ) -> Path:
+        """Copy and register an analysis plot, report, or related output file."""
+        return self.context.log_artifact(source, kind=kind, name=name)
+
+    def finalize(
+        self,
+        summary: Mapping[str, Any] | None = None,
+        namespace: str = "comparison",
+    ) -> dict[str, Any]:
+        """Persist comparison totals plus one labeled block per matchup."""
+        merged = self._aggregate.as_summary()
+        merged["matchups"] = len(self._matchups)
+        merged["failed_matchups"] = len(self._failed)
+        if summary:
+            merged.update(dict(summary))
+        namespaced = _prefix_metrics(namespace, merged)
+        for matchup, fields in self._matchups.items():
+            namespaced.update(
+                _prefix_metrics(namespace, _prefix_metrics(matchup, fields))
+            )
+        for matchup, reason in self._failed.items():
+            namespaced.update(
+                _prefix_metrics(
+                    namespace,
+                    _prefix_metrics(matchup, {"failed": 1, "error": reason}),
+                )
+            )
+        self.context.log_summary(namespaced)
+        return namespaced
 
 
 class TrainingRunRecorder:
@@ -305,14 +471,32 @@ def serialize_game_replay(
         replay["states"] = [
             serialize_game_state(state) for state in game.game_history
         ]
-        replay["ticket_history"] = json_safe(game.ticket_history)
+        replay["ticket_history"] = json_safe(_ticket_history(game))
     if recording_level == "full":
         replay["configuration"] = {
             "num_detectives": game.num_detectives,
-            "reveal_turns": sorted(game.reveal_turns),
+            "reveal_turns": sorted(getattr(game, "reveal_turns", ())),
             "graph": json_safe(nx.node_link_data(game.graph, edges="links")),
         }
     return replay
+
+
+def evaluation_summary(
+    result: Mapping[str, Any],
+    namespace: str = "evaluation",
+) -> dict[str, Any]:
+    """Read one run's aggregate summary fields without their namespace prefix.
+
+    A comparison command consumes the manifests written by the evaluation
+    command, so the namespace that keeps those fields unambiguous inside a run
+    has to be stripped before they can be re-aggregated.
+    """
+    prefix = f"{_safe_metric_segment(namespace)}/"
+    return {
+        name[len(prefix):]: value
+        for name, value in result.items()
+        if name.startswith(prefix) and "/" not in name[len(prefix):]
+    }
 
 
 def _game_summary(game: ShadowChaseGame) -> dict[str, Any]:
@@ -326,7 +510,7 @@ def _game_summary(game: ShadowChaseGame) -> dict[str, Any]:
         "turns": game.game_state.turn_count,
         "mrx_turns": game.game_state.MrX_turn_count,
         "history_states": len(game.game_history),
-        "ticket_events": len(game.ticket_history),
+        "ticket_events": len(_ticket_history(game)),
         "mrx_final_position": game.game_state.MrX_position,
         "detective_final_positions": list(
             game.game_state.detective_positions
@@ -355,6 +539,11 @@ def _game_metrics(
     return metrics
 
 
+def _ticket_history(game: ShadowChaseGame) -> list[Any]:
+    """Return the ticket log, which only ticket-based game classes maintain."""
+    return list(getattr(game, "ticket_history", ()))
+
+
 def _serialize_ticket_mapping(tickets: Mapping[Any, Any]) -> dict[str, Any]:
     """Normalize ticket enum keys without losing their domain names."""
     return {
@@ -380,6 +569,15 @@ def _prefix_metrics(
             key = f"{safe_namespace}/{raw_name}"
         prefixed[key] = value
     return prefixed
+
+
+def _numeric_fields(fields: Mapping[str, Any]) -> dict[str, Any]:
+    """Keep only the values a metric series can plot, dropping identifiers."""
+    return {
+        name: value
+        for name, value in fields.items()
+        if isinstance(value, (int, float)) and not isinstance(value, bool)
+    }
 
 
 def _safe_identifier(value: str) -> str:

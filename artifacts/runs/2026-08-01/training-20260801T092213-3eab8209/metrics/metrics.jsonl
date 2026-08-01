@@ -1,0 +1,256 @@
+{"timestamp": "2026-08-01T09:22:16.950318+00:00", "step": 0, "train/q_mean": -0.7736249583512544, "train/q_std": 0.47852022405372147, "train/q_min": -2.0727500915527344, "train/q_max": 0.416914165019989, "train/q_negative_fraction": 0.948, "train/q_samples": 500}
+{"timestamp": "2026-08-01T09:22:16.963912+00:00", "step": 0, "train/rolling_avg_reward": -16.5, "train/rolling_avg_loss": 0.0, "train/rolling_win_rate": 0.0}
+{"timestamp": "2026-08-01T09:22:17.001093+00:00", "step": 0, "train/episode_reward": -16.5, "train/epsilon": 1.0, "train/buffer_size": 4, "train/avg_loss": 0}
+{"timestamp": "2026-08-01T09:22:17.041452+00:00", "step": 1, "train/episode_reward": -4.48695652173913, "train/epsilon": 0.9998944561715365, "train/buffer_size": 16, "train/avg_loss": 0}
+{"timestamp": "2026-08-01T09:22:17.073577+00:00", "step": 2, "train/episode_reward": -4.51304347826087, "train/epsilon": 0.999788912343073, "train/buffer_size": 28, "train/avg_loss": 0}
+{"timestamp": "2026-08-01T09:22:17.103532+00:00", "step": 3, "train/episode_reward": -4.526086956521739, "train/epsilon": 0.9996833685146095, "train/buffer_size": 40, "train/avg_loss": 0}
+{"timestamp": "2026-08-01T09:22:17.135664+00:00", "step": 4, "train/episode_reward": 20.933333333333334, "train/epsilon": 0.999577824686146, "train/buffer_size": 63, "train/avg_loss": 0}
+{"timestamp": "2026-08-01T09:22:17.168872+00:00", "step": 5, "train/episode_reward": -4.388888888888889, "train/epsilon": 0.9994722808576825, "train/buffer_size": 77, "train/avg_loss": 0}
+{"timestamp": "2026-08-01T09:22:17.204558+00:00", "step": 6, "train/episode_reward": 20.97674418604651, "train/epsilon": 0.999366737029219, "train/buffer_size": 99, "train/avg_loss": 0}
+{"timestamp": "2026-08-01T09:22:17.231893+00:00", "step": 7, "train/episode_reward": -7.22, "train/epsilon": 0.9992611932007555, "train/buffer_size": 107, "train/avg_loss": 0}
+{"timestamp": "2026-08-01T09:22:17.257547+00:00", "step": 8, "train/episode_reward": -6.15, "train/epsilon": 0.999155649372292, "train/buffer_size": 116, "train/avg_loss": 0}
+{"timestamp": "2026-08-01T09:22:17.285116+00:00", "step": 9, "train/episode_reward": -4.325, "train/epsilon": 0.9990501055438284, "train/buffer_size": 128, "train/avg_loss": 0}
+{"timestamp": "2026-08-01T09:22:17.320336+00:00", "step": 10, "train/episode_reward": 20.96923076923077, "train/epsilon": 0.9989445617153649, "train/buffer_size": 148, "train/avg_loss": 0}
+{"timestamp": "2026-08-01T09:22:17.350339+00:00", "step": 11, "train/episode_reward": -5.883333333333334, "train/epsilon": 0.9988390178869014, "train/buffer_size": 157, "train/avg_loss": 0}
+{"timestamp": "2026-08-01T09:22:17.386112+00:00", "step": 12, "train/episode_reward": 21.01860465116279, "train/epsilon": 0.9987334740584379, "train/buffer_size": 179, "train/avg_loss": 0}
+{"timestamp": "2026-08-01T09:22:17.417898+00:00", "step": 13, "train/episode_reward": 21.242857142857144, "train/epsilon": 0.9986279302299744, "train/buffer_size": 197, "train/avg_loss": 0}
+{"timestamp": "2026-08-01T09:22:17.451838+00:00", "step": 14, "train/episode_reward": 21.0609756097561, "train/epsilon": 0.9985223864015109, "train/buffer_size": 218, "train/avg_loss": 0}
+{"timestamp": "2026-08-01T09:22:17.488036+00:00", "step": 15, "train/episode_reward": 20.683720930232557, "train/epsilon": 0.9984168425730474, "train/buffer_size": 240, "train/avg_loss": 0}
+{"timestamp": "2026-08-01T09:22:17.523191+00:00", "step": 16, "train/episode_reward": -4.304, "train/epsilon": 0.9983112987445839, "train/buffer_size": 253, "train/avg_loss": 0}
+{"timestamp": "2026-08-01T09:22:17.560816+00:00", "step": 17, "train/episode_reward": 20.953333333333333, "train/epsilon": 0.9982057549161204, "train/buffer_size": 276, "train/avg_loss": 0}
+{"timestamp": "2026-08-01T09:22:17.638070+00:00", "step": 18, "train/episode_reward": 20.72, "train/epsilon": 0.9981002110876569, "train/buffer_size": 299, "train/avg_loss": 0}
+{"timestamp": "2026-08-01T09:22:17.679300+00:00", "step": 19, "train/episode_reward": -4.148, "train/epsilon": 0.9979946672591934, "train/buffer_size": 312, "train/avg_loss": 0}
+{"timestamp": "2026-08-01T09:22:17.709308+00:00", "step": 20, "train/episode_reward": -8.607692307692309, "train/epsilon": 0.9978891234307299, "train/buffer_size": 319, "train/avg_loss": 0}
+{"timestamp": "2026-08-01T09:22:17.737214+00:00", "step": 21, "train/episode_reward": -6.050000000000001, "train/epsilon": 0.9977835796022664, "train/buffer_size": 328, "train/avg_loss": 0}
+{"timestamp": "2026-08-01T09:22:17.775070+00:00", "step": 22, "train/episode_reward": 21.073333333333334, "train/epsilon": 0.9976780357738029, "train/buffer_size": 351, "train/avg_loss": 0}
+{"timestamp": "2026-08-01T09:22:17.812546+00:00", "step": 23, "train/episode_reward": 20.913333333333334, "train/epsilon": 0.9975724919453394, "train/buffer_size": 374, "train/avg_loss": 0}
+{"timestamp": "2026-08-01T09:22:17.840303+00:00", "step": 24, "train/episode_reward": -5.505, "train/epsilon": 0.9974669481168759, "train/buffer_size": 384, "train/avg_loss": 0}
+{"timestamp": "2026-08-01T09:22:17.875689+00:00", "step": 25, "train/episode_reward": 21.045945945945945, "train/epsilon": 0.9973614042884124, "train/buffer_size": 403, "train/avg_loss": 0}
+{"timestamp": "2026-08-01T09:22:17.903691+00:00", "step": 26, "train/episode_reward": -16.54285714285714, "train/epsilon": 0.9972558604599489, "train/buffer_size": 407, "train/avg_loss": 0}
+{"timestamp": "2026-08-01T09:22:17.941955+00:00", "step": 27, "train/episode_reward": 20.76829268292683, "train/epsilon": 0.9971503166314853, "train/buffer_size": 428, "train/avg_loss": 0}
+{"timestamp": "2026-08-01T09:22:17.971864+00:00", "step": 28, "train/episode_reward": -11.31, "train/epsilon": 0.9970447728030218, "train/buffer_size": 433, "train/avg_loss": 0}
+{"timestamp": "2026-08-01T09:22:18.012486+00:00", "step": 29, "train/episode_reward": 21.026666666666667, "train/epsilon": 0.9969392289745583, "train/buffer_size": 456, "train/avg_loss": 0}
+{"timestamp": "2026-08-01T09:22:18.040622+00:00", "step": 30, "train/episode_reward": -19.55, "train/epsilon": 0.9968336851460948, "train/buffer_size": 458, "train/avg_loss": 0}
+{"timestamp": "2026-08-01T09:22:18.080753+00:00", "step": 31, "train/episode_reward": 21.086666666666666, "train/epsilon": 0.9967281413176313, "train/buffer_size": 481, "train/avg_loss": 0}
+{"timestamp": "2026-08-01T09:22:18.115724+00:00", "step": 32, "train/episode_reward": -5.794736842105263, "train/epsilon": 0.9966225974891678, "train/buffer_size": 491, "train/avg_loss": 0}
+{"timestamp": "2026-08-01T09:22:18.145749+00:00", "step": 33, "train/episode_reward": -11.49, "train/epsilon": 0.9965170536607044, "train/buffer_size": 496, "train/avg_loss": 0}
+{"timestamp": "2026-08-01T09:22:18.174839+00:00", "step": 34, "train/episode_reward": -5.265, "train/epsilon": 0.9964115098322409, "train/buffer_size": 506, "train/avg_loss": 0}
+{"timestamp": "2026-08-01T09:22:18.206648+00:00", "step": 35, "train/episode_reward": 20.927906976744186, "train/epsilon": 0.9963059660037774, "train/buffer_size": 528, "train/avg_loss": 0}
+{"timestamp": "2026-08-01T09:22:18.233684+00:00", "step": 36, "train/episode_reward": -11.19, "train/epsilon": 0.9962004221753139, "train/buffer_size": 533, "train/avg_loss": 0}
+{"timestamp": "2026-08-01T09:22:18.266843+00:00", "step": 37, "train/episode_reward": 20.7, "train/epsilon": 0.9960948783468504, "train/buffer_size": 553, "train/avg_loss": 0}
+{"timestamp": "2026-08-01T09:22:18.297631+00:00", "step": 38, "train/episode_reward": -7.12, "train/epsilon": 0.9959893345183869, "train/buffer_size": 561, "train/avg_loss": 0}
+{"timestamp": "2026-08-01T09:22:18.337082+00:00", "step": 39, "train/episode_reward": 20.8, "train/epsilon": 0.9958837906899234, "train/buffer_size": 584, "train/avg_loss": 0}
+{"timestamp": "2026-08-01T09:22:18.380793+00:00", "step": 40, "train/episode_reward": 20.870731707317074, "train/epsilon": 0.9957782468614599, "train/buffer_size": 605, "train/avg_loss": 0}
+{"timestamp": "2026-08-01T09:22:18.416223+00:00", "step": 41, "train/episode_reward": 20.793548387096774, "train/epsilon": 0.9956727030329964, "train/buffer_size": 621, "train/avg_loss": 0}
+{"timestamp": "2026-08-01T09:22:18.449683+00:00", "step": 42, "train/episode_reward": 20.786666666666665, "train/epsilon": 0.9955671592045329, "train/buffer_size": 644, "train/avg_loss": 0}
+{"timestamp": "2026-08-01T09:22:18.488834+00:00", "step": 43, "train/episode_reward": 21.16, "train/epsilon": 0.9954616153760694, "train/buffer_size": 667, "train/avg_loss": 0}
+{"timestamp": "2026-08-01T09:22:18.530574+00:00", "step": 44, "train/episode_reward": 20.86, "train/epsilon": 0.9953560715476059, "train/buffer_size": 690, "train/avg_loss": 0}
+{"timestamp": "2026-08-01T09:22:18.557315+00:00", "step": 45, "train/episode_reward": -6.99375, "train/epsilon": 0.9952505277191424, "train/buffer_size": 698, "train/avg_loss": 0}
+{"timestamp": "2026-08-01T09:22:18.583951+00:00", "step": 46, "train/episode_reward": -16.67142857142857, "train/epsilon": 0.9951449838906788, "train/buffer_size": 701, "train/avg_loss": 0}
+{"timestamp": "2026-08-01T09:22:18.608224+00:00", "step": 47, "train/episode_reward": -7.8428571428571425, "train/epsilon": 0.9950394400622153, "train/buffer_size": 708, "train/avg_loss": 0}
+{"timestamp": "2026-08-01T09:22:18.660494+00:00", "step": 48, "train/episode_reward": -4.181818181818182, "train/epsilon": 0.9949338962337518, "train/buffer_size": 730, "train/avg_loss": 0}
+{"timestamp": "2026-08-01T09:22:18.695095+00:00", "step": 49, "train/episode_reward": -16.8, "train/epsilon": 0.9948283524052883, "train/buffer_size": 734, "train/avg_loss": 0}
+{"timestamp": "2026-08-01T09:22:21.272579+00:00", "step": 50, "train/q_mean": -0.7609426202848554, "train/q_std": 0.48663767757127513, "train/q_min": -2.540571689605713, "train/q_max": 1.0729222297668457, "train/q_negative_fraction": 0.95, "train/q_samples": 500}
+{"timestamp": "2026-08-01T09:22:21.288440+00:00", "step": 50, "train/episode_reward": 21.093333333333334, "train/epsilon": 0.9947228085768248, "train/buffer_size": 757, "train/avg_loss": 0}
+{"timestamp": "2026-08-01T09:22:21.351310+00:00", "step": 51, "train/episode_reward": 20.786666666666665, "train/epsilon": 0.9946172647483613, "train/buffer_size": 780, "train/avg_loss": 0}
+{"timestamp": "2026-08-01T09:22:21.402732+00:00", "step": 52, "train/episode_reward": 20.7, "train/epsilon": 0.9945117209198978, "train/buffer_size": 803, "train/avg_loss": 0}
+{"timestamp": "2026-08-01T09:22:21.432843+00:00", "step": 53, "train/episode_reward": -7.4, "train/epsilon": 0.9944061770914343, "train/buffer_size": 811, "train/avg_loss": 0}
+{"timestamp": "2026-08-01T09:22:21.466357+00:00", "step": 54, "train/episode_reward": -4.2153846153846155, "train/epsilon": 0.9943006332629708, "train/buffer_size": 824, "train/avg_loss": 0}
+{"timestamp": "2026-08-01T09:22:21.504368+00:00", "step": 55, "train/episode_reward": 20.766666666666666, "train/epsilon": 0.9941950894345073, "train/buffer_size": 847, "train/avg_loss": 0}
+{"timestamp": "2026-08-01T09:22:21.545382+00:00", "step": 56, "train/episode_reward": 21.178048780487806, "train/epsilon": 0.9940895456060438, "train/buffer_size": 868, "train/avg_loss": 0}
+{"timestamp": "2026-08-01T09:22:21.579485+00:00", "step": 57, "train/episode_reward": -8.035714285714285, "train/epsilon": 0.9939840017775803, "train/buffer_size": 875, "train/avg_loss": 0}
+{"timestamp": "2026-08-01T09:22:21.617511+00:00", "step": 58, "train/episode_reward": -5.652631578947369, "train/epsilon": 0.9938784579491168, "train/buffer_size": 885, "train/avg_loss": 0}
+{"timestamp": "2026-08-01T09:22:21.662275+00:00", "step": 59, "train/episode_reward": 20.86341463414634, "train/epsilon": 0.9937729141206533, "train/buffer_size": 906, "train/avg_loss": 0}
+{"timestamp": "2026-08-01T09:22:21.700042+00:00", "step": 60, "train/episode_reward": 20.76, "train/epsilon": 0.9936673702921898, "train/buffer_size": 929, "train/avg_loss": 0}
+{"timestamp": "2026-08-01T09:22:21.739628+00:00", "step": 61, "train/episode_reward": 21.223076923076924, "train/epsilon": 0.9935618264637263, "train/buffer_size": 949, "train/avg_loss": 0}
+{"timestamp": "2026-08-01T09:22:21.773108+00:00", "step": 62, "train/episode_reward": -4.2821428571428575, "train/epsilon": 0.9934562826352628, "train/buffer_size": 963, "train/avg_loss": 0}
+{"timestamp": "2026-08-01T09:22:21.803822+00:00", "step": 63, "train/episode_reward": -6.116666666666667, "train/epsilon": 0.9933507388067992, "train/buffer_size": 972, "train/avg_loss": 0}
+{"timestamp": "2026-08-01T09:22:21.848037+00:00", "step": 64, "train/episode_reward": 20.9, "train/epsilon": 0.9932451949783357, "train/buffer_size": 995, "train/avg_loss": 0}
+{"timestamp": "2026-08-01T09:22:22.362401+00:00", "step": 65, "train/episode_reward": 20.86, "train/epsilon": 0.9931396511498722, "train/buffer_size": 1018, "train/avg_loss": 0.17802773416042328}
+{"timestamp": "2026-08-01T09:22:22.426013+00:00", "step": 66, "train/episode_reward": 21.06923076923077, "train/epsilon": 0.9930341073214087, "train/buffer_size": 1038, "train/avg_loss": 0.4175380989909172}
+{"timestamp": "2026-08-01T09:22:22.481554+00:00", "step": 67, "train/episode_reward": 20.9, "train/epsilon": 0.9929285634929452, "train/buffer_size": 1058, "train/avg_loss": 0.4399634649356206}
+{"timestamp": "2026-08-01T09:22:22.563558+00:00", "step": 68, "train/episode_reward": -5.715789473684211, "train/epsilon": 0.9928230196644817, "train/buffer_size": 1068, "train/avg_loss": 0.3723459057509899}
+{"timestamp": "2026-08-01T09:22:22.636522+00:00", "step": 69, "train/episode_reward": 21.133333333333333, "train/epsilon": 0.9927174758360182, "train/buffer_size": 1091, "train/avg_loss": 0.3340021580457687}
+{"timestamp": "2026-08-01T09:22:22.694193+00:00", "step": 70, "train/episode_reward": 20.638461538461538, "train/epsilon": 0.9926119320075547, "train/buffer_size": 1111, "train/avg_loss": 0.305780753493309}
+{"timestamp": "2026-08-01T09:22:22.763905+00:00", "step": 71, "train/episode_reward": 20.921951219512195, "train/epsilon": 0.9925063881790912, "train/buffer_size": 1132, "train/avg_loss": 0.28080474053110394}
+{"timestamp": "2026-08-01T09:22:22.831102+00:00", "step": 72, "train/episode_reward": -7.8, "train/epsilon": 0.9924008443506277, "train/buffer_size": 1139, "train/avg_loss": 0.2589423134922981}
+{"timestamp": "2026-08-01T09:22:22.886338+00:00", "step": 73, "train/episode_reward": -4.108823529411764, "train/epsilon": 0.9922953005221642, "train/buffer_size": 1156, "train/avg_loss": 0.24555422531233895}
+{"timestamp": "2026-08-01T09:22:22.931006+00:00", "step": 74, "train/episode_reward": -19.625, "train/epsilon": 0.9921897566937007, "train/buffer_size": 1158, "train/avg_loss": 0.24014606475830078}
+{"timestamp": "2026-08-01T09:22:22.998001+00:00", "step": 75, "train/episode_reward": 20.746666666666666, "train/epsilon": 0.9920842128652372, "train/buffer_size": 1181, "train/avg_loss": 0.2338987745344639}
+{"timestamp": "2026-08-01T09:22:23.053530+00:00", "step": 76, "train/episode_reward": -10.336363636363638, "train/epsilon": 0.9919786690367737, "train/buffer_size": 1186, "train/avg_loss": 0.1799483083188534}
+{"timestamp": "2026-08-01T09:22:23.116266+00:00", "step": 77, "train/episode_reward": -8.584615384615386, "train/epsilon": 0.9918731252083102, "train/buffer_size": 1193, "train/avg_loss": 0.14648832753300667}
+{"timestamp": "2026-08-01T09:22:23.172440+00:00", "step": 78, "train/episode_reward": 21.033333333333335, "train/epsilon": 0.9917675813798467, "train/buffer_size": 1216, "train/avg_loss": 0.14217005148530007}
+{"timestamp": "2026-08-01T09:22:23.239323+00:00", "step": 79, "train/episode_reward": -8.746153846153847, "train/epsilon": 0.9916620375513832, "train/buffer_size": 1223, "train/avg_loss": 0.13575220182538034}
+{"timestamp": "2026-08-01T09:22:23.299606+00:00", "step": 80, "train/episode_reward": 21.067441860465117, "train/epsilon": 0.9915564937229197, "train/buffer_size": 1245, "train/avg_loss": 0.13367966637015344}
+{"timestamp": "2026-08-01T09:22:23.360242+00:00", "step": 81, "train/episode_reward": 21.24186046511628, "train/epsilon": 0.9914509498944561, "train/buffer_size": 1267, "train/avg_loss": 0.1325897492468357}
+{"timestamp": "2026-08-01T09:22:23.411779+00:00", "step": 82, "train/episode_reward": -10.227272727272728, "train/epsilon": 0.9913454060659926, "train/buffer_size": 1272, "train/avg_loss": 0.1345674879848957}
+{"timestamp": "2026-08-01T09:22:23.463443+00:00", "step": 83, "train/episode_reward": -12.600000000000001, "train/epsilon": 0.9912398622375291, "train/buffer_size": 1277, "train/avg_loss": 0.13171838894486426}
+{"timestamp": "2026-08-01T09:22:23.533536+00:00", "step": 84, "train/episode_reward": -4.233333333333333, "train/epsilon": 0.9911343184090656, "train/buffer_size": 1291, "train/avg_loss": 0.12619194760918617}
+{"timestamp": "2026-08-01T09:22:23.599364+00:00", "step": 85, "train/episode_reward": 21.193023255813955, "train/epsilon": 0.9910287745806021, "train/buffer_size": 1313, "train/avg_loss": 0.12667030245065689}
+{"timestamp": "2026-08-01T09:22:23.662915+00:00", "step": 86, "train/episode_reward": 21.27674418604651, "train/epsilon": 0.9909232307521386, "train/buffer_size": 1335, "train/avg_loss": 0.1269043006002903}
+{"timestamp": "2026-08-01T09:22:23.726276+00:00", "step": 87, "train/episode_reward": -4.014285714285714, "train/epsilon": 0.9908176869236751, "train/buffer_size": 1356, "train/avg_loss": 0.12322855666279793}
+{"timestamp": "2026-08-01T09:22:23.796572+00:00", "step": 88, "train/episode_reward": -6.352941176470588, "train/epsilon": 0.9907121430952116, "train/buffer_size": 1365, "train/avg_loss": 0.1222174234688282}
+{"timestamp": "2026-08-01T09:22:23.859575+00:00", "step": 89, "train/episode_reward": 20.673333333333332, "train/epsilon": 0.9906065992667481, "train/buffer_size": 1388, "train/avg_loss": 0.12197977006435394}
+{"timestamp": "2026-08-01T09:22:23.915428+00:00", "step": 90, "train/episode_reward": -5.573684210526316, "train/epsilon": 0.9905010554382846, "train/buffer_size": 1398, "train/avg_loss": 0.11953960508108138}
+{"timestamp": "2026-08-01T09:22:24.164984+00:00", "step": 91, "train/episode_reward": 20.753488372093024, "train/epsilon": 0.9903955116098211, "train/buffer_size": 1420, "train/avg_loss": 0.11836308613419533}
+{"timestamp": "2026-08-01T09:22:24.233126+00:00", "step": 92, "train/episode_reward": 21.16, "train/epsilon": 0.9902899677813576, "train/buffer_size": 1443, "train/avg_loss": 0.1158873625099659}
+{"timestamp": "2026-08-01T09:22:24.286707+00:00", "step": 93, "train/episode_reward": -10.41818181818182, "train/epsilon": 0.9901844239528941, "train/buffer_size": 1449, "train/avg_loss": 0.11669426634907723}
+{"timestamp": "2026-08-01T09:22:24.346721+00:00", "step": 94, "train/episode_reward": -4.677272727272728, "train/epsilon": 0.9900788801244306, "train/buffer_size": 1460, "train/avg_loss": 0.11253978386521339}
+{"timestamp": "2026-08-01T09:22:24.405755+00:00", "step": 95, "train/episode_reward": 21.086666666666666, "train/epsilon": 0.9899733362959671, "train/buffer_size": 1483, "train/avg_loss": 0.11329694017767906}
+{"timestamp": "2026-08-01T09:22:24.473213+00:00", "step": 96, "train/episode_reward": -4.376923076923077, "train/epsilon": 0.9898677924675036, "train/buffer_size": 1503, "train/avg_loss": 0.11410883218050002}
+{"timestamp": "2026-08-01T09:22:24.537163+00:00", "step": 97, "train/episode_reward": 20.995121951219513, "train/epsilon": 0.98976224863904, "train/buffer_size": 1524, "train/avg_loss": 0.11536194980144501}
+{"timestamp": "2026-08-01T09:22:24.606652+00:00", "step": 98, "train/episode_reward": 20.865116279069767, "train/epsilon": 0.9896567048105767, "train/buffer_size": 1546, "train/avg_loss": 0.11753003895282746}
+{"timestamp": "2026-08-01T09:22:24.672471+00:00", "step": 99, "train/episode_reward": 20.732558139534884, "train/epsilon": 0.9895511609821132, "train/buffer_size": 1568, "train/avg_loss": 0.11639207229018211}
+{"timestamp": "2026-08-01T09:22:26.317964+00:00", "step": 100, "train/q_mean": -0.44710950476117434, "train/q_std": 0.29152891421550337, "train/q_min": -1.6941784620285034, "train/q_max": 0.18508762121200562, "train/q_negative_fraction": 0.94, "train/q_samples": 500}
+{"timestamp": "2026-08-01T09:22:26.337099+00:00", "step": 100, "train/rolling_avg_reward": 6.870253006710709, "train/rolling_avg_loss": 0.15339265515406927, "train/rolling_win_rate": 0.51}
+{"timestamp": "2026-08-01T09:22:26.353641+00:00", "step": 100, "train/episode_reward": -7.0125, "train/epsilon": 0.9894456171536496, "train/buffer_size": 1576, "train/avg_loss": 0.11552583500742912}
+{"timestamp": "2026-08-01T09:22:26.412789+00:00", "step": 101, "train/episode_reward": -4.228571428571429, "train/epsilon": 0.9893400733251861, "train/buffer_size": 1590, "train/avg_loss": 0.11627139002084733}
+{"timestamp": "2026-08-01T09:22:26.471445+00:00", "step": 102, "train/episode_reward": 20.9, "train/epsilon": 0.9892345294967226, "train/buffer_size": 1613, "train/avg_loss": 0.11765807569026947}
+{"timestamp": "2026-08-01T09:22:26.541531+00:00", "step": 103, "train/episode_reward": 20.866666666666667, "train/epsilon": 0.9891289856682591, "train/buffer_size": 1636, "train/avg_loss": 0.11693099290132522}
+{"timestamp": "2026-08-01T09:22:26.597144+00:00", "step": 104, "train/episode_reward": -4.175, "train/epsilon": 0.9890234418397956, "train/buffer_size": 1652, "train/avg_loss": 0.11599559485912322}
+{"timestamp": "2026-08-01T09:22:26.700023+00:00", "step": 105, "train/episode_reward": -4.463636363636364, "train/epsilon": 0.9889178980113321, "train/buffer_size": 1669, "train/avg_loss": 0.11627300977706909}
+{"timestamp": "2026-08-01T09:22:26.772021+00:00", "step": 106, "train/episode_reward": 20.78, "train/epsilon": 0.9888123541828686, "train/buffer_size": 1692, "train/avg_loss": 0.11363852620124817}
+{"timestamp": "2026-08-01T09:22:26.829106+00:00", "step": 107, "train/episode_reward": -19.85, "train/epsilon": 0.9887068103544051, "train/buffer_size": 1692, "train/avg_loss": 0.11203188896179199}
+{"timestamp": "2026-08-01T09:22:26.887034+00:00", "step": 108, "train/episode_reward": -4.308333333333334, "train/epsilon": 0.9886012665259416, "train/buffer_size": 1710, "train/avg_loss": 0.10667668581008911}
+{"timestamp": "2026-08-01T09:22:26.940003+00:00", "step": 109, "train/episode_reward": -6.211764705882353, "train/epsilon": 0.9884957226974781, "train/buffer_size": 1719, "train/avg_loss": 0.10881196334958076}
+{"timestamp": "2026-08-01T09:22:26.998529+00:00", "step": 110, "train/episode_reward": 20.724390243902437, "train/epsilon": 0.9883901788690146, "train/buffer_size": 1740, "train/avg_loss": 0.10822791531682015}
+{"timestamp": "2026-08-01T09:22:27.080932+00:00", "step": 111, "train/episode_reward": 21.009756097560974, "train/epsilon": 0.9882846350405511, "train/buffer_size": 1761, "train/avg_loss": 0.1063851997256279}
+{"timestamp": "2026-08-01T09:22:27.159316+00:00", "step": 112, "train/episode_reward": 20.86, "train/epsilon": 0.9881790912120876, "train/buffer_size": 1784, "train/avg_loss": 0.10514655858278274}
+{"timestamp": "2026-08-01T09:22:27.217315+00:00", "step": 113, "train/episode_reward": -4.1375, "train/epsilon": 0.9880735473836241, "train/buffer_size": 1796, "train/avg_loss": 0.10228876769542694}
+{"timestamp": "2026-08-01T09:22:27.279315+00:00", "step": 114, "train/episode_reward": 20.98, "train/epsilon": 0.9879680035551606, "train/buffer_size": 1819, "train/avg_loss": 0.10401499122381211}
+{"timestamp": "2026-08-01T09:22:27.356307+00:00", "step": 115, "train/episode_reward": 20.933333333333334, "train/epsilon": 0.9878624597266971, "train/buffer_size": 1842, "train/avg_loss": 0.10451415777206421}
+{"timestamp": "2026-08-01T09:22:27.406762+00:00", "step": 116, "train/episode_reward": -8.700000000000001, "train/epsilon": 0.9877569158982336, "train/buffer_size": 1849, "train/avg_loss": 0.10410536378622055}
+{"timestamp": "2026-08-01T09:22:27.469762+00:00", "step": 117, "train/episode_reward": 20.66857142857143, "train/epsilon": 0.98765137206977, "train/buffer_size": 1867, "train/avg_loss": 0.10311135202646256}
+{"timestamp": "2026-08-01T09:22:27.525869+00:00", "step": 118, "train/episode_reward": -4.081818181818182, "train/epsilon": 0.9875458282413065, "train/buffer_size": 1884, "train/avg_loss": 0.10385540947318077}
+{"timestamp": "2026-08-01T09:22:27.596935+00:00", "step": 119, "train/episode_reward": -9.275, "train/epsilon": 0.987440284412843, "train/buffer_size": 1890, "train/avg_loss": 0.1037394568324089}
+{"timestamp": "2026-08-01T09:22:27.654677+00:00", "step": 120, "train/episode_reward": -4.1891891891891895, "train/epsilon": 0.9873347405843795, "train/buffer_size": 1909, "train/avg_loss": 0.10164672434329987}
+{"timestamp": "2026-08-01T09:22:27.717125+00:00", "step": 121, "train/episode_reward": 20.807692307692307, "train/epsilon": 0.987229196755916, "train/buffer_size": 1929, "train/avg_loss": 0.10428418889641762}
+{"timestamp": "2026-08-01T09:22:27.785376+00:00", "step": 122, "train/episode_reward": 20.858620689655172, "train/epsilon": 0.9871236529274525, "train/buffer_size": 1944, "train/avg_loss": 0.10432316809892654}
+{"timestamp": "2026-08-01T09:22:27.850561+00:00", "step": 123, "train/episode_reward": -10.445454545454547, "train/epsilon": 0.987018109098989, "train/buffer_size": 1950, "train/avg_loss": 0.10695179998874664}
+{"timestamp": "2026-08-01T09:22:27.907954+00:00", "step": 124, "train/episode_reward": 20.98780487804878, "train/epsilon": 0.9869125652705255, "train/buffer_size": 1971, "train/avg_loss": 0.10678956881165505}
+{"timestamp": "2026-08-01T09:22:27.954073+00:00", "step": 125, "train/episode_reward": -19.7, "train/epsilon": 0.986807021442062, "train/buffer_size": 1972, "train/avg_loss": 0.1040504328906536}
+{"timestamp": "2026-08-01T09:22:28.021853+00:00", "step": 126, "train/episode_reward": 20.753333333333334, "train/epsilon": 0.9867014776135985, "train/buffer_size": 1995, "train/avg_loss": 0.10598980337381363}
+{"timestamp": "2026-08-01T09:22:28.100972+00:00", "step": 127, "train/episode_reward": 20.84193548387097, "train/epsilon": 0.986595933785135, "train/buffer_size": 2011, "train/avg_loss": 0.10744611024856568}
+{"timestamp": "2026-08-01T09:22:28.147749+00:00", "step": 128, "train/episode_reward": -4.425, "train/epsilon": 0.9864903899566715, "train/buffer_size": 2023, "train/avg_loss": 0.11150339767336845}
+{"timestamp": "2026-08-01T09:22:28.201578+00:00", "step": 129, "train/episode_reward": -4.22972972972973, "train/epsilon": 0.986384846128208, "train/buffer_size": 2042, "train/avg_loss": 0.11001882776618004}
+{"timestamp": "2026-08-01T09:22:28.248577+00:00", "step": 130, "train/episode_reward": -12.700000000000001, "train/epsilon": 0.9862793022997445, "train/buffer_size": 2047, "train/avg_loss": 0.11193981245160103}
+{"timestamp": "2026-08-01T09:22:28.308074+00:00", "step": 131, "train/episode_reward": 20.724390243902437, "train/epsilon": 0.986173758471281, "train/buffer_size": 2068, "train/avg_loss": 0.10969185158610344}
+{"timestamp": "2026-08-01T09:22:28.377712+00:00", "step": 132, "train/episode_reward": 21.36829268292683, "train/epsilon": 0.9860682146428175, "train/buffer_size": 2089, "train/avg_loss": 0.10987539440393448}
+{"timestamp": "2026-08-01T09:22:28.435613+00:00", "step": 133, "train/episode_reward": -6.388235294117647, "train/epsilon": 0.985962670814354, "train/buffer_size": 2098, "train/avg_loss": 0.10998032689094543}
+{"timestamp": "2026-08-01T09:22:28.486255+00:00", "step": 134, "train/episode_reward": -12.766666666666667, "train/epsilon": 0.9858571269858905, "train/buffer_size": 2102, "train/avg_loss": 0.10956482216715813}
+{"timestamp": "2026-08-01T09:22:28.542912+00:00", "step": 135, "train/episode_reward": 21.133333333333333, "train/epsilon": 0.985751583157427, "train/buffer_size": 2125, "train/avg_loss": 0.11071034446358681}
+{"timestamp": "2026-08-01T09:22:28.603241+00:00", "step": 136, "train/episode_reward": 20.82, "train/epsilon": 0.9856460393289634, "train/buffer_size": 2148, "train/avg_loss": 0.1087865799665451}
+{"timestamp": "2026-08-01T09:22:28.663906+00:00", "step": 137, "train/episode_reward": -10.390909090909092, "train/epsilon": 0.9855404955004999, "train/buffer_size": 2154, "train/avg_loss": 0.10654372423887253}
+{"timestamp": "2026-08-01T09:22:28.717907+00:00", "step": 138, "train/episode_reward": -5.589473684210526, "train/epsilon": 0.9854349516720364, "train/buffer_size": 2164, "train/avg_loss": 0.10258536338806153}
+{"timestamp": "2026-08-01T09:22:28.778875+00:00", "step": 139, "train/episode_reward": 20.724390243902437, "train/epsilon": 0.9853294078435729, "train/buffer_size": 2185, "train/avg_loss": 0.10306672155857086}
+{"timestamp": "2026-08-01T09:22:28.836184+00:00", "step": 140, "train/episode_reward": -4.185714285714286, "train/epsilon": 0.9852238640151094, "train/buffer_size": 2203, "train/avg_loss": 0.10083548575639725}
+{"timestamp": "2026-08-01T09:22:28.924582+00:00", "step": 141, "train/episode_reward": 21.092307692307692, "train/epsilon": 0.9851183201866459, "train/buffer_size": 2223, "train/avg_loss": 0.10106714218854904}
+{"timestamp": "2026-08-01T09:22:28.992056+00:00", "step": 142, "train/episode_reward": 21.0, "train/epsilon": 0.9850127763581824, "train/buffer_size": 2246, "train/avg_loss": 0.1013439029455185}
+{"timestamp": "2026-08-01T09:22:29.058059+00:00", "step": 143, "train/episode_reward": 20.793333333333333, "train/epsilon": 0.9849072325297189, "train/buffer_size": 2269, "train/avg_loss": 0.0998340904712677}
+{"timestamp": "2026-08-01T09:22:29.117301+00:00", "step": 144, "train/episode_reward": 20.953333333333333, "train/epsilon": 0.9848016887012554, "train/buffer_size": 2292, "train/avg_loss": 0.10279980897903443}
+{"timestamp": "2026-08-01T09:22:29.190300+00:00", "step": 145, "train/episode_reward": -4.407317073170732, "train/epsilon": 0.9846961448727919, "train/buffer_size": 2313, "train/avg_loss": 0.10048033744096756}
+{"timestamp": "2026-08-01T09:22:29.249300+00:00", "step": 146, "train/episode_reward": -3.8615384615384616, "train/epsilon": 0.9845906010443284, "train/buffer_size": 2333, "train/avg_loss": 0.0998131938278675}
+{"timestamp": "2026-08-01T09:22:29.316300+00:00", "step": 147, "train/episode_reward": 20.923076923076923, "train/epsilon": 0.9844850572158649, "train/buffer_size": 2353, "train/avg_loss": 0.10013429448008537}
+{"timestamp": "2026-08-01T09:22:29.374301+00:00", "step": 148, "train/episode_reward": 20.866666666666667, "train/epsilon": 0.9843795133874014, "train/buffer_size": 2376, "train/avg_loss": 0.10158362165093422}
+{"timestamp": "2026-08-01T09:22:29.446560+00:00", "step": 149, "train/episode_reward": 20.76, "train/epsilon": 0.9842739695589379, "train/buffer_size": 2399, "train/avg_loss": 0.10149549618363381}
+{"timestamp": "2026-08-01T09:22:31.153108+00:00", "step": 150, "train/q_mean": -0.5505460035651922, "train/q_std": 0.5089559382064788, "train/q_min": -2.1938681602478027, "train/q_max": 0.6751062273979187, "train/q_negative_fraction": 0.878, "train/q_samples": 500}
+{"timestamp": "2026-08-01T09:22:31.168178+00:00", "step": 150, "train/episode_reward": 20.661538461538463, "train/epsilon": 0.9841684257304744, "train/buffer_size": 2419, "train/avg_loss": 0.10268083140254021}
+{"timestamp": "2026-08-01T09:22:31.250268+00:00", "step": 151, "train/episode_reward": 21.086666666666666, "train/epsilon": 0.9840628819020109, "train/buffer_size": 2442, "train/avg_loss": 0.10257185325026512}
+{"timestamp": "2026-08-01T09:22:31.329266+00:00", "step": 152, "train/episode_reward": 20.96, "train/epsilon": 0.9839573380735473, "train/buffer_size": 2465, "train/avg_loss": 0.10088485181331634}
+{"timestamp": "2026-08-01T09:22:31.386663+00:00", "step": 153, "train/episode_reward": -11.46, "train/epsilon": 0.9838517942450838, "train/buffer_size": 2470, "train/avg_loss": 0.10142166018486024}
+{"timestamp": "2026-08-01T09:22:31.448357+00:00", "step": 154, "train/episode_reward": -4.3, "train/epsilon": 0.9837462504166203, "train/buffer_size": 2490, "train/avg_loss": 0.09940554350614547}
+{"timestamp": "2026-08-01T09:22:31.510522+00:00", "step": 155, "train/episode_reward": 21.093333333333334, "train/epsilon": 0.9836407065881568, "train/buffer_size": 2513, "train/avg_loss": 0.09943828135728836}
+{"timestamp": "2026-08-01T09:22:31.573931+00:00", "step": 156, "train/episode_reward": -19.4, "train/epsilon": 0.9835351627596933, "train/buffer_size": 2515, "train/avg_loss": 0.1013486035168171}
+{"timestamp": "2026-08-01T09:22:31.630567+00:00", "step": 157, "train/episode_reward": -12.700000000000001, "train/epsilon": 0.9834296189312298, "train/buffer_size": 2520, "train/avg_loss": 0.10192859768867493}
+{"timestamp": "2026-08-01T09:22:31.689645+00:00", "step": 158, "train/episode_reward": 20.613333333333333, "train/epsilon": 0.9833240751027663, "train/buffer_size": 2543, "train/avg_loss": 0.10075542479753494}
+{"timestamp": "2026-08-01T09:22:31.744254+00:00", "step": 159, "train/episode_reward": -19.55, "train/epsilon": 0.9832185312743028, "train/buffer_size": 2546, "train/avg_loss": 0.09869887083768844}
+{"timestamp": "2026-08-01T09:22:31.829499+00:00", "step": 160, "train/episode_reward": 20.826666666666668, "train/epsilon": 0.9831129874458393, "train/buffer_size": 2569, "train/avg_loss": 0.10132694393396377}
+{"timestamp": "2026-08-01T09:22:31.896670+00:00", "step": 161, "train/episode_reward": 20.766666666666666, "train/epsilon": 0.9830074436173758, "train/buffer_size": 2592, "train/avg_loss": 0.10033543407917023}
+{"timestamp": "2026-08-01T09:22:31.958082+00:00", "step": 162, "train/episode_reward": -4.434615384615385, "train/epsilon": 0.9829018997889123, "train/buffer_size": 2605, "train/avg_loss": 0.10238239094614983}
+{"timestamp": "2026-08-01T09:22:32.018554+00:00", "step": 163, "train/episode_reward": 20.876923076923077, "train/epsilon": 0.9827963559604489, "train/buffer_size": 2625, "train/avg_loss": 0.1032818540930748}
+{"timestamp": "2026-08-01T09:22:32.098882+00:00", "step": 164, "train/episode_reward": -4.236363636363636, "train/epsilon": 0.9826908121319853, "train/buffer_size": 2642, "train/avg_loss": 0.1027907058596611}
+{"timestamp": "2026-08-01T09:22:32.162422+00:00", "step": 165, "train/episode_reward": 20.96, "train/epsilon": 0.9825852683035219, "train/buffer_size": 2665, "train/avg_loss": 0.10461733192205429}
+{"timestamp": "2026-08-01T09:22:32.219593+00:00", "step": 166, "train/episode_reward": -4.957142857142857, "train/epsilon": 0.9824797244750584, "train/buffer_size": 2676, "train/avg_loss": 0.10411239713430405}
+{"timestamp": "2026-08-01T09:22:32.316845+00:00", "step": 167, "train/episode_reward": -4.15, "train/epsilon": 0.9823741806465949, "train/buffer_size": 2697, "train/avg_loss": 0.1040862463414669}
+{"timestamp": "2026-08-01T09:22:32.389005+00:00", "step": 168, "train/episode_reward": 20.773333333333333, "train/epsilon": 0.9822686368181314, "train/buffer_size": 2720, "train/avg_loss": 0.10425439178943634}
+{"timestamp": "2026-08-01T09:22:32.478456+00:00", "step": 169, "train/episode_reward": -4.395652173913043, "train/epsilon": 0.9821630929896679, "train/buffer_size": 2732, "train/avg_loss": 0.10541289150714875}
+{"timestamp": "2026-08-01T09:22:32.558346+00:00", "step": 170, "train/episode_reward": 20.713333333333335, "train/epsilon": 0.9820575491612044, "train/buffer_size": 2755, "train/avg_loss": 0.104206021130085}
+{"timestamp": "2026-08-01T09:22:32.630312+00:00", "step": 171, "train/episode_reward": -8.723076923076924, "train/epsilon": 0.9819520053327409, "train/buffer_size": 2762, "train/avg_loss": 0.10471590459346772}
+{"timestamp": "2026-08-01T09:22:32.702209+00:00", "step": 172, "train/episode_reward": 20.79230769230769, "train/epsilon": 0.9818464615042773, "train/buffer_size": 2782, "train/avg_loss": 0.10304522961378097}
+{"timestamp": "2026-08-01T09:22:32.793932+00:00", "step": 173, "train/episode_reward": -10.172727272727274, "train/epsilon": 0.9817409176758138, "train/buffer_size": 2788, "train/avg_loss": 0.10240952894091607}
+{"timestamp": "2026-08-01T09:22:32.904111+00:00", "step": 174, "train/episode_reward": 20.86, "train/epsilon": 0.9816353738473503, "train/buffer_size": 2811, "train/avg_loss": 0.10311092659831048}
+{"timestamp": "2026-08-01T09:22:33.000422+00:00", "step": 175, "train/episode_reward": 21.32439024390244, "train/epsilon": 0.9815298300188868, "train/buffer_size": 2832, "train/avg_loss": 0.10212093889713288}
+{"timestamp": "2026-08-01T09:22:33.061823+00:00", "step": 176, "train/episode_reward": -19.5, "train/epsilon": 0.9814242861904233, "train/buffer_size": 2835, "train/avg_loss": 0.10224995985627175}
+{"timestamp": "2026-08-01T09:22:33.116041+00:00", "step": 177, "train/episode_reward": -14.25, "train/epsilon": 0.9813187423619598, "train/buffer_size": 2838, "train/avg_loss": 0.10258619040250778}
+{"timestamp": "2026-08-01T09:22:33.180525+00:00", "step": 178, "train/episode_reward": -4.007692307692308, "train/epsilon": 0.9812131985334963, "train/buffer_size": 2858, "train/avg_loss": 0.10173926278948783}
+{"timestamp": "2026-08-01T09:22:33.268543+00:00", "step": 179, "train/episode_reward": 20.733333333333334, "train/epsilon": 0.9811076547050328, "train/buffer_size": 2881, "train/avg_loss": 0.10183613374829292}
+{"timestamp": "2026-08-01T09:22:33.344227+00:00", "step": 180, "train/episode_reward": 21.16, "train/epsilon": 0.9810021108765693, "train/buffer_size": 2904, "train/avg_loss": 0.10106763765215873}
+{"timestamp": "2026-08-01T09:22:33.417997+00:00", "step": 181, "train/episode_reward": -4.266666666666667, "train/epsilon": 0.9808965670481058, "train/buffer_size": 2918, "train/avg_loss": 0.10129262730479241}
+{"timestamp": "2026-08-01T09:22:33.481672+00:00", "step": 182, "train/episode_reward": 20.6, "train/epsilon": 0.9807910232196423, "train/buffer_size": 2941, "train/avg_loss": 0.10115957036614417}
+{"timestamp": "2026-08-01T09:22:33.565800+00:00", "step": 183, "train/episode_reward": -3.8375000000000004, "train/epsilon": 0.9806854793911788, "train/buffer_size": 2953, "train/avg_loss": 0.09717923775315285}
+{"timestamp": "2026-08-01T09:22:33.631740+00:00", "step": 184, "train/episode_reward": -4.3076923076923075, "train/epsilon": 0.9805799355627153, "train/buffer_size": 2966, "train/avg_loss": 0.09638350903987884}
+{"timestamp": "2026-08-01T09:22:33.723209+00:00", "step": 185, "train/episode_reward": 20.86756756756757, "train/epsilon": 0.9804743917342518, "train/buffer_size": 2985, "train/avg_loss": 0.09639238640666008}
+{"timestamp": "2026-08-01T09:22:33.804369+00:00", "step": 186, "train/episode_reward": 20.8, "train/epsilon": 0.9803688479057883, "train/buffer_size": 3002, "train/avg_loss": 0.0948972910642624}
+{"timestamp": "2026-08-01T09:22:33.880227+00:00", "step": 187, "train/episode_reward": 20.885365853658538, "train/epsilon": 0.9802633040773248, "train/buffer_size": 3023, "train/avg_loss": 0.0927928514778614}
+{"timestamp": "2026-08-01T09:22:33.960178+00:00", "step": 188, "train/episode_reward": 20.893333333333334, "train/epsilon": 0.9801577602488613, "train/buffer_size": 3046, "train/avg_loss": 0.09376396760344505}
+{"timestamp": "2026-08-01T09:22:34.019556+00:00", "step": 189, "train/episode_reward": -6.0166666666666675, "train/epsilon": 0.9800522164203977, "train/buffer_size": 3055, "train/avg_loss": 0.09155072048306465}
+{"timestamp": "2026-08-01T09:22:34.085286+00:00", "step": 190, "train/episode_reward": 20.886666666666667, "train/epsilon": 0.9799466725919342, "train/buffer_size": 3078, "train/avg_loss": 0.09115358218550682}
+{"timestamp": "2026-08-01T09:22:34.163204+00:00", "step": 191, "train/episode_reward": 20.686666666666667, "train/epsilon": 0.9798411287634707, "train/buffer_size": 3101, "train/avg_loss": 0.08944316133856774}
+{"timestamp": "2026-08-01T09:22:34.238409+00:00", "step": 192, "train/episode_reward": -6.4411764705882355, "train/epsilon": 0.9797355849350072, "train/buffer_size": 3110, "train/avg_loss": 0.08791108056902885}
+{"timestamp": "2026-08-01T09:22:34.312439+00:00", "step": 193, "train/episode_reward": 21.066666666666666, "train/epsilon": 0.9796300411065437, "train/buffer_size": 3133, "train/avg_loss": 0.09117720052599906}
+{"timestamp": "2026-08-01T09:22:34.375517+00:00", "step": 194, "train/episode_reward": -4.375675675675676, "train/epsilon": 0.9795244972780802, "train/buffer_size": 3152, "train/avg_loss": 0.09079253003001213}
+{"timestamp": "2026-08-01T09:22:34.442071+00:00", "step": 195, "train/episode_reward": -19.55, "train/epsilon": 0.9794189534496167, "train/buffer_size": 3154, "train/avg_loss": 0.09144970998167992}
+{"timestamp": "2026-08-01T09:22:34.508723+00:00", "step": 196, "train/episode_reward": -19.4, "train/epsilon": 0.9793134096211532, "train/buffer_size": 3157, "train/avg_loss": 0.09249478206038475}
+{"timestamp": "2026-08-01T09:22:34.609848+00:00", "step": 197, "train/episode_reward": -4.389655172413793, "train/epsilon": 0.9792078657926897, "train/buffer_size": 3172, "train/avg_loss": 0.09383414760231971}
+{"timestamp": "2026-08-01T09:22:34.686131+00:00", "step": 198, "train/episode_reward": -6.264705882352941, "train/epsilon": 0.9791023219642262, "train/buffer_size": 3181, "train/avg_loss": 0.09381725788116455}
+{"timestamp": "2026-08-01T09:22:34.771144+00:00", "step": 199, "train/episode_reward": 21.15609756097561, "train/epsilon": 0.9789967781357627, "train/buffer_size": 3202, "train/avg_loss": 0.09530631154775619}
+{"timestamp": "2026-08-01T09:22:36.118544+00:00", "step": 0, "validation/win": 0, "validation/turns": 30}
+{"timestamp": "2026-08-01T09:22:36.160958+00:00", "step": 1, "validation/win": 0, "validation/turns": 11}
+{"timestamp": "2026-08-01T09:22:36.198117+00:00", "step": 2, "validation/win": 0, "validation/turns": 18}
+{"timestamp": "2026-08-01T09:22:36.237605+00:00", "step": 3, "validation/win": 0, "validation/turns": 17}
+{"timestamp": "2026-08-01T09:22:36.274864+00:00", "step": 4, "validation/win": 0, "validation/turns": 9}
+{"timestamp": "2026-08-01T09:22:36.326745+00:00", "step": 5, "validation/win": 0, "validation/turns": 25}
+{"timestamp": "2026-08-01T09:22:36.367076+00:00", "step": 6, "validation/win": 0, "validation/turns": 19}
+{"timestamp": "2026-08-01T09:22:36.401081+00:00", "step": 7, "validation/win": 0, "validation/turns": 11}
+{"timestamp": "2026-08-01T09:22:36.434090+00:00", "step": 8, "validation/win": 0, "validation/turns": 11}
+{"timestamp": "2026-08-01T09:22:36.471770+00:00", "step": 9, "validation/win": 0, "validation/turns": 12}
+{"timestamp": "2026-08-01T09:22:36.495440+00:00", "step": 10, "validation/win": 0, "validation/turns": 8}
+{"timestamp": "2026-08-01T09:22:36.564438+00:00", "step": 11, "validation/win": 0, "validation/turns": 32}
+{"timestamp": "2026-08-01T09:22:36.599709+00:00", "step": 12, "validation/win": 0, "validation/turns": 17}
+{"timestamp": "2026-08-01T09:22:36.627925+00:00", "step": 13, "validation/win": 0, "validation/turns": 19}
+{"timestamp": "2026-08-01T09:22:36.670731+00:00", "step": 14, "validation/win": 0, "validation/turns": 19}
+{"timestamp": "2026-08-01T09:22:36.710562+00:00", "step": 15, "validation/win": 0, "validation/turns": 12}
+{"timestamp": "2026-08-01T09:22:36.734869+00:00", "step": 16, "validation/win": 0, "validation/turns": 11}
+{"timestamp": "2026-08-01T09:22:36.774894+00:00", "step": 17, "validation/win": 0, "validation/turns": 8}
+{"timestamp": "2026-08-01T09:22:36.808450+00:00", "step": 18, "validation/win": 0, "validation/turns": 13}
+{"timestamp": "2026-08-01T09:22:36.882404+00:00", "step": 19, "validation/win": 0, "validation/turns": 37}
+{"timestamp": "2026-08-01T09:22:36.912865+00:00", "step": 20, "validation/win": 0, "validation/turns": 11}
+{"timestamp": "2026-08-01T09:22:36.949300+00:00", "step": 21, "validation/win": 0, "validation/turns": 7}
+{"timestamp": "2026-08-01T09:22:36.981099+00:00", "step": 22, "validation/win": 0, "validation/turns": 27}
+{"timestamp": "2026-08-01T09:22:37.016183+00:00", "step": 23, "validation/win": 0, "validation/turns": 10}
+{"timestamp": "2026-08-01T09:22:37.040835+00:00", "step": 24, "validation/win": 0, "validation/turns": 20}
+{"timestamp": "2026-08-01T09:22:37.105007+00:00", "step": 25, "validation/win": 0, "validation/turns": 21}
+{"timestamp": "2026-08-01T09:22:37.145414+00:00", "step": 26, "validation/win": 0, "validation/turns": 18}
+{"timestamp": "2026-08-01T09:22:37.179911+00:00", "step": 27, "validation/win": 0, "validation/turns": 12}
+{"timestamp": "2026-08-01T09:22:37.219912+00:00", "step": 28, "validation/win": 0, "validation/turns": 15}
+{"timestamp": "2026-08-01T09:22:37.246912+00:00", "step": 29, "validation/win": 0, "validation/turns": 10}
+{"timestamp": "2026-08-01T09:22:37.283656+00:00", "step": 30, "validation/win": 0, "validation/turns": 18}
+{"timestamp": "2026-08-01T09:22:37.316619+00:00", "step": 31, "validation/win": 0, "validation/turns": 18}
+{"timestamp": "2026-08-01T09:22:37.350619+00:00", "step": 32, "validation/win": 0, "validation/turns": 9}
+{"timestamp": "2026-08-01T09:22:37.378653+00:00", "step": 33, "validation/win": 0, "validation/turns": 18}
+{"timestamp": "2026-08-01T09:22:37.419619+00:00", "step": 34, "validation/win": 0, "validation/turns": 21}
+{"timestamp": "2026-08-01T09:22:37.452748+00:00", "step": 35, "validation/win": 0, "validation/turns": 18}
+{"timestamp": "2026-08-01T09:22:37.492748+00:00", "step": 36, "validation/win": 0, "validation/turns": 24}
+{"timestamp": "2026-08-01T09:22:37.525748+00:00", "step": 37, "validation/win": 0, "validation/turns": 8}
+{"timestamp": "2026-08-01T09:22:37.561471+00:00", "step": 38, "validation/win": 0, "validation/turns": 34}
+{"timestamp": "2026-08-01T09:22:37.613693+00:00", "step": 39, "validation/win": 0, "validation/turns": 16}
+{"timestamp": "2026-08-01T09:22:37.640169+00:00", "step": 40, "validation/win": 0, "validation/turns": 21}
+{"timestamp": "2026-08-01T09:22:37.690111+00:00", "step": 41, "validation/win": 0, "validation/turns": 15}
+{"timestamp": "2026-08-01T09:22:37.720168+00:00", "step": 42, "validation/win": 0, "validation/turns": 18}
+{"timestamp": "2026-08-01T09:22:37.753107+00:00", "step": 43, "validation/win": 0, "validation/turns": 19}
+{"timestamp": "2026-08-01T09:22:37.788111+00:00", "step": 44, "validation/win": 0, "validation/turns": 17}
+{"timestamp": "2026-08-01T09:22:37.822613+00:00", "step": 45, "validation/win": 0, "validation/turns": 15}
+{"timestamp": "2026-08-01T09:22:37.885993+00:00", "step": 46, "validation/win": 0, "validation/turns": 16}
+{"timestamp": "2026-08-01T09:22:37.918991+00:00", "step": 47, "validation/win": 0, "validation/turns": 14}
+{"timestamp": "2026-08-01T09:22:37.953118+00:00", "step": 48, "validation/win": 0, "validation/turns": 10}
+{"timestamp": "2026-08-01T09:22:37.987875+00:00", "step": 49, "validation/win": 0, "validation/turns": 13}

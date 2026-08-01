@@ -1,0 +1,234 @@
+/* The map itself. Everything here is drawn in board units and scales with the
+   pan/zoom transform, so a station keeps its proportions at any magnification. */
+
+.layer-image image {
+  filter: saturate(0.62) contrast(1.04) brightness(0.74);
+}
+
+.edge {
+  opacity: 0.34;
+}
+
+.edge-live {
+  opacity: 0.95;
+  filter: drop-shadow(0 0 6px rgb(0 0 0 / 55%));
+}
+
+/* Stations ------------------------------------------------------------ */
+
+.station {
+  cursor: pointer;
+}
+
+.st-hit {
+  fill: transparent;
+  stroke: none;
+  pointer-events: all;
+}
+
+.st-disc {
+  fill: #0b1017;
+  stroke-width: 2.2;
+  transition: fill 160ms ease, stroke 160ms ease;
+  pointer-events: none;
+}
+
+.st-ring {
+  fill: none;
+  stroke: none;
+  stroke-width: 2.6;
+  pointer-events: none;
+}
+
+.st-halo {
+  fill: none;
+  stroke: none;
+  pointer-events: none;
+}
+
+.st-mark,
+.st-caption {
+  text-anchor: middle;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+  user-select: none;
+}
+
+.st-mark {
+  fill: var(--paper-dim);
+  font-weight: 600;
+}
+
+.st-caption {
+  fill: var(--muted);
+  paint-order: stroke;
+  stroke: #070a0f;
+  stroke-width: 2.6;
+  stroke-linejoin: round;
+}
+
+/* Faded when the photo is carrying the labels, but still clickable. */
+.station.is-dim .st-disc {
+  fill: rgb(9 13 19 / 40%);
+  stroke-opacity: 0.3;
+}
+
+.station.is-dim .st-mark {
+  fill-opacity: 0.35;
+}
+
+.station.is-dim:hover .st-disc {
+  fill: #0b1017;
+  stroke-opacity: 1;
+}
+
+.station:hover .st-disc {
+  stroke-width: 3;
+}
+
+/* Reachable this turn -------------------------------------------------- */
+
+.station.is-reachable .st-ring {
+  stroke: currentColor;
+  stroke-opacity: 0.95;
+  animation: ring-in 260ms cubic-bezier(0.22, 0.61, 0.36, 1) both;
+}
+
+.station.is-reachable .st-disc {
+  fill: #10161f;
+  stroke-opacity: 1;
+}
+
+.station.is-reachable .st-mark {
+  fill: var(--paper);
+}
+
+.station.is-reachable.is-dim .st-disc,
+.station.is-reachable.is-dim .st-mark {
+  fill-opacity: 1;
+  stroke-opacity: 1;
+}
+
+@keyframes ring-in {
+  from {
+    transform: scale(0.55);
+    opacity: 0;
+  }
+}
+
+/* Pieces --------------------------------------------------------------- */
+
+.station.is-detective .st-disc {
+  fill: var(--detective);
+  stroke: #d7f4ff;
+}
+
+.station.is-detective .st-mark {
+  fill: #05242f;
+}
+
+.station.is-mrx .st-disc {
+  fill: #10141b;
+  stroke: var(--mrx);
+  stroke-width: 3;
+}
+
+.station.is-mrx .st-mark {
+  fill: var(--mrx);
+  font-weight: 700;
+}
+
+.station.is-revealed .st-disc {
+  fill: var(--alarm);
+  stroke: #ffd9d9;
+  animation: surfaced 620ms cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+.station.is-revealed .st-mark {
+  fill: #2b0707;
+}
+
+.station.is-revealed .st-halo {
+  fill: var(--alarm);
+  fill-opacity: 0.16;
+  stroke: var(--alarm);
+  stroke-opacity: 0.4;
+  stroke-width: 1.5;
+}
+
+@keyframes surfaced {
+  0% {
+    transform: scale(1);
+  }
+  35% {
+    transform: scale(1.5);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* The piece currently being moved. */
+.station.is-active .st-halo {
+  fill: none;
+  stroke: var(--paper);
+  stroke-opacity: 0.55;
+  stroke-width: 1.8;
+  stroke-dasharray: 5 5;
+  animation: spin 14s linear infinite;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+/* Already picked this turn. */
+.station.is-staged .st-halo {
+  fill: none;
+  stroke: var(--ok);
+  stroke-opacity: 0.95;
+  stroke-width: 2.4;
+  stroke-dasharray: 4 4;
+}
+
+.station.is-staged .st-disc {
+  stroke: var(--ok);
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Pointed at from the panel. */
+.station.is-hinted .st-halo {
+  fill: var(--paper);
+  fill-opacity: 0.1;
+  stroke: var(--paper);
+  stroke-opacity: 0.8;
+  stroke-width: 2;
+}
+
+.station.is-hinted .st-caption {
+  fill: var(--paper);
+  display: block !important;
+}
+
+/* Where Mr. X might be ------------------------------------------------- */
+
+.suspect {
+  fill: var(--alarm);
+  fill-opacity: 0.14;
+  stroke: var(--alarm);
+  stroke-opacity: 0.55;
+  stroke-width: 1.6;
+  stroke-dasharray: 3 4;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .station.is-reachable .st-ring,
+  .station.is-revealed .st-disc,
+  .station.is-active .st-halo {
+    animation: none;
+  }
+}

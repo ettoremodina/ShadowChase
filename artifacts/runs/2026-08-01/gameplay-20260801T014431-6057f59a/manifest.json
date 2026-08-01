@@ -1,0 +1,225 @@
+{
+  "schema_version": 2,
+  "run_id": "gameplay-20260801T014431-6057f59a",
+  "run_type": "gameplay",
+  "name": "extracted",
+  "status": "completed",
+  "started_at": "2026-08-01T01:44:31.913147+00:00",
+  "ended_at": "2026-08-01T01:45:00.490143+00:00",
+  "command": "'C:\\Users\\modin\\Desktop\\programming\\GAMES\\ScotlandYardRL\\main.py'",
+  "python": "3.11.15 (main, Jul 18 2026, 17:06:27) [MSC v.1944 64 bit (AMD64)]",
+  "git": {
+    "commit": "6c8679970256b3373f00bb146ac10aa22bd13023",
+    "dirty": true
+  },
+  "config": {
+    "demo": "extracted",
+    "num_detectives": 5,
+    "headless": false,
+    "uses_visualizer": true
+  },
+  "metadata": {
+    "entry_point": "main"
+  },
+  "logger_settings": {
+    "version": 2,
+    "artifacts": {
+      "root_dir": "artifacts",
+      "directories": [
+        "logs",
+        "metrics",
+        "artifacts",
+        "models",
+        "replays"
+      ]
+    },
+    "logging": {
+      "enabled": true,
+      "level": "INFO",
+      "console": true,
+      "file": true
+    },
+    "terminal": {
+      "colors": true,
+      "timezone": "+02:00",
+      "show_time": true,
+      "show_level": true,
+      "show_source": false,
+      "omit_repeated_times": true,
+      "rich_tracebacks": true
+    },
+    "saving": {
+      "enabled": true,
+      "params": true,
+      "metrics": true,
+      "results": true,
+      "artifacts": true,
+      "telemetry": true
+    },
+    "metrics": {
+      "include": [
+        "game/*",
+        "evaluation/*",
+        "train/*",
+        "validation/*",
+        "system/*"
+      ],
+      "exclude": []
+    },
+    "dashboard": {
+      "mode": "compact",
+      "refresh_rate": 4,
+      "max_log_lines": 50,
+      "max_metrics": 16,
+      "screen": true,
+      "metrics": {
+        "include": [
+          "game/*",
+          "evaluation/*",
+          "train/*",
+          "validation/*"
+        ],
+        "exclude": []
+      }
+    },
+    "telemetry": {
+      "enabled": false,
+      "sample_interval_sec": 5,
+      "include_process": true,
+      "include_system": true,
+      "gpu_provider": "auto"
+    },
+    "report": {
+      "enabled": true,
+      "filename": "run_report.html",
+      "visualization": "auto",
+      "metrics": {
+        "include": [
+          "game/*",
+          "evaluation/*",
+          "train/*",
+          "validation/*"
+        ],
+        "exclude": []
+      }
+    },
+    "run_type_overrides": {
+      "gameplay": {
+        "dashboard": {
+          "mode": "compact"
+        },
+        "telemetry": {
+          "enabled": false
+        }
+      },
+      "evaluation": {
+        "dashboard": {
+          "mode": "compact"
+        }
+      },
+      "training": {
+        "dashboard": {
+          "mode": "auto"
+        },
+        "telemetry": {
+          "enabled": true
+        }
+      },
+      "test": {
+        "dashboard": {
+          "mode": false
+        },
+        "telemetry": {
+          "enabled": false
+        },
+        "report": {
+          "enabled": false
+        }
+      }
+    },
+    "highlights": [
+      {
+        "pattern": "\\b(starting|started|complete|completed|saved)\\b",
+        "style": "bold green"
+      },
+      {
+        "pattern": "\\b(benchmark|summary)\\b",
+        "style": "bold magenta"
+      },
+      {
+        "pattern": "\\b(CPU|CUDA|GPU)\\b",
+        "style": "bold cyan"
+      },
+      {
+        "pattern": "\\b(on|true)\\b",
+        "style": "green"
+      },
+      {
+        "pattern": "\\b(off|false)\\b",
+        "style": "dim"
+      },
+      {
+        "pattern": "\\b(epoch|step)\\b",
+        "style": "bold magenta"
+      },
+      {
+        "pattern": "\\bloss\\b",
+        "style": "yellow"
+      },
+      {
+        "pattern": "\\b(accuracy|acc|f1)\\b",
+        "style": "green"
+      },
+      {
+        "pattern": "\\b(val|valid)\\b",
+        "style": "cyan"
+      },
+      {
+        "pattern": "\\b(warn|warning)\\b",
+        "style": "bold yellow"
+      },
+      {
+        "pattern": "\\b(error|fail)\\b",
+        "style": "bold red"
+      },
+      {
+        "pattern": "\\b(saved|checkpoint)\\b",
+        "style": "bold green"
+      },
+      {
+        "pattern": "(?<![\\w.])[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?(?![\\w.])",
+        "style": "cyan"
+      }
+    ],
+    "integrations": {
+      "shadow_chase": {
+        "recording": {
+          "level": "actions",
+          "save_replays": true
+        }
+      }
+    },
+    "config_path": "C:\\Users\\modin\\Desktop\\programming\\GAMES\\ScotlandYardRL\\logger_config.yaml"
+  },
+  "params": {
+    "logging/recording_level": "actions",
+    "logging/save_replays": true,
+    "demo": "extracted",
+    "num_detectives": 5,
+    "headless": false,
+    "uses_visualizer": true
+  },
+  "result": {
+    "gameplay/games": 0,
+    "gameplay/mrx_wins": 0,
+    "gameplay/detective_wins": 0,
+    "gameplay/incomplete_games": 0,
+    "gameplay/mrx_win_rate": 0.0,
+    "gameplay/detective_win_rate": 0.0,
+    "gameplay/average_turns": 0.0,
+    "gameplay/average_duration_seconds": 0.0,
+    "gameplay/demo": "extracted",
+    "gameplay/recorded_games": 0,
+    "gameplay/duration_seconds": 28.274215936660767
+  }
+}

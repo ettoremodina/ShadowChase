@@ -1,0 +1,252 @@
+{
+  "schema_version": 2,
+  "run_id": "training-20260801T092213-3eab8209",
+  "run_type": "training",
+  "name": "dqn-MrX",
+  "status": "completed",
+  "started_at": "2026-08-01T09:22:13.942658+00:00",
+  "ended_at": "2026-08-01T09:22:38.042081+00:00",
+  "command": "train_dqn.py --role MrX --episodes 200 --plotting-every 50 --save-dir training_results --no-show-plots",
+  "python": "3.11.15 (main, Jul 18 2026, 17:06:27) [MSC v.1944 64 bit (AMD64)]",
+  "git": {
+    "commit": "6c8679970256b3373f00bb146ac10aa22bd13023",
+    "dirty": true
+  },
+  "config": {
+    "mode": "train",
+    "player_role": "MrX",
+    "episodes": 200,
+    "plotting_every": 50,
+    "map_size": "extended",
+    "num_detectives": 5,
+    "max_turns": 24,
+    "evaluation_games": 50,
+    "save_dir": "training_results",
+    "device": "cuda"
+  },
+  "metadata": {
+    "entry_point": "train_dqn"
+  },
+  "logger_settings": {
+    "version": 2,
+    "artifacts": {
+      "root_dir": "artifacts",
+      "directories": [
+        "logs",
+        "metrics",
+        "artifacts",
+        "models",
+        "replays"
+      ]
+    },
+    "logging": {
+      "enabled": true,
+      "level": "INFO",
+      "console": true,
+      "file": true
+    },
+    "terminal": {
+      "colors": true,
+      "timezone": "+02:00",
+      "show_time": true,
+      "show_level": true,
+      "show_source": false,
+      "omit_repeated_times": true,
+      "rich_tracebacks": true
+    },
+    "saving": {
+      "enabled": true,
+      "params": true,
+      "metrics": true,
+      "results": true,
+      "artifacts": true,
+      "telemetry": true
+    },
+    "metrics": {
+      "include": [
+        "game/*",
+        "evaluation/*",
+        "train/*",
+        "validation/*",
+        "system/*"
+      ],
+      "exclude": []
+    },
+    "dashboard": {
+      "mode": "auto",
+      "refresh_rate": 4,
+      "max_log_lines": 50,
+      "max_metrics": 16,
+      "screen": true,
+      "metrics": {
+        "include": [
+          "game/*",
+          "evaluation/*",
+          "train/*",
+          "validation/*"
+        ],
+        "exclude": []
+      }
+    },
+    "telemetry": {
+      "enabled": true,
+      "sample_interval_sec": 5,
+      "include_process": true,
+      "include_system": true,
+      "gpu_provider": "auto"
+    },
+    "report": {
+      "enabled": true,
+      "filename": "run_report.html",
+      "visualization": "auto",
+      "metrics": {
+        "include": [
+          "game/*",
+          "evaluation/*",
+          "train/*",
+          "validation/*"
+        ],
+        "exclude": []
+      }
+    },
+    "run_type_overrides": {
+      "gameplay": {
+        "dashboard": {
+          "mode": "compact"
+        },
+        "telemetry": {
+          "enabled": false
+        }
+      },
+      "evaluation": {
+        "dashboard": {
+          "mode": "compact"
+        }
+      },
+      "training": {
+        "dashboard": {
+          "mode": "auto"
+        },
+        "telemetry": {
+          "enabled": true
+        }
+      },
+      "test": {
+        "dashboard": {
+          "mode": false
+        },
+        "telemetry": {
+          "enabled": false
+        },
+        "report": {
+          "enabled": false
+        }
+      }
+    },
+    "highlights": [
+      {
+        "pattern": "\\b(starting|started|complete|completed|saved)\\b",
+        "style": "bold green"
+      },
+      {
+        "pattern": "\\b(benchmark|summary)\\b",
+        "style": "bold magenta"
+      },
+      {
+        "pattern": "\\b(CPU|CUDA|GPU)\\b",
+        "style": "bold cyan"
+      },
+      {
+        "pattern": "\\b(on|true)\\b",
+        "style": "green"
+      },
+      {
+        "pattern": "\\b(off|false)\\b",
+        "style": "dim"
+      },
+      {
+        "pattern": "\\b(epoch|step)\\b",
+        "style": "bold magenta"
+      },
+      {
+        "pattern": "\\bloss\\b",
+        "style": "yellow"
+      },
+      {
+        "pattern": "\\b(accuracy|acc|f1)\\b",
+        "style": "green"
+      },
+      {
+        "pattern": "\\b(val|valid)\\b",
+        "style": "cyan"
+      },
+      {
+        "pattern": "\\b(warn|warning)\\b",
+        "style": "bold yellow"
+      },
+      {
+        "pattern": "\\b(error|fail)\\b",
+        "style": "bold red"
+      },
+      {
+        "pattern": "\\b(saved|checkpoint)\\b",
+        "style": "bold green"
+      },
+      {
+        "pattern": "(?<![\\w.])[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?(?![\\w.])",
+        "style": "cyan"
+      }
+    ],
+    "integrations": {
+      "shadow_chase": {
+        "recording": {
+          "level": "actions",
+          "save_replays": true
+        }
+      }
+    },
+    "config_path": "C:\\Users\\modin\\Desktop\\programming\\GAMES\\ScotlandYardRL\\logger_config.yaml"
+  },
+  "params": {
+    "training/plotting_every": 50,
+    "network/feature_size": 226,
+    "network/action_size": 3,
+    "network/parameter_count": 54273,
+    "network/device": "cuda",
+    "training/algorithm": "dqn",
+    "training/player_role": "MrX",
+    "training/episodes": 200,
+    "training/map_size": "extended",
+    "training/num_detectives": 5,
+    "training/max_turns_per_game": 24,
+    "training/batch_size": 64,
+    "training/learning_rate": 0.003,
+    "training/gamma": 0.95,
+    "training/epsilon_start": 1.0,
+    "training/epsilon_end": 0.05,
+    "training/target_update_frequency": 200,
+    "training/min_replay_size": 1000,
+    "training/config_path": "training/configs/dqn_config.json",
+    "validation/model_path": "training_results\\dqn_MrX_1785576154.pth",
+    "validation/player_role": "MrX",
+    "validation/games": 50,
+    "validation/opponent": "random",
+    "validation/map_size": "test",
+    "validation/num_detectives": 2
+  },
+  "result": {
+    "training/algorithm": "dqn",
+    "training/player_role": "MrX",
+    "training/total_episodes": 200,
+    "training/duration_seconds": 20.54745626449585,
+    "training/model_path": "training_results\\dqn_MrX_1785576154.pth",
+    "training/avg_episode_reward": 6.603650579407615,
+    "training/final_epsilon": 0.9789967781357627,
+    "training/total_steps": 135,
+    "training/final_buffer_size": 3202,
+    "validation/games": 50,
+    "validation/wins": 0,
+    "validation/win_rate": 0.0,
+    "validation/average_turns": 16.64
+  }
+}

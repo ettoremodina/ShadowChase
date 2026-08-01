@@ -1,0 +1,263 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>extracted · gameplay-20260801T014431-6057f59a</title>
+<style>
+:root { color-scheme: dark; --bg:#0d1020; --card:#171b31; --ink:#eef1ff;
+--muted:#9ba5c9; --cyan:#59d9e8; --magenta:#cf7cff; --line:#343b61; }
+* { box-sizing:border-box; }
+body { margin:0; background:radial-gradient(circle at top,#202750,var(--bg) 42%);
+color:var(--ink); font:15px/1.5 Inter,ui-sans-serif,system-ui,sans-serif; }
+main { width:min(1100px,calc(100% - 32px)); margin:48px auto 96px; }
+header { margin-bottom:28px; } h1 { margin:.2rem 0; font-size:clamp(1.7rem,4vw,3rem); }
+h2 { margin-top:0; } .eyebrow { color:var(--cyan); text-transform:uppercase;
+letter-spacing:.16em; font-weight:700; }
+section,.chart { background:color-mix(in srgb,var(--card) 92%,transparent);
+border:1px solid var(--line); border-radius:16px; padding:20px; margin:16px 0; }
+table { width:100%; border-collapse:collapse; } th,td { padding:8px 10px;
+border-bottom:1px solid var(--line); text-align:left; } th { color:var(--muted); }
+.chart-title { display:flex; justify-content:space-between; align-items:center; }
+.chart-title h3 { margin:0; } .chart-title span { color:var(--cyan); font-weight:700; }
+svg { width:100%; height:auto; overflow:visible; }
+.axis { stroke:var(--line); stroke-width:1; }
+.series { fill:none; stroke:var(--magenta); stroke-width:3;
+stroke-linejoin:round; stroke-linecap:round; }
+pre { overflow:auto; color:#d8defa; background:#0a0d19; padding:16px; border-radius:10px; }
+</style>
+</head>
+<body>
+<main>
+<header><p class="eyebrow">ML Logger run report</p><h1>extracted · gameplay-20260801T014431-6057f59a</h1></header>
+<section><h2>Summary</h2><table><tr><th>Status</th><td>completed</td></tr><tr><th>Started</th><td>2026-08-01T01:44:31.913147+00:00</td></tr><tr><th>Ended</th><td>2026-08-01T01:45:00.490143+00:00</td></tr><tr><th>Run type</th><td>gameplay</td></tr><tr><th>Metrics</th><td>0</td></tr></table></section>
+
+
+<section><h2>Manifest</h2><pre>{
+  &quot;schema_version&quot;: 2,
+  &quot;run_id&quot;: &quot;gameplay-20260801T014431-6057f59a&quot;,
+  &quot;run_type&quot;: &quot;gameplay&quot;,
+  &quot;name&quot;: &quot;extracted&quot;,
+  &quot;status&quot;: &quot;completed&quot;,
+  &quot;started_at&quot;: &quot;2026-08-01T01:44:31.913147+00:00&quot;,
+  &quot;ended_at&quot;: &quot;2026-08-01T01:45:00.490143+00:00&quot;,
+  &quot;command&quot;: &quot;&#x27;C:\\Users\\modin\\Desktop\\programming\\GAMES\\ScotlandYardRL\\main.py&#x27;&quot;,
+  &quot;python&quot;: &quot;3.11.15 (main, Jul 18 2026, 17:06:27) [MSC v.1944 64 bit (AMD64)]&quot;,
+  &quot;git&quot;: {
+    &quot;commit&quot;: &quot;6c8679970256b3373f00bb146ac10aa22bd13023&quot;,
+    &quot;dirty&quot;: true
+  },
+  &quot;config&quot;: {
+    &quot;demo&quot;: &quot;extracted&quot;,
+    &quot;num_detectives&quot;: 5,
+    &quot;headless&quot;: false,
+    &quot;uses_visualizer&quot;: true
+  },
+  &quot;metadata&quot;: {
+    &quot;entry_point&quot;: &quot;main&quot;
+  },
+  &quot;logger_settings&quot;: {
+    &quot;version&quot;: 2,
+    &quot;artifacts&quot;: {
+      &quot;root_dir&quot;: &quot;artifacts&quot;,
+      &quot;directories&quot;: [
+        &quot;logs&quot;,
+        &quot;metrics&quot;,
+        &quot;artifacts&quot;,
+        &quot;models&quot;,
+        &quot;replays&quot;
+      ]
+    },
+    &quot;logging&quot;: {
+      &quot;enabled&quot;: true,
+      &quot;level&quot;: &quot;INFO&quot;,
+      &quot;console&quot;: true,
+      &quot;file&quot;: true
+    },
+    &quot;terminal&quot;: {
+      &quot;colors&quot;: true,
+      &quot;timezone&quot;: &quot;+02:00&quot;,
+      &quot;show_time&quot;: true,
+      &quot;show_level&quot;: true,
+      &quot;show_source&quot;: false,
+      &quot;omit_repeated_times&quot;: true,
+      &quot;rich_tracebacks&quot;: true
+    },
+    &quot;saving&quot;: {
+      &quot;enabled&quot;: true,
+      &quot;params&quot;: true,
+      &quot;metrics&quot;: true,
+      &quot;results&quot;: true,
+      &quot;artifacts&quot;: true,
+      &quot;telemetry&quot;: true
+    },
+    &quot;metrics&quot;: {
+      &quot;include&quot;: [
+        &quot;game/*&quot;,
+        &quot;evaluation/*&quot;,
+        &quot;train/*&quot;,
+        &quot;validation/*&quot;,
+        &quot;system/*&quot;
+      ],
+      &quot;exclude&quot;: []
+    },
+    &quot;dashboard&quot;: {
+      &quot;mode&quot;: &quot;compact&quot;,
+      &quot;refresh_rate&quot;: 4,
+      &quot;max_log_lines&quot;: 50,
+      &quot;max_metrics&quot;: 16,
+      &quot;screen&quot;: true,
+      &quot;metrics&quot;: {
+        &quot;include&quot;: [
+          &quot;game/*&quot;,
+          &quot;evaluation/*&quot;,
+          &quot;train/*&quot;,
+          &quot;validation/*&quot;
+        ],
+        &quot;exclude&quot;: []
+      }
+    },
+    &quot;telemetry&quot;: {
+      &quot;enabled&quot;: false,
+      &quot;sample_interval_sec&quot;: 5,
+      &quot;include_process&quot;: true,
+      &quot;include_system&quot;: true,
+      &quot;gpu_provider&quot;: &quot;auto&quot;
+    },
+    &quot;report&quot;: {
+      &quot;enabled&quot;: true,
+      &quot;filename&quot;: &quot;run_report.html&quot;,
+      &quot;visualization&quot;: &quot;auto&quot;,
+      &quot;metrics&quot;: {
+        &quot;include&quot;: [
+          &quot;game/*&quot;,
+          &quot;evaluation/*&quot;,
+          &quot;train/*&quot;,
+          &quot;validation/*&quot;
+        ],
+        &quot;exclude&quot;: []
+      }
+    },
+    &quot;run_type_overrides&quot;: {
+      &quot;gameplay&quot;: {
+        &quot;dashboard&quot;: {
+          &quot;mode&quot;: &quot;compact&quot;
+        },
+        &quot;telemetry&quot;: {
+          &quot;enabled&quot;: false
+        }
+      },
+      &quot;evaluation&quot;: {
+        &quot;dashboard&quot;: {
+          &quot;mode&quot;: &quot;compact&quot;
+        }
+      },
+      &quot;training&quot;: {
+        &quot;dashboard&quot;: {
+          &quot;mode&quot;: &quot;auto&quot;
+        },
+        &quot;telemetry&quot;: {
+          &quot;enabled&quot;: true
+        }
+      },
+      &quot;test&quot;: {
+        &quot;dashboard&quot;: {
+          &quot;mode&quot;: false
+        },
+        &quot;telemetry&quot;: {
+          &quot;enabled&quot;: false
+        },
+        &quot;report&quot;: {
+          &quot;enabled&quot;: false
+        }
+      }
+    },
+    &quot;highlights&quot;: [
+      {
+        &quot;pattern&quot;: &quot;\\b(starting|started|complete|completed|saved)\\b&quot;,
+        &quot;style&quot;: &quot;bold green&quot;
+      },
+      {
+        &quot;pattern&quot;: &quot;\\b(benchmark|summary)\\b&quot;,
+        &quot;style&quot;: &quot;bold magenta&quot;
+      },
+      {
+        &quot;pattern&quot;: &quot;\\b(CPU|CUDA|GPU)\\b&quot;,
+        &quot;style&quot;: &quot;bold cyan&quot;
+      },
+      {
+        &quot;pattern&quot;: &quot;\\b(on|true)\\b&quot;,
+        &quot;style&quot;: &quot;green&quot;
+      },
+      {
+        &quot;pattern&quot;: &quot;\\b(off|false)\\b&quot;,
+        &quot;style&quot;: &quot;dim&quot;
+      },
+      {
+        &quot;pattern&quot;: &quot;\\b(epoch|step)\\b&quot;,
+        &quot;style&quot;: &quot;bold magenta&quot;
+      },
+      {
+        &quot;pattern&quot;: &quot;\\bloss\\b&quot;,
+        &quot;style&quot;: &quot;yellow&quot;
+      },
+      {
+        &quot;pattern&quot;: &quot;\\b(accuracy|acc|f1)\\b&quot;,
+        &quot;style&quot;: &quot;green&quot;
+      },
+      {
+        &quot;pattern&quot;: &quot;\\b(val|valid)\\b&quot;,
+        &quot;style&quot;: &quot;cyan&quot;
+      },
+      {
+        &quot;pattern&quot;: &quot;\\b(warn|warning)\\b&quot;,
+        &quot;style&quot;: &quot;bold yellow&quot;
+      },
+      {
+        &quot;pattern&quot;: &quot;\\b(error|fail)\\b&quot;,
+        &quot;style&quot;: &quot;bold red&quot;
+      },
+      {
+        &quot;pattern&quot;: &quot;\\b(saved|checkpoint)\\b&quot;,
+        &quot;style&quot;: &quot;bold green&quot;
+      },
+      {
+        &quot;pattern&quot;: &quot;(?&lt;![\\w.])[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?(?![\\w.])&quot;,
+        &quot;style&quot;: &quot;cyan&quot;
+      }
+    ],
+    &quot;integrations&quot;: {
+      &quot;shadow_chase&quot;: {
+        &quot;recording&quot;: {
+          &quot;level&quot;: &quot;actions&quot;,
+          &quot;save_replays&quot;: true
+        }
+      }
+    },
+    &quot;config_path&quot;: &quot;C:\\Users\\modin\\Desktop\\programming\\GAMES\\ScotlandYardRL\\logger_config.yaml&quot;
+  },
+  &quot;params&quot;: {
+    &quot;logging/recording_level&quot;: &quot;actions&quot;,
+    &quot;logging/save_replays&quot;: true,
+    &quot;demo&quot;: &quot;extracted&quot;,
+    &quot;num_detectives&quot;: 5,
+    &quot;headless&quot;: false,
+    &quot;uses_visualizer&quot;: true
+  },
+  &quot;result&quot;: {
+    &quot;gameplay/games&quot;: 0,
+    &quot;gameplay/mrx_wins&quot;: 0,
+    &quot;gameplay/detective_wins&quot;: 0,
+    &quot;gameplay/incomplete_games&quot;: 0,
+    &quot;gameplay/mrx_win_rate&quot;: 0.0,
+    &quot;gameplay/detective_win_rate&quot;: 0.0,
+    &quot;gameplay/average_turns&quot;: 0.0,
+    &quot;gameplay/average_duration_seconds&quot;: 0.0,
+    &quot;gameplay/demo&quot;: &quot;extracted&quot;,
+    &quot;gameplay/recorded_games&quot;: 0,
+    &quot;gameplay/duration_seconds&quot;: 28.274215936660767
+  }
+}</pre></section>
+</main>
+</body>
+</html>

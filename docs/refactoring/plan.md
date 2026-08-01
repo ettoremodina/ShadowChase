@@ -51,15 +51,50 @@ than hiding them. See [baseline.md](baseline.md).
 `GameRunRecorder`, `TrainingRunRecorder`, and versioned replay serialization.
 See [ml-logging-adapter.md](ml-logging-adapter.md).
 
-### 4. Entry-point migration — in progress
+### 4. Entry-point migration — done
 
 One command owns one run. Domain code never opens a run and never touches the
 global run lifecycle.
 
 - [x] 4a. Batch evaluation — `game_controls/simple_game.py --batch N`
 - [x] 4b. Training — `train_dqn.py`, `DQNTrainer`, `BaseTrainer`, `plot_utils`
-- [ ] 4c. Interactive and visualization CLI — `main.py`
-- [ ] 4d. Agent comparison script — `test_agents.py`
+- [x] 4c. Interactive and visualization CLI — `main.py`
+- [x] 4d. Agent comparison script — `test_agents.py`
+
+A comparison delegates each matchup to the evaluation command, so it owns one
+`comparison` run that indexes one child `evaluation` run per matchup. The
+process boundary between matchups is preserved deliberately: removing it would
+change cache and agent state, which is a behavior change, not a logging one.
+
+### 4.5 Pickle compatibility repair — done
+
+The invariant "historical pickles stay loadable" was already broken before this
+refactoring started. `tests/characterization/test_pickle_compatibility.py` reads
+the real corpus and found that **all 2,521 pre-2025-08 saves failed to load**,
+from renames that predate the plan:
+
+| Failing saves | Cause |
+|---|---|
+| 2,100 | `ScotlandYardMovement` renamed to `ShadowChaseMovement` |
+| 411 | package `ScotlandYard` renamed to `ShadowChase` |
+| 6 | `Player` value `mr_x` renamed to `MrX` |
+| 4 | package `cops_and_robbers` renamed to `ScotlandYard` |
+
+A round trip through freshly created objects cannot detect this, because a new
+save records whatever path is current. Only reading the corpus does.
+
+Repaired by the same shim mechanism checkpoint 5 depends on:
+
+- `ShadowChase/compat.py` installs a `sys.meta_path` finder that maps the
+  historical package names, including the `storage` to `services` rename;
+- class aliases in `ShadowChase/core/game.py` for the renamed rule classes;
+- `Player._missing_` for the renamed enum value.
+
+All 11,996 saved games now load, with class identity preserved. The finder must
+stay in front of the standard path finder: behind it, a legacy name whose parent
+resolves to this package gets found on disk and executed a second time, giving
+duplicate classes and a second `Player` enum whose members compare unequal to
+the real ones.
 
 ### 5. Physical reorganization
 
@@ -67,16 +102,23 @@ Move files into the target layout and leave import shims behind. Deferred until
 checkpoint 4 is complete, because moving modules before the logging boundary is
 settled would mix two kinds of breakage.
 
+The application layer gets one module per verb this system actually performs.
+The full set, from a survey of the working tree: play, train, evaluate, compare,
+analyze, replay, export video, author boards, benchmark. The last two are
+developer tooling and become scripts rather than application modules.
+
 ```
 src/shadow_chase/
   domain/          rules, state, movement, win conditions
   agents/          random, heuristic, MCTS, DQN
-  application/     gameplay, training, evaluation
-  infrastructure/  persistence, boards, cache, observability
-  interfaces/      cli, gui, pettingzoo
+  application/     play, training, evaluation, comparison,
+                   analysis, replay, video
+  infrastructure/  persistence, boards, cache, observability, compat
+  interfaces/      cli/  gui/  web/  pettingzoo/
 configs/           game, training, logger_config.yaml
+scripts/           board authoring, profiling, cache benchmarks (was other/)
 tests/             unit, integration, characterization, compatibility
-docs/  examples/  scripts/
+docs/  examples/
 ```
 
 Pickle compatibility is the hard constraint here: unpickling resolves the module
@@ -104,3 +146,7 @@ visualization path. Then update `README.md` and the architecture docs.
   repository until the refactor is verified.
 - The PettingZoo adapter's deprecated `observation_space` / `action_space`
   dictionary attributes.
+- Cache namespace policy for agent comparison. The previous script configured
+  the cache in a process that plays no games, so the settings never reached a
+  game. Wiring them into the evaluation processes would change which decisions
+  are cached, so it belongs to a behavior change, not to this migration.

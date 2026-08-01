@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "shadow-chase-webui",
+      "runtimeExecutable": ".venv/Scripts/python.exe",
+      "runtimeArgs": ["-m", "webui", "--no-browser", "--port", "8420"],
+      "port": 8420
+    }
+  ]
+}

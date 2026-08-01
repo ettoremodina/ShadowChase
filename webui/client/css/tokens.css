@@ -1,0 +1,161 @@
+/* Shadow Chase — design tokens.
+   The identity comes from transit signage: DIN-derived condensed type, route
+   colours as the only saturated hues, ink-blue surfaces instead of grey. */
+
+:root {
+  /* Surfaces: blue-black, like a map read at night. */
+  --ink-950: #070a0f;
+  --ink-900: #0c1119;
+  --ink-850: #0f151e;
+  --ink-800: #131a24;
+  --ink-750: #19212d;
+  --ink-700: #212b39;
+  --line: #27323f;
+  --line-soft: #1a222d;
+
+  /* Text: warm off-white, the colour of printed map paper. */
+  --paper: #e9e6dc;
+  --paper-dim: #a8b2c0;
+  --muted: #6d7a8b;
+  --faint: #4a5566;
+
+  /* Routes. These are the brand; nothing else on the page is this saturated. */
+  --taxi: #f5c542;
+  --bus: #3e8ff0;
+  --tube: #e4483c;
+  --ferry: #37b67a;
+  --black-ticket: #c9d1de;
+  --double: #b07cf0;
+
+  /* Sides. Mr. X is absence, not a colour, until he surfaces. */
+  --detective: #4fc3e8;
+  --detective-deep: #123a4b;
+  --mrx: #f2f5f9;
+  --mrx-deep: #1c1f26;
+  --alarm: #ff4d4d;
+  --ok: #37b67a;
+  --warn: #f5c542;
+
+  /* Type. Bahnschrift ships with Windows and is DIN 1451 — signage metal. */
+  --font-display: "Bahnschrift", "DIN Alternate", "Segoe UI Semibold",
+    "Segoe UI", system-ui, sans-serif;
+  --font-body: "Segoe UI", system-ui, -apple-system, "Helvetica Neue", sans-serif;
+  --font-mono: "Cascadia Mono", "Consolas", ui-monospace, "SF Mono", monospace;
+
+  --step-eyebrow: 0.6875rem; /* 11px */
+  --step-caption: 0.75rem;
+  --step-body: 0.8125rem;
+  --step-lead: 0.9375rem;
+  --step-title: 1.25rem;
+  --step-display: 1.75rem;
+
+  --track-eyebrow: 0.16em;
+  --track-title: 0.01em;
+
+  /* Space: a 4px grid, named by intent. */
+  --gap-hair: 2px;
+  --gap-tight: 6px;
+  --gap: 12px;
+  --gap-wide: 18px;
+  --gap-section: 26px;
+
+  --rail-width: 62px;
+  --panel-width: 384px;
+
+  /* Enamel plates, not cards: barely any radius. Circles are for stations. */
+  --radius: 3px;
+  --radius-pill: 999px;
+
+  --shadow-panel: 0 0 0 1px var(--line-soft), 0 18px 40px rgb(0 0 0 / 45%);
+  --shadow-lift: 0 6px 18px rgb(0 0 0 / 40%);
+
+  --speed-fast: 120ms;
+  --speed: 220ms;
+  --speed-slow: 420ms;
+  --ease: cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --speed-fast: 1ms;
+    --speed: 1ms;
+    --speed-slow: 1ms;
+  }
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background: var(--ink-950);
+  color: var(--paper);
+  font-family: var(--font-body);
+  font-size: var(--step-body);
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden;
+}
+
+button,
+input,
+select {
+  font: inherit;
+  color: inherit;
+}
+
+:focus-visible {
+  outline: 2px solid var(--detective);
+  outline-offset: 2px;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--ink-900);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--ink-700);
+  border: 2px solid var(--ink-900);
+  border-radius: var(--radius-pill);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #2c3848;
+}
+
+/* Shared type roles ------------------------------------------------- */
+
+.eyebrow {
+  font-family: var(--font-display);
+  font-size: var(--step-eyebrow);
+  font-weight: 600;
+  letter-spacing: var(--track-eyebrow);
+  text-transform: uppercase;
+  color: var(--muted);
+  font-stretch: semi-condensed;
+}
+
+.display {
+  font-family: var(--font-display);
+  font-stretch: semi-condensed;
+  font-weight: 600;
+  letter-spacing: var(--track-title);
+}
+
+.num {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}

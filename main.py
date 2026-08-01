@@ -1,340 +1,161 @@
-import networkx as nx
-import sys
+"""Interactive and visualization entry point for Shadow Chase.
+
+One invocation owns exactly one ``gameplay`` run. The demos in
+``ShadowChase.examples.demos`` build and play games; this command opens the
+run, records the resulting game through the ml_logger adapter, and closes the
+run. Demo code never touches the run lifecycle.
+
+Usage:
+    python main.py                       # extracted board with 5 detectives
+    python main.py --list-demos          # show every available demo
+    python main.py --demo grid --headless
+"""
+import argparse
 import os
-import random
+import sys
+import time
+from typing import Optional, Sequence
 
 # Add the project root to sys.path for imports
 current_dir = os.path.dirname(os.path.abspath(__file__))
 if current_dir not in sys.path:
     sys.path.insert(0, current_dir)
 
-from ShadowChase.ui.game_visualizer import GameVisualizer
-from ShadowChase.core.game import Game, Player, ShadowChaseGame, TicketType, TransportType
-from ShadowChase.examples.example_games import *
-
-def print_game_state(game):
-    """Print current game state"""
-    state = game.get_state_representation()
-    print(f"\n=== Turn {state['turn_count']} - {state['turn'].upper()}'S TURN ===")
-    print(f"detectives at: {state['detective_positions']}")
-    print(f"MrX at: {state['MrX_position']}")
-    print(f"Game over: {state['game_over']}")
-    if state['winner']:
-        print(f"Winner: {state['winner'].upper()}")
-
-def show_valid_moves(game, player, position=None):
-    """Show valid moves for a player"""
-    if player == Player.DETECTIVES and position is not None:
-        moves = game.get_valid_moves(Player.DETECTIVES, position)
-        if isinstance(game, ShadowChaseGame):
-            print(f"detective at {position} can move to: {[(dest, transport.name) for dest, transport in moves]}")
-        else:
-            print(f"detective at {position} can move to: {sorted(moves)}")
-    elif player == Player.MRX:
-        moves = game.get_valid_moves(Player.MRX)
-        if isinstance(game, ShadowChaseGame):
-            print(f"MrX can move to: {[(dest, transport.name) for dest, transport in moves]}")
-        else:
-            print(f"MrX can move to: {sorted(moves)}")
-    return moves
-
-def test_basic_game():
-    """Test basic game mechanics"""
-    print("=== TESTING BASIC GAME MECHANICS ===")
-    
-    # Create small grid game
-    m, n = 3, 3
-    graph = nx.grid_2d_graph(m, n)
-    # Convert to simple integer labels
-    mapping = {node: i for i, node in enumerate(graph.nodes())}
-    graph = nx.relabel_nodes(graph, mapping)
-    
-    print(f"Graph nodes: {sorted(graph.nodes())}")
-    print(f"Graph edges: {list(graph.edges())}")
-    
-    # Initialize game: 2 detectives at positions 0,1 and MrX at position 7
-    # Make sure positions don't conflict
-    game = Game(graph, 2)
-    detective_positions = [0, 1]
-    MrX_position = 7
-    
-    # Ensure no position conflicts
-    if MrX_position not in detective_positions:
-        game.initialize_game(detective_positions, MrX_position)
-    else:
-        # Use different positions if there's a conflict
-        game.initialize_game([0, 2], 7)
-    
-    print_game_state(game)
-    
-    # Show valid moves for each detective
-    for i, detective_pos in enumerate(game.game_state.detective_positions):
-        print(f"\ndetective {i+1}:")
-        show_valid_moves(game, Player.DETECTIVES, detective_pos)
-    
-    # Make detectives move
-    print("\n--- detectives MOVE ---")
-    detective1_moves = show_valid_moves(game, Player.DETECTIVES, 0)
-    detective2_moves = show_valid_moves(game, Player.DETECTIVES, 1)
-    
-    # Move detectives to new positions
-    new_detective_positions = [3, 4]  # Example moves
-    success = game.make_move(new_positions=new_detective_positions)
-    print(f"detectives move to {new_detective_positions}: {'Success' if success else 'Failed'}")
-    
-    print_game_state(game)
-    
-    # Show MrX's valid moves
-    print("\n--- MrX'S TURN ---")
-    MrX_moves = show_valid_moves(game, Player.MRX)
-    
-    # Move MrX
-    new_MrX_pos = 8  # Example move
-    success = game.make_move(new_MrX_pos=new_MrX_pos)
-    print(f"MrX moves to {new_MrX_pos}: {'Success' if success else 'Failed'}")
-    
-    print_game_state(game)
-
-def test_game_until_end():
-    """Play a simple game until completion"""
-    print("\n\n=== PLAYING COMPLETE GAME ===")
-    
-    # Simple path graph for quick game
-    graph = nx.path_graph(5)  # Nodes 0-4 in a line
-    game = Game(graph, 1)
-    game.initialize_game([0], 4)  # detective at 0, MrX at 4
-    
-    turn = 0
-    max_turns = 10
-    
-    while not game.is_game_over() and turn < max_turns:
-        print_game_state(game)
-        
-        if game.game_state.turn == Player.DETECTIVES:
-            # Simple strategy: detective moves toward MrX
-            detective_pos = game.game_state.detective_positions[0]
-            MrX_pos = game.game_state.MrX_position
-            
-            moves = show_valid_moves(game, Player.DETECTIVES, detective_pos)
-            
-            # Choose move that gets closer to MrX
-            best_move = detective_pos
-            for move in moves:
-                if abs(move - MrX_pos) < abs(best_move - MrX_pos):
-                    best_move = move
-            
-            print(f"detective chooses to move to: {best_move}")
-            game.make_move(new_positions=[best_move])
-            
-        else:  # MrX's turn
-            moves = show_valid_moves(game, Player.MRX)
-            
-            # Simple strategy: move away from detectives
-            MrX_pos = game.game_state.MrX_position
-            detective_pos = game.game_state.detective_positions[0]
-            
-            best_move = MrX_pos
-            for move in moves:
-                if abs(move - detective_pos) > abs(best_move - detective_pos):
-                    best_move = move
-            
-            print(f"MrX chooses to move to: {best_move}")
-            game.make_move(new_MrX_pos=best_move)
-        
-        turn += 1
-    
-    print_game_state(game)
-    if game.is_game_over():
-        print(f"\nGame ended after {turn} turns!")
-    else:
-        print(f"\nGame stopped after {max_turns} turns (no winner yet)")
-
-def test_shadow_chase_game():
-    """Test Shadow Chase specific mechanics"""
-    print("\n\n=== TESTING SHADOW CHASE GAME ===")
-    
-    # Create Shadow Chase game
-    game = create_shadowChase_game(2)
-    
-    # Initialize with specific positions
-    detective_positions = [1, 13]
-    MrX_position = 100
-    
-    game.initialize_shadow_chase_game(detective_positions, MrX_position)
-    
-    print(f"Game initialized:")
-    print(f"Detectives at: {detective_positions}")
-    print(f"Mr. X at: {MrX_position} (hidden: {not game.game_state.MrX_visible})")
-    
-    # Show initial tickets
-    print("\nInitial tickets:")
-    for i in range(2):
-        tickets = game.get_detective_tickets(i)
-        print(f"Detective {i+1}: {tickets}")
-    
-    MrX_tickets = game.get_MrX_tickets()
-    print(f"Mr. X: {MrX_tickets}")
-
-def demo_path_game():
-    """Demonstrate game on path graph"""
-    print("Path Graph Game Demo")
-    game = create_path_graph_game(5, 1)
-    
-    # Solve the game
-    solver = None
-    result = solver.solve([0], 4)
-    
-    print(f"detectives can win: {result.detectives_can_win}")
-    if result.game_length:
-        print(f"Game length: {result.game_length}")
-    
-    # Visualize
-    visualizer = GameVisualizer(game)
-    visualizer.run()
-
-def demo_cycle_game():
-    """Demonstrate game on cycle graph"""
-    print("Cycle Graph Game Demo")
-    game = create_cycle_graph_game(6, 1)
-    
-    visualizer = GameVisualizer(game)
-    visualizer.run()
-
-def demo_grid_game():
-    """Demonstrate game on grid graph"""
-    print("Grid Graph Game Demo")
-    game = create_grid_graph_game(3, 3, 2)
-    
-    visualizer = GameVisualizer(game)
-    visualizer.run()
-
-def demo_shadow_chase_game():
-    """Demonstrate full Shadow Chase game"""
-    print("Shadow Chase Game Demo")
-    game = create_shadowChase_game(3)
-    
-    # Initialize with random positions
-    nodes = list(game.graph.nodes())
-    detective_positions = random.sample(nodes, 3)
-    MrX_position = random.choice([n for n in nodes if n not in detective_positions])
-    
-    game.initialize_shadow_chase_game(detective_positions, MrX_position)
-    
-    print(f"Detectives at: {detective_positions}")
-    print(f"Mr. X at: {MrX_position} (hidden)")
-    
-    # Show ticket counts
-    for i in range(3):
-        tickets = game.get_detective_tickets(i)
-        print(f"Detective {i+1}: {tickets}")
-    
-    MrX_tickets = game.get_MrX_tickets()
-    print(f"Mr. X: {MrX_tickets}")
-
-def demo_simple_shadow_chase():
-    """Demonstrate simplified Shadow Chase game"""
-    print("Simple Shadow Chase Game Demo")
-    game = create_simple_shadow_chase_game(num_detectives=2, show_MrX=True, use_tickets=False)
-    
-    # Use basic initialization
-    game.initialize_game([1, 3], 100)
-    
-    visualizer = GameVisualizer(game)
-    visualizer.run()
-
-def demo_shadow_chase_visualizer():
-    """Demonstrate full Shadow Chase game with visualizer"""
-    print("Shadow Chase Game with Visualizer")
-    game = create_shadowChase_game(3)
-    
-    visualizer = GameVisualizer(game)
-    visualizer.run()
-
-def demo_test_shadow_chase():
-    """Demonstrate test Shadow Chase game with small graph"""
-    print("Test Shadow Chase Game Demo (10 nodes)")
-    from ShadowChase.examples.example_games import create_test_shadow_chase_game
-    
-    game = create_test_shadow_chase_game(2)
-    
-    # Initialize with specific positions
-    detective_positions = [1, 3]
-    MrX_position = 8
-    
-    game.initialize_shadow_chase_game(detective_positions, MrX_position)
-    
-    print(f"Detectives at: {detective_positions}")
-    print(f"Mr. X at: {MrX_position}")
-    
-    # Show ticket counts
-    for i in range(2):
-        tickets = game.get_detective_tickets(i)
-        print(f"Detective {i+1}: {tickets}")
-    
-    MrX_tickets = game.get_MrX_tickets()
-    print(f"Mr. X: {MrX_tickets}")
-    
-    visualizer = GameVisualizer(game)
-    visualizer.run()
-
-def demo_simple_test_shadow_chase():
-    """Demonstrate simple test Shadow Chase game"""
-    print("Simple Test Shadow Chase Game Demo")
-    from ShadowChase.examples.example_games import create_simple_test_shadow_chase_game
-    
-    game = create_simple_test_shadow_chase_game(num_detectives=2, show_MrX=True, use_tickets=False)
-    
-    # Use basic initialization
-    game.initialize_game([1, 3], 8)
-    
-    visualizer = GameVisualizer(game)
-    visualizer.run()
-
-def demo_extracted_board_game(num_detectives: int = 3, auto_init: bool = True):
-    """Create Shadow Chase game using the extracted board data"""
-    game = create_extracted_board_game(num_detectives)
-
-    # Define predefined positions using the method from game_logic.py
-    if auto_init:
-        import random
-        starting_cards = [13,26,29,34,50,53,91,103,112,132,138,141,155,174,197,94, 117, 198]
-        available_nodes = list(game.graph.nodes())
-        
-        # Filter starting cards to only include nodes that exist in the graph
-        valid_starting_cards = [pos for pos in starting_cards if pos in available_nodes]
-        
-        # Ensure we have enough valid positions
-        if len(valid_starting_cards) < num_detectives + 1:
-            # Add more random positions if needed
-            remaining_nodes = [n for n in available_nodes if n not in valid_starting_cards]
-            additional_needed = (num_detectives + 1) - len(valid_starting_cards)
-            valid_starting_cards.extend(random.sample(remaining_nodes, min(additional_needed, len(remaining_nodes))))
-        
-        sample = random.sample(valid_starting_cards, num_detectives + 1)
-        detective_positions = sample[1:num_detectives+1]        
-        MrX_position = sample[0]
-        
-        positions = detective_positions + [MrX_position]
-    else:
-        positions = None
-
-    # Initialize visualizer with positions but don't auto-start
-    visualizer = GameVisualizer(game, auto_positions=positions)
-    
-    # # Set game mode to human vs human by default (can be changed in UI)
-    # mode_map = {
-    #     "human_vs_human": {'detectives': 'Human', 'MrX': 'Human'},
-    #     "human_det_vs_ai_mrx": {'detectives': 'Human', 'MrX': 'AI'},
-    #     "ai_det_vs_human_mrx": {'detectives': 'AI', 'MrX': 'Human'},
-    #     "ai_vs_ai": {'detectives': 'AI', 'MrX': 'AI'}
-    # }
-    # visualizer.game_mode = mode_map['ai_vs_ai']
-    
-    visualizer.run()
+from ml_logger import configure_logging, get_logger, run
+from ShadowChase.core.game import Game
+from ShadowChase.examples.demos import DEFAULT_DEMO, DEMOS
+from ShadowChase.integrations import GameRunRecorder
 
 
+logger = get_logger(__name__)
 
+
+def parse_arguments(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
+    """Parse command line arguments"""
+    parser = argparse.ArgumentParser(
+        description='Shadow Chase interactive and visualization demos',
+    )
+    parser.add_argument('--demo', choices=sorted(DEMOS), default=DEFAULT_DEMO,
+                       help=f'Demonstration to run (default: {DEFAULT_DEMO})')
+    parser.add_argument('--list-demos', action='store_true',
+                       help='List the available demonstrations and exit')
+    parser.add_argument('--detectives', type=int, choices=[1, 2, 3, 4, 5],
+                       help='Number of detectives, for demos that accept one')
+    parser.add_argument('--headless', action='store_true',
+                       help='Build and record the game without opening the GUI')
+    parser.add_argument('--run-name', type=str,
+                       help='Optional ml_logger run name')
+    parser.add_argument('--logger-config', type=str,
+                       help='Path to an ml_logger YAML configuration')
+    parser.add_argument('--artifact-root', type=str,
+                       help='Override the ml_logger artifact root directory')
+    parser.add_argument('--recording-level', choices=['summary', 'actions', 'full'],
+                       help='Game replay detail stored by ml_logger')
+    parser.add_argument('--no-replays', action='store_true',
+                       help='Disable ml_logger replay files while retaining metrics')
+    return parser.parse_args(argv)
+
+
+def main(argv: Optional[Sequence[str]] = None) -> int:
+    """Run one demonstration inside a single gameplay run."""
+    args = parse_arguments(argv)
+
+    if args.list_demos:
+        configure_logging()
+        _log_demo_catalog()
+        return 0
+
+    demo = DEMOS[args.demo]
+    if args.detectives is not None and not demo.configurable_detectives:
+        raise SystemExit(
+            f"Demo '{args.demo}' uses a fixed layout of "
+            f"{demo.default_detectives} detectives and does not accept "
+            "--detectives"
+        )
+    num_detectives = args.detectives or demo.default_detectives
+    headless = args.headless or not demo.uses_visualizer
+
+    effective_config = {
+        "demo": args.demo,
+        "num_detectives": num_detectives,
+        "headless": headless,
+        "uses_visualizer": demo.uses_visualizer and not args.headless,
+    }
+    with run(
+        "gameplay",
+        name=args.run_name or args.demo,
+        config=effective_config,
+        root_dir=args.artifact_root,
+        metadata={"entry_point": "main"},
+        logger_config_path=args.logger_config,
+    ) as context:
+        recorder = GameRunRecorder(
+            context,
+            recording_level=args.recording_level,
+            save_replays=False if args.no_replays else None,
+        )
+        recorder.record_run_parameters(effective_config)
+        logger.info("Demo '%s': %s", args.demo, demo.description)
+
+        start_time = time.time()
+        game = demo.play(num_detectives=num_detectives, headless=headless)
+        execution_time = time.time() - start_time
+
+        recorded = _record_demo_game(
+            recorder,
+            game,
+            demo_name=args.demo,
+            num_detectives=num_detectives,
+            execution_time=execution_time,
+        )
+        recorder.finalize(
+            {
+                "demo": args.demo,
+                "recorded_games": int(recorded),
+                "duration_seconds": execution_time,
+            },
+            namespace="gameplay",
+        )
+        logger.info("Run artifacts: %s", context.run_dir)
+    return 0
+
+
+def _record_demo_game(recorder: GameRunRecorder, game: Optional[Game], *,
+                      demo_name: str, num_detectives: int,
+                      execution_time: float) -> bool:
+    """Record the demo's game unless it never reached an initialized state."""
+    if game is None or game.game_state is None:
+        logger.info("Demo '%s' produced no initialized game to record", demo_name)
+        return False
+    recorder.record_game(
+        0,
+        game,
+        execution_time_seconds=execution_time,
+        game_id=demo_name,
+        metadata={
+            "demo": demo_name,
+            "num_detectives": num_detectives,
+            "game_class": type(game).__name__,
+        },
+    )
+    return True
+
+
+def _log_demo_catalog() -> None:
+    """Log every demo with the detective count it runs by default."""
+    logger.info("Available demos:")
+    for name, demo in sorted(DEMOS.items()):
+        detectives = demo.default_detectives
+        logger.info(
+            "  %-12s %s (%d detective%s%s%s)",
+            name,
+            demo.description,
+            detectives,
+            "" if detectives == 1 else "s",
+            "" if demo.configurable_detectives else ", fixed",
+            ", GUI" if demo.uses_visualizer else "",
+        )
 
 
 if __name__ == "__main__":
-    demo_extracted_board_game(5)
+    raise SystemExit(main())

@@ -3,13 +3,14 @@
   "projectId": "c64e5e37-6e10-493b-828a-53380f40624a",
   "projectName": "ScotlandYardRL",
   "sourceRepository": "C:\\Users\\modin\\Desktop\\programming\\LIFE\\AgentWorkflow",
-  "connectedAtUtc": "2026-07-31T23:04:03.3727241Z",
+  "connectedAtUtc": "07/31/2026 23:04:03",
   "workflow": {
-    "version": "1.6.0",
-    "appliedAtUtc": "2026-07-31T23:04:03.3727335Z"
+    "version": "1.8.0",
+    "appliedAtUtc": "2026-08-01T01:23:08.5257472Z"
   },
   "providers": [
-    "codex"
+    "codex",
+    "claude"
   ],
   "skills": [
     {
@@ -23,8 +24,43 @@
       "scope": "shared"
     },
     {
+      "name": "code-flow-explorer",
+      "sourcePath": ".agents/skills/code-flow-explorer/SKILL.md",
+      "scope": "shared"
+    },
+    {
       "name": "frontend-design",
       "sourcePath": ".agents/skills/frontend-design/SKILL.md",
+      "scope": "shared"
+    },
+    {
+      "name": "html-output-viewer",
+      "sourcePath": ".agents/skills/html-output-viewer/SKILL.md",
+      "scope": "shared"
+    },
+    {
+      "name": "paper-summarizer-visual",
+      "sourcePath": ".agents/skills/paper-summarizer-visual/SKILL.md",
+      "scope": "shared"
+    },
+    {
+      "name": "parallel-worktree-tasks",
+      "sourcePath": ".agents/skills/parallel-worktree-tasks/SKILL.md",
+      "scope": "shared"
+    },
+    {
+      "name": "pdf",
+      "sourcePath": ".agents/skills/pdf/SKILL.md",
+      "scope": "shared"
+    },
+    {
+      "name": "teach",
+      "sourcePath": ".agents/skills/teach/SKILL.md",
+      "scope": "shared"
+    },
+    {
+      "name": "webapp-testing",
+      "sourcePath": ".agents/skills/webapp-testing/SKILL.md",
       "scope": "shared"
     }
   ],

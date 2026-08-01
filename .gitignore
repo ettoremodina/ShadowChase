@@ -151,3 +151,7 @@ board_progress.json.backup
 
 # Copyrighted game assets - do not distribute
 data/board.jpg
+
+# AgentWorkflow junctions are machine-local and recreated from
+# .agents/control-center.json. Add a targeted exception if a skill is localized.
+.claude/skills/

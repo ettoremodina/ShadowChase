@@ -29,9 +29,10 @@ Connect a repository to the shared AgentWorkflow environment with a small, rever
    - primary technology;
    - important commands already evidenced by project files;
    - important constraints, or `Not established yet` when unknown.
-4. Read the active entries in `<AgentWorkflow>/registry/skills.csv`. Select a small set of directly relevant skills, normally 1–6:
-   - always include `agent-workflow-bootstrap` so the project can be refreshed later;
-   - always include `memory-manager` so durable memory is classified and indexed consistently;
+4. Read `<AgentWorkflow>/config/project-skills.json`, then use the matching active entries in `<AgentWorkflow>/registry/skills.csv` for descriptions and paths. Select a small set of directly relevant opt-in skills, normally 0–6:
+   - the Control Center always adds every `permanentSkills` entry; do not make the user select them;
+   - choose opt-in skills only from the relevant `categories`;
+   - do not select entries listed under `excludedSkills` or located under a `hiddenPathPrefixes` path;
    - add a skill only when the project files or user description provide a concrete reason;
    - do not add document, ML, frontend, deployment, or testing skills merely because they might someday be useful;
    - preserve project-local skills already present;
@@ -44,8 +45,7 @@ Connect a repository to the shared AgentWorkflow environment with a small, rever
 ```powershell
 ./.agents/skills/agent-workflow-bootstrap/scripts/bootstrap-project.ps1 `
   -ProjectPath "C:\absolute\path\to\project" `
-  -Skills agent-workflow-bootstrap,memory-manager,frontend-design,webapp-testing `
-  -Providers codex `
+  -Providers codex,claude `
   -ProjectName "Example" `
   -Purpose "A small web application for ..." `
   -Technology "TypeScript, React, Vite" `
@@ -55,6 +55,8 @@ Connect a repository to the shared AgentWorkflow environment with a small, rever
 ```
 
 The script always runs the Control Center preview before applying. Without `-Apply`, it performs preview only.
+
+`-Providers` defaults to `codex,claude`. The `codex` provider reads `.agents/skills` directly; the `claude` provider needs a `.claude/skills/<name>` junction per selected skill, which the Control Center creates. Both bridges are machine-local links, so add `.claude/skills/` next to `.agents/skills/` in the project `.gitignore`.
 
 6. Verify the final `Status` output and briefly report:
    - selected skills and why they were selected;

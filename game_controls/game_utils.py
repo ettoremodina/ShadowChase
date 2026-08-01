@@ -5,14 +5,19 @@ Contains game configuration, saving, and batch execution functions.
 import time
 from datetime import datetime
 import argparse
-from typing import Tuple, Optional
+from typing import TYPE_CHECKING, Tuple, Optional
+from ml_logger import get_logger
 from ShadowChase.core.game import Player, ShadowChaseGame
 from ShadowChase.services.game_service import GameService
 from game_controls.display_utils import GameDisplay, VerbosityLevel, display_game_start_info, display_game_over
 from game_controls.game_logic import GameController, GameSetup
-from tqdm import tqdm
-
 from agents import AgentType
+
+if TYPE_CHECKING:
+    from ShadowChase.integrations import GameRunRecorder
+
+
+logger = get_logger(__name__)
 
 
 def parse_arguments():
@@ -37,6 +42,18 @@ def parse_arguments():
                        help='Mr. X agent type (default: random)')
     parser.add_argument('--detective-agent', type=str, choices=agent_types, default='random',
                        help='Detective agent type (default: random)')
+    parser.add_argument('--run-name', type=str,
+                       help='Optional ml_logger run name')
+    parser.add_argument('--logger-config', type=str,
+                       help='Path to an ml_logger YAML configuration')
+    parser.add_argument('--artifact-root', type=str,
+                       help='Override the ml_logger artifact root directory')
+    parser.add_argument('--recording-level', choices=['summary', 'actions', 'full'],
+                       help='Game replay detail stored by ml_logger')
+    parser.add_argument('--no-replays', action='store_true',
+                       help='Disable ml_logger replay files while retaining metrics')
+    parser.add_argument('--no-legacy-save', action='store_true',
+                       help='Disable legacy saved_games pickle output in batch mode')
     return parser.parse_args()
 
 def get_game_configuration() -> Tuple[str, str, int, int, AgentType, AgentType]:
@@ -186,7 +203,10 @@ def execute_single_turn(controller: GameController, game: ShadowChaseGame,
 def play_single_game(map_size: str = "test", play_mode: str = "ai_vs_ai", 
                     num_detectives: int = 2, verbosity: int = VerbosityLevel.BASIC,
                     auto_save: bool = False, max_turns: int = 24,
-                    MrX_agent_type=None, detective_agent_type=None, save_dir: str = "fritto_misto") -> Tuple[Optional[str], int, bool]:
+                    MrX_agent_type=None, detective_agent_type=None,
+                    save_dir: str = "fritto_misto", save_legacy: bool = True,
+                    run_recorder: Optional["GameRunRecorder"] = None,
+                    game_index: Optional[int] = None) -> Tuple[Optional[str], int, bool]:
     """
     Play a single game with specified parameters.
     
@@ -200,6 +220,9 @@ def play_single_game(map_size: str = "test", play_mode: str = "ai_vs_ai",
         MrX_agent_type: Type of agent for Mr. X (defaults to RANDOM)
         detective_agent_type: Type of agent for detectives (defaults to RANDOM)
         save_dir: Directory for saving games (defaults to "fritto_misto")
+        save_legacy: Whether to retain the pickle-based saved_games output
+        run_recorder: Optional ml_logger adapter owned by the calling command
+        game_index: Zero-based batch index required when a recorder is supplied
     
     Returns:
         Tuple of (game_id if saved, turn_count, game_completed_normally)
@@ -269,14 +292,33 @@ def play_single_game(map_size: str = "test", play_mode: str = "ai_vs_ai",
 
     # Save game
     game_id = None
-    if play_mode == "ai_vs_ai":
+    if play_mode == "ai_vs_ai" and save_legacy:
         auto_save = True  # Always auto-save in AI vs AI mode
-    if auto_save:
+    if auto_save and save_legacy:
         game_id = save_game_automatically(game, play_mode, map_size, num_detectives, turn_count, display,
                                          MrX_agent_type, detective_agent_type, save_dir, execution_time)
-    elif verbosity >= VerbosityLevel.MOVES:
+    elif save_legacy and verbosity >= VerbosityLevel.MOVES:
         offer_save_option(game, play_mode, map_size, num_detectives, turn_count, display,
                          MrX_agent_type, detective_agent_type, save_dir)
+
+    if run_recorder is not None:
+        if game_index is None:
+            raise ValueError("game_index is required when run_recorder is provided")
+        run_recorder.record_game(
+            game_index,
+            game,
+            execution_time_seconds=execution_time,
+            game_id=game_id,
+            metadata={
+                "play_mode": play_mode,
+                "map_size": map_size,
+                "num_detectives": num_detectives,
+                "mrx_agent": _agent_name(MrX_agent_type),
+                "detective_agent": _agent_name(detective_agent_type),
+                "legacy_save_directory": save_dir if save_legacy else None,
+            },
+            extra_metrics={"legacy_saved": int(game_id is not None)},
+        )
 
     return game_id, turn_count, game_completed
 
@@ -284,7 +326,8 @@ def play_single_game(map_size: str = "test", play_mode: str = "ai_vs_ai",
 def play_multiple_games(n_games: int, map_size: str = "test", play_mode: str = "ai_vs_ai",
                        num_detectives: int = 2, verbosity: int = VerbosityLevel.BASIC,
                        max_turns: int = 24, MrX_agent_type=None, detective_agent_type=None, 
-                       save_dir: str = "fritto_misto") -> dict:
+                       save_dir: str = "fritto_misto", save_legacy: bool = True,
+                       run_recorder: Optional["GameRunRecorder"] = None) -> dict:
     """
     Play N games automatically with the specified parameters.
     All games are saved automatically without confirmation.
@@ -299,18 +342,23 @@ def play_multiple_games(n_games: int, map_size: str = "test", play_mode: str = "
         MrX_agent_type: Type of agent for Mr. X
         detective_agent_type: Type of agent for detectives
         save_dir: Directory for saving games
+        save_legacy: Whether each game is also stored in the pickle-based layout
+        run_recorder: Optional ml_logger game recorder owned by the entry point
     
     Returns:
         Dictionary with game statistics
     """
     MrX_agent = AgentType(MrX_agent_type) 
     detective_agent = AgentType(detective_agent_type) 
-    print(f"🎮 BATCH GAME EXECUTION - {n_games} games")
+    logger.info("Batch game execution: %d games", n_games)
     if verbosity >= VerbosityLevel.BASIC:
-        print(f"   Mr. X Agent: {MrX_agent_type.title()}")
-        print(f"   Detective Agent: {detective_agent_type.title()}")
-        print(f"   Save Directory: {save_dir}")
-        print("=" * 50)
+        logger.info("Mr. X agent: %s", MrX_agent_type)
+        logger.info("Detective agent: %s", detective_agent_type)
+        logger.info(
+            "Legacy saves: %s%s",
+            "enabled" if save_legacy else "disabled",
+            f" ({save_dir})" if save_legacy else "",
+        )
     
     results = {
         'total_games': n_games,
@@ -327,9 +375,9 @@ def play_multiple_games(n_games: int, map_size: str = "test", play_mode: str = "
         'end_time': None
     }
     
-    for game_num in tqdm(range(1, n_games + 1)):
+    for game_num in range(1, n_games + 1):
         if verbosity >= VerbosityLevel.BASIC:
-            print(f"\n🔄 Playing game {game_num}/{n_games}...")
+            logger.info("Playing game %d/%d", game_num, n_games)
         
         # try:
         game_id, turn_count, completed = play_single_game(
@@ -341,7 +389,10 @@ def play_multiple_games(n_games: int, map_size: str = "test", play_mode: str = "
             max_turns=max_turns,
             MrX_agent_type=MrX_agent,
             detective_agent_type=detective_agent,
-            save_dir=save_dir
+            save_dir=save_dir,
+            save_legacy=save_legacy,
+            run_recorder=run_recorder,
+            game_index=game_num - 1,
         )
         
         results['total_turns'] += turn_count
@@ -360,13 +411,20 @@ def play_multiple_games(n_games: int, map_size: str = "test", play_mode: str = "
                 results['incomplete_games'].append(game_id)
                 # Print incomplete game ID if verbosity allows basic output or higher
                 if verbosity >= VerbosityLevel.BASIC:
-                    print(f"❌ Game {game_num} incomplete: {game_id}")
+                    logger.warning("Game %d incomplete: %s", game_num, game_id)
         
         # Progress indicator
         if game_num % 10 == 0 or game_num == n_games:
             progress = (game_num / n_games) * 100
+            if run_recorder is not None:
+                run_recorder.record_progress(game_num, n_games)
             if verbosity >= VerbosityLevel.BASIC:
-                print(f"📊 Progress: {progress:.1f}% ({game_num}/{n_games})")
+                logger.info(
+                    "Progress: %.1f%% (%d/%d)",
+                    progress,
+                    game_num,
+                    n_games,
+                )
         
         # except Exception as e:
         #     print(f"❌ Error in game {game_num}: {e}")
@@ -376,24 +434,45 @@ def play_multiple_games(n_games: int, map_size: str = "test", play_mode: str = "
     duration = results['end_time'] - results['start_time']
     
     # Print final statistics
-    print(f"\n📈 BATCH EXECUTION COMPLETE")
+    logger.info("Batch execution complete")
     if verbosity >= VerbosityLevel.BASIC:
-        print("=" * 40)
-        print(f"Total games: {results['total_games']}")
-        print(f"Completed games: {results['completed_games']}")
-        print(f"Incomplete games: {len(results['incomplete_games'])}")
+        logger.info("Total games: %d", results['total_games'])
+        logger.info("Completed games: %d", results['completed_games'])
+        logger.info("Incomplete games: %d", len(results['incomplete_games']))
         if results['incomplete_games']:
-            print(f"Incomplete game IDs: {', '.join(results['incomplete_games'])}")
-        print(f"Games saved: {len(results['saved_games'])}")
-        print(f"Total turns played: {results['total_turns']}")
-        print(f"Average turns per game: {results['total_turns']/results['completed_games']:.1f}" if results['completed_games'] > 0 else "N/A")
-        print(f"Execution time: {duration}")
-        print(f"Games per minute: {results['completed_games']/(duration.total_seconds()/60):.1f}" if duration.total_seconds() > 0 else "N/A")
-        print(f"Mr. X Agent: {results['MrX_agent'].title()}")
-        print(f"Detective Agent: {results['detective_agent'].title()}")
+            logger.warning(
+                "Incomplete game IDs: %s",
+                ", ".join(results['incomplete_games']),
+            )
+        logger.info("Games saved in legacy format: %d", len(results['saved_games']))
+        logger.info("Total turns played: %d", results['total_turns'])
+        if results['completed_games'] > 0:
+            logger.info(
+                "Average turns per game: %.1f",
+                results['total_turns'] / results['completed_games'],
+            )
+        logger.info("Execution time: %s", duration)
+        if duration.total_seconds() > 0:
+            logger.info(
+                "Games per minute: %.1f",
+                results['completed_games'] / (duration.total_seconds() / 60),
+            )
+        logger.info("Mr. X agent: %s", results['MrX_agent'])
+        logger.info("Detective agent: %s", results['detective_agent'])
     else:
-        # For silent mode, still show incomplete games
+        # Silent mode still records incomplete games through the logger.
         if results['incomplete_games']:
-            print(f"Incomplete games ({len(results['incomplete_games'])}): {', '.join(results['incomplete_games'])}")
+            logger.warning(
+                "Incomplete games (%d): %s",
+                len(results['incomplete_games']),
+                ", ".join(results['incomplete_games']),
+            )
     
     return results
+
+
+def _agent_name(agent_type) -> Optional[str]:
+    """Return a stable string for enum and string agent identifiers."""
+    if agent_type is None:
+        return None
+    return str(getattr(agent_type, "value", agent_type))

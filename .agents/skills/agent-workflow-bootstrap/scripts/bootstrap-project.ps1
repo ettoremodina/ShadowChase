@@ -3,12 +3,10 @@ param(
     [Parameter(Mandatory)]
     [string]$ProjectPath,
 
-    [Parameter(Mandatory)]
-    [ValidateNotNullOrEmpty()]
-    [string[]]$Skills,
+    [string[]]$Skills = @(),
 
     [ValidateSet("codex", "claude", "gemini")]
-    [string[]]$Providers = @("codex"),
+    [string[]]$Providers = @("codex", "claude"),
 
     [string]$ProjectName = "",
     [string]$Purpose = "Not established yet",
@@ -105,10 +103,15 @@ if (-not (Test-Path -LiteralPath $controlScript -PathType Leaf)) {
 }
 
 $selectedSkills = @($Skills | Where-Object { -not [string]::IsNullOrWhiteSpace($_) } | Select-Object -Unique)
-if ($selectedSkills.Count -eq 0) {
-    throw "Select at least one skill."
+$policyPath = Join-Path $sourceRepository "config\project-skills.json"
+if (-not (Test-Path -LiteralPath $policyPath -PathType Leaf)) {
+    throw "Project skill policy was not found: $policyPath"
 }
-$requiredSkills = @("agent-workflow-bootstrap", "memory-manager")
+$projectPolicy = Get-Content -Raw -LiteralPath $policyPath | ConvertFrom-Json
+if ([int]$projectPolicy.schemaVersion -ne 1) {
+    throw "Unsupported project skill policy schema version: $($projectPolicy.schemaVersion)"
+}
+$requiredSkills = @($projectPolicy.permanentSkills | ForEach-Object { [string]$_.name })
 $selectedSkills = @($requiredSkills + $selectedSkills | Select-Object -Unique)
 
 $applyArguments = @{

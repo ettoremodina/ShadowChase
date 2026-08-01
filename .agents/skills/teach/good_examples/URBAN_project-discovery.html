@@ -1,0 +1,1617 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>Urban_project · Step-zero discovery</title>
+  <style>
+    :root {
+      --asphalt: #172431;
+      --asphalt-soft: #273846;
+      --paper: #f5f7f5;
+      --surface: #ffffff;
+      --sky: #c7e5ef;
+      --route: #2767b1;
+      --route-dark: #174d89;
+      --signal: #f4b942;
+      --coral: #e66b53;
+      --mint: #5aa589;
+      --ink: #15202a;
+      --muted: #64727d;
+      --line: #d8e0e3;
+      --shadow: 0 18px 50px rgba(23, 36, 49, 0.12);
+      --radius: 18px;
+      --display: "Bahnschrift SemiCondensed", "Arial Narrow", "Segoe UI", sans-serif;
+      --body: "Segoe UI Variable Text", "Segoe UI", sans-serif;
+      --utility: "Cascadia Mono", "Consolas", monospace;
+    }
+
+    * { box-sizing: border-box; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      margin: 0;
+      min-width: 320px;
+      background:
+        linear-gradient(rgba(39, 103, 177, 0.045) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(39, 103, 177, 0.045) 1px, transparent 1px),
+        var(--paper);
+      background-size: 28px 28px;
+      color: var(--ink);
+      font-family: var(--body);
+      line-height: 1.5;
+    }
+
+    button, textarea, input { font: inherit; }
+
+    button { color: inherit; }
+
+    button:focus-visible,
+    textarea:focus-visible,
+    input:focus-visible {
+      outline: 3px solid rgba(39, 103, 177, 0.3);
+      outline-offset: 3px;
+    }
+
+    .app-shell {
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: 270px minmax(0, 1fr);
+    }
+
+    .rail {
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow: auto;
+      padding: 30px 24px;
+      background: var(--asphalt);
+      color: #eef6f8;
+    }
+
+    .brand {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 34px;
+    }
+
+    .brand-mark {
+      width: 42px;
+      height: 42px;
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      background: var(--signal);
+      color: var(--asphalt);
+      font-family: var(--utility);
+      font-weight: 800;
+      box-shadow: 0 0 0 6px rgba(244, 185, 66, 0.13);
+    }
+
+    .brand strong {
+      display: block;
+      font-family: var(--display);
+      font-size: 1.1rem;
+      letter-spacing: 0.02em;
+    }
+
+    .brand small { color: #aabac4; }
+
+    .nav-label,
+    .eyebrow {
+      font-family: var(--utility);
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.11em;
+      text-transform: uppercase;
+    }
+
+    .nav-label {
+      margin: 0 0 12px 8px;
+      color: #93a6b2;
+    }
+
+    .route-nav {
+      position: relative;
+      display: grid;
+      gap: 2px;
+      margin-bottom: 28px;
+    }
+
+    .route-nav::before {
+      content: "";
+      position: absolute;
+      left: 17px;
+      top: 19px;
+      bottom: 19px;
+      width: 3px;
+      border-radius: 99px;
+      background: #496170;
+    }
+
+    .route-button {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      display: grid;
+      grid-template-columns: 36px minmax(0, 1fr);
+      gap: 10px;
+      align-items: center;
+      padding: 10px 8px;
+      border: 0;
+      border-radius: 12px;
+      background: transparent;
+      color: #b9c7ce;
+      text-align: left;
+      cursor: pointer;
+    }
+
+    .route-button:hover { background: rgba(255, 255, 255, 0.06); }
+
+    .route-button[aria-current="page"] {
+      background: rgba(199, 229, 239, 0.1);
+      color: #fff;
+    }
+
+    .route-dot {
+      width: 15px;
+      height: 15px;
+      justify-self: center;
+      border: 3px solid #79909d;
+      border-radius: 50%;
+      background: var(--asphalt);
+    }
+
+    .route-button.is-complete .route-dot {
+      border-color: var(--signal);
+      background: var(--signal);
+    }
+
+    .route-button[aria-current="page"] .route-dot {
+      border-color: var(--sky);
+      box-shadow: 0 0 0 5px rgba(199, 229, 239, 0.13);
+    }
+
+    .rail-actions {
+      display: grid;
+      gap: 8px;
+    }
+
+    .rail-action {
+      border: 1px solid #415866;
+      border-radius: 10px;
+      padding: 9px 12px;
+      background: transparent;
+      color: #d9e4e8;
+      text-align: left;
+      cursor: pointer;
+    }
+
+    .rail-action:hover { border-color: #8298a4; }
+
+    .main {
+      min-width: 0;
+      padding: 42px clamp(22px, 5vw, 78px) 70px;
+    }
+
+    .topbar {
+      max-width: 980px;
+      display: flex;
+      justify-content: space-between;
+      gap: 24px;
+      align-items: center;
+      margin: 0 auto 38px;
+    }
+
+    .save-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--muted);
+      font-size: 0.88rem;
+    }
+
+    .save-status::before {
+      content: "";
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--mint);
+    }
+
+    .progress-wrap {
+      min-width: min(360px, 48vw);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .progress-track {
+      height: 8px;
+      flex: 1;
+      overflow: hidden;
+      border-radius: 99px;
+      background: #dce4e6;
+    }
+
+    .progress-fill {
+      height: 100%;
+      width: 0;
+      border-radius: inherit;
+      background: var(--route);
+      transition: width 240ms ease;
+    }
+
+    .progress-label {
+      min-width: 42px;
+      color: var(--muted);
+      font-family: var(--utility);
+      font-size: 0.76rem;
+      text-align: right;
+    }
+
+    .view {
+      display: none;
+      max-width: 980px;
+      margin: 0 auto;
+    }
+
+    .view.is-active { display: block; }
+
+    .hero {
+      position: relative;
+      overflow: hidden;
+      padding: clamp(28px, 5vw, 58px);
+      border-radius: 26px;
+      background: var(--surface);
+      box-shadow: var(--shadow);
+    }
+
+    .hero::after {
+      content: "";
+      position: absolute;
+      right: -74px;
+      top: -92px;
+      width: 260px;
+      height: 260px;
+      border: 26px solid var(--sky);
+      border-radius: 50%;
+      opacity: 0.7;
+    }
+
+    .hero > * { position: relative; z-index: 1; }
+
+    .eyebrow {
+      margin: 0 0 12px;
+      color: var(--route-dark);
+    }
+
+    h1, h2, h3 {
+      font-family: var(--display);
+      line-height: 1.02;
+      margin-top: 0;
+    }
+
+    h1 {
+      max-width: 760px;
+      margin-bottom: 18px;
+      font-size: clamp(3rem, 8vw, 6.6rem);
+      font-weight: 700;
+      letter-spacing: -0.055em;
+    }
+
+    .project-name {
+      color: var(--route);
+      text-decoration: underline;
+      text-decoration-color: var(--signal);
+      text-decoration-thickness: 0.12em;
+      text-underline-offset: 0.08em;
+    }
+
+    .lede {
+      max-width: 660px;
+      margin: 0 0 30px;
+      color: #40505c;
+      font-size: clamp(1.05rem, 2vw, 1.28rem);
+    }
+
+    .hero-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin: 30px 0;
+    }
+
+    .hero-stat {
+      padding: 16px;
+      border-left: 4px solid var(--route);
+      background: #f1f6f8;
+    }
+
+    .hero-stat strong {
+      display: block;
+      font-family: var(--display);
+      font-size: 1.35rem;
+    }
+
+    .hero-stat span {
+      color: var(--muted);
+      font-size: 0.86rem;
+    }
+
+    .known-lead {
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+      margin-top: 20px;
+      padding: 14px 16px;
+      border: 1px solid #cbdde4;
+      border-radius: 12px;
+      background: #eff8fb;
+      color: #344b58;
+      font-size: 0.88rem;
+      word-break: break-word;
+    }
+
+    .known-lead b {
+      flex: 0 0 auto;
+      color: var(--route-dark);
+    }
+
+    .primary,
+    .secondary,
+    .quiet {
+      min-height: 44px;
+      border-radius: 12px;
+      padding: 10px 17px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .primary {
+      border: 1px solid var(--route);
+      background: var(--route);
+      color: #fff;
+      box-shadow: 0 7px 18px rgba(39, 103, 177, 0.2);
+    }
+
+    .primary:hover { background: var(--route-dark); }
+
+    .secondary {
+      border: 1px solid #b6c5cc;
+      background: var(--surface);
+      color: var(--ink);
+    }
+
+    .secondary:hover { border-color: var(--route); }
+
+    .quiet {
+      border: 0;
+      background: transparent;
+      color: var(--route-dark);
+    }
+
+    .quiet:hover { background: #edf3f5; }
+
+    .button-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .question-card {
+      min-height: 560px;
+      display: grid;
+      align-content: start;
+      padding: clamp(26px, 5vw, 56px);
+      border-top: 8px solid var(--route);
+      border-radius: 20px;
+      background: var(--surface);
+      box-shadow: var(--shadow);
+    }
+
+    .question-number {
+      margin-bottom: 14px;
+      color: var(--route-dark);
+      font-family: var(--utility);
+      font-size: 0.8rem;
+      font-weight: 700;
+    }
+
+    .question-card h2 {
+      max-width: 760px;
+      margin-bottom: 16px;
+      font-size: clamp(2.4rem, 6vw, 4.7rem);
+      letter-spacing: -0.045em;
+    }
+
+    .question-help {
+      max-width: 680px;
+      margin: 0 0 26px;
+      color: var(--muted);
+      font-size: 1.03rem;
+    }
+
+    .chip-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 9px;
+      margin-bottom: 22px;
+    }
+
+    .chip {
+      border: 1px solid #bccbd1;
+      border-radius: 999px;
+      padding: 9px 13px;
+      background: #fff;
+      cursor: pointer;
+    }
+
+    .chip:hover { border-color: var(--route); }
+
+    .chip[aria-pressed="true"] {
+      border-color: var(--route);
+      background: var(--sky);
+      color: #103c66;
+      box-shadow: inset 0 0 0 1px var(--route);
+    }
+
+    .answer-label {
+      display: block;
+      margin: 0 0 8px;
+      color: #3a4b56;
+      font-weight: 700;
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 128px;
+      resize: vertical;
+      border: 1px solid #b8c7ce;
+      border-radius: 13px;
+      padding: 14px 15px;
+      background: #fbfdfd;
+      color: var(--ink);
+    }
+
+    textarea::placeholder { color: #8b989f; }
+
+    textarea:focus {
+      border-color: var(--route);
+      background: #fff;
+    }
+
+    .question-nav {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      margin-top: 30px;
+      padding-top: 22px;
+      border-top: 1px solid var(--line);
+    }
+
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      gap: 24px;
+      align-items: end;
+      margin-bottom: 24px;
+    }
+
+    .section-header h2 {
+      margin-bottom: 8px;
+      font-size: clamp(2.4rem, 5vw, 4.2rem);
+      letter-spacing: -0.045em;
+    }
+
+    .section-header p {
+      max-width: 700px;
+      margin: 0;
+      color: var(--muted);
+    }
+
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 0 0 24px;
+    }
+
+    .legend span {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--muted);
+      font-size: 0.82rem;
+    }
+
+    .legend i {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: var(--status-color);
+    }
+
+    .horizon-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .horizon-card {
+      padding: 22px;
+      border: 1px solid var(--line);
+      border-top: 5px solid var(--status-color, #9aa8af);
+      border-radius: 16px;
+      background: var(--surface);
+      box-shadow: 0 8px 24px rgba(23, 36, 49, 0.06);
+    }
+
+    .horizon-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: start;
+      margin-bottom: 10px;
+    }
+
+    .horizon-card h3 {
+      margin-bottom: 5px;
+      font-size: 1.45rem;
+    }
+
+    .horizon-kind {
+      flex: 0 0 auto;
+      padding: 4px 7px;
+      border-radius: 6px;
+      background: #eef2f3;
+      color: #5f6e77;
+      font-family: var(--utility);
+      font-size: 0.66rem;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    .horizon-card > p {
+      min-height: 48px;
+      margin: 0 0 16px;
+      color: var(--muted);
+      font-size: 0.91rem;
+    }
+
+    .status-row {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 5px;
+      margin-bottom: 14px;
+    }
+
+    .status-button {
+      min-width: 0;
+      border: 1px solid #c9d3d7;
+      border-radius: 8px;
+      padding: 7px 4px;
+      background: #fff;
+      color: #4f5e67;
+      font-size: 0.74rem;
+      cursor: pointer;
+    }
+
+    .status-button:hover { border-color: var(--status-color); }
+
+    .status-button[aria-pressed="true"] {
+      border-color: var(--status-color);
+      background: color-mix(in srgb, var(--status-color) 17%, white);
+      color: var(--ink);
+      font-weight: 700;
+    }
+
+    .horizon-card textarea { min-height: 92px; font-size: 0.9rem; }
+
+    .summary-grid {
+      display: grid;
+      gap: 16px;
+    }
+
+    .summary-card {
+      min-width: 0;
+      padding: 24px;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: var(--surface);
+      box-shadow: 0 8px 24px rgba(23, 36, 49, 0.05);
+    }
+
+    .summary-card h3 {
+      margin-bottom: 15px;
+      font-size: 1.55rem;
+    }
+
+    .summary-list {
+      display: grid;
+      gap: 10px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .summary-list li {
+      min-width: 0;
+      padding: 12px 14px;
+      border-left: 4px solid var(--summary-color, var(--route));
+      background: #f4f7f8;
+    }
+
+    .summary-list b { display: block; margin-bottom: 3px; }
+
+    .summary-list span {
+      color: var(--muted);
+      overflow-wrap: anywhere;
+      white-space: pre-wrap;
+    }
+
+    .summary-empty {
+      margin: 0;
+      color: var(--muted);
+      font-style: italic;
+    }
+
+    .export-panel {
+      margin-top: 18px;
+      padding: 24px;
+      border-radius: 16px;
+      background: var(--asphalt);
+      color: #edf5f7;
+    }
+
+    .export-panel h3 { margin-bottom: 8px; font-size: 1.6rem; }
+    .export-panel p { margin-top: 0; color: #b7c7cf; }
+
+    .export-panel .secondary {
+      border-color: #5e7480;
+      background: transparent;
+      color: #edf5f7;
+    }
+
+    .export-panel .secondary:hover { border-color: var(--sky); }
+
+    .footer-note {
+      margin-top: 30px;
+      color: var(--muted);
+      font-size: 0.85rem;
+      text-align: center;
+    }
+
+    .mobile-nav { display: none; }
+
+    .toast {
+      position: fixed;
+      right: 22px;
+      bottom: 22px;
+      z-index: 20;
+      max-width: min(360px, calc(100vw - 44px));
+      padding: 12px 15px;
+      border-radius: 11px;
+      background: var(--asphalt);
+      color: #fff;
+      box-shadow: var(--shadow);
+      opacity: 0;
+      transform: translateY(12px);
+      pointer-events: none;
+      transition: opacity 180ms ease, transform 180ms ease;
+    }
+
+    .toast.is-visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    @media (max-width: 880px) {
+      .app-shell { display: block; }
+      .rail { display: none; }
+      .main { padding: 22px 16px 80px; }
+      .topbar { align-items: flex-start; }
+      .progress-wrap { min-width: 180px; }
+      .hero-grid, .horizon-grid { grid-template-columns: 1fr; }
+      .question-card { min-height: auto; }
+      .mobile-nav {
+        position: fixed;
+        left: 12px;
+        right: 12px;
+        bottom: 12px;
+        z-index: 10;
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 7px;
+        padding: 7px;
+        border: 1px solid #334957;
+        border-radius: 14px;
+        background: rgba(23, 36, 49, 0.96);
+        box-shadow: var(--shadow);
+        backdrop-filter: blur(10px);
+      }
+      .mobile-nav button {
+        border: 0;
+        border-radius: 9px;
+        padding: 9px 5px;
+        background: transparent;
+        color: #c4d1d7;
+        font-size: 0.76rem;
+      }
+      .mobile-nav button[aria-current="page"] {
+        background: var(--signal);
+        color: var(--asphalt);
+        font-weight: 800;
+      }
+    }
+
+    @media (max-width: 560px) {
+      .topbar { display: grid; gap: 10px; }
+      .progress-wrap { width: 100%; min-width: 0; }
+      h1 { font-size: 3.15rem; }
+      .hero { padding: 27px 22px; }
+      .hero-grid { gap: 8px; }
+      .section-header { display: block; }
+      .section-header .secondary { margin-top: 14px; }
+      .status-row { grid-template-columns: repeat(3, 1fr); }
+      .question-nav { align-items: stretch; }
+      .question-nav button { flex: 1; }
+      .known-lead { display: block; }
+      .known-lead b { display: block; margin-bottom: 4px; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        scroll-behavior: auto !important;
+        transition: none !important;
+      }
+    }
+
+    @media print {
+      body { background: #fff; }
+      .rail, .topbar, .mobile-nav, .button-row, .question-nav, .export-panel { display: none !important; }
+      .app-shell { display: block; }
+      .main { padding: 0; }
+      .view { display: none !important; }
+      #summaryView { display: block !important; }
+      .summary-card { break-inside: avoid; box-shadow: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="rail" aria-label="Discovery navigation">
+      <div class="brand">
+        <span class="brand-mark" aria-hidden="true">U0</span>
+        <div>
+          <strong>Urban_project</strong>
+          <small>Step-zero discovery</small>
+        </div>
+      </div>
+
+      <p class="nav-label">Quick compass</p>
+      <nav class="route-nav" id="routeNav" aria-label="Quick questions"></nav>
+
+      <p class="nav-label">Project map</p>
+      <div class="rail-actions">
+        <button class="rail-action" data-view="home">Start / context</button>
+        <button class="rail-action" data-view="horizon">Horizon map</button>
+        <button class="rail-action" data-view="summary">Answers & export</button>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <span class="save-status" id="saveStatus" role="status">Saved in this browser</span>
+        <div class="progress-wrap" aria-label="Quick compass progress">
+          <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+          <span class="progress-label" id="progressLabel">0 / 8</span>
+        </div>
+      </header>
+
+      <section class="view is-active" id="homeView">
+        <div class="hero">
+          <p class="eyebrow">Before requirements · before features · before certainty</p>
+          <h1>Find the shape of <span class="project-name">Urban_project</span>.</h1>
+          <p class="lede">
+            This is not a specification interview. It is a fast first pass that separates
+            what you already know, what you need to learn, and what the project will
+            eventually need you to decide.
+          </p>
+
+          <div class="hero-grid" aria-label="Questionnaire overview">
+            <div class="hero-stat"><strong>8 broad stops</strong><span>About five minutes</span></div>
+            <div class="hero-stat"><strong>15 horizons</strong><span>Learn, decide, know, or park</span></div>
+            <div class="hero-stat"><strong>2 exports</strong><span>Markdown for people, JSON to resume</span></div>
+          </div>
+
+          <div class="button-row">
+            <button class="primary" id="beginButton">Begin the quick compass</button>
+            <button class="secondary" data-view="horizon">Skip to the horizon map</button>
+          </div>
+
+          <div class="known-lead">
+            <b>Known lead</b>
+            <span>
+              The existing project note points to learning material at
+              C:\Users\modin\Desktop\programming\LEARNING\UrbanMobility\papers.
+              The horizon map carries this forward as a research starting point.
+            </span>
+          </div>
+        </div>
+      </section>
+
+      <section class="view" id="questionView" aria-live="polite">
+        <article class="question-card">
+          <div class="question-number" id="questionNumber"></div>
+          <h2 id="questionTitle"></h2>
+          <p class="question-help" id="questionHelp"></p>
+          <div class="chip-grid" id="questionChips"></div>
+          <label class="answer-label" for="questionAnswer">A few words are enough</label>
+          <textarea id="questionAnswer"></textarea>
+          <div class="question-nav">
+            <button class="secondary" id="previousQuestion">Previous</button>
+            <button class="primary" id="nextQuestion">Next stop</button>
+          </div>
+        </article>
+      </section>
+
+      <section class="view" id="horizonView">
+        <div class="section-header">
+          <div>
+            <p class="eyebrow">The decision surface</p>
+            <h2>Map the horizon.</h2>
+            <p>
+              Each area starts with a suggested step-zero status. Change anything.
+              Describe only the areas that spark a thought; blank is a valid answer.
+            </p>
+          </div>
+          <button class="secondary" id="restoreHorizon">Restore suggested map</button>
+        </div>
+
+        <div class="legend" aria-label="Horizon statuses">
+          <span style="--status-color:#2767b1"><i></i>Learn</span>
+          <span style="--status-color:#e66b53"><i></i>Decide / specify</span>
+          <span style="--status-color:#5aa589"><i></i>Known</span>
+          <span style="--status-color:#f4b942"><i></i>Later</span>
+          <span style="--status-color:#9aa8af"><i></i>Not relevant</span>
+        </div>
+
+        <div class="horizon-grid" id="horizonGrid"></div>
+
+        <div class="button-row" style="margin-top:24px">
+          <button class="primary" data-view="summary">See my project map</button>
+          <button class="quiet" data-view="home">Return to start</button>
+        </div>
+      </section>
+
+      <section class="view" id="summaryView">
+        <div class="section-header">
+          <div>
+            <p class="eyebrow">Your living step-zero brief</p>
+            <h2>What is clear—and what is next.</h2>
+            <p>
+              This is a map of questions, not a premature product specification.
+              Revisit it as the project becomes real.
+            </p>
+          </div>
+          <button class="secondary" onclick="window.print()">Print this view</button>
+        </div>
+
+        <div class="summary-grid" id="summaryGrid"></div>
+
+        <div class="export-panel">
+          <h3>Keep the answers portable.</h3>
+          <p>
+            Markdown is ready for an agent or planning document. JSON restores every
+            selection and answer in this questionnaire.
+          </p>
+          <div class="button-row">
+            <button class="primary" id="downloadMarkdown">Download answers (.md)</button>
+            <button class="secondary" id="copyMarkdown">Copy Markdown</button>
+            <button class="secondary" id="downloadJson">Save backup (.json)</button>
+            <button class="secondary" id="importJson">Open backup</button>
+            <input type="file" id="importFile" accept="application/json,.json" hidden>
+          </div>
+        </div>
+
+        <p class="footer-note">
+          Autosave uses this browser's local storage. Download a JSON backup before
+          clearing browser data or moving to another machine.
+        </p>
+      </section>
+    </main>
+  </div>
+
+  <nav class="mobile-nav" aria-label="Mobile navigation">
+    <button data-view="home" aria-current="page">Start</button>
+    <button data-view="horizon">Map</button>
+    <button data-view="summary">Answers</button>
+  </nav>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script>
+    const STORAGE_KEY = "urban-project-step-zero-v1";
+    const RESOURCE_LEAD = "C:\\Users\\modin\\Desktop\\programming\\LEARNING\\UrbanMobility\\papers";
+
+    const questions = [
+      {
+        id: "reason",
+        label: "Reason",
+        title: "Why should this project exist?",
+        help: "Name the change you hope Urban_project creates. It can be personal, practical, civic, or still half-formed.",
+        placeholder: "Urban_project should exist because…",
+        mode: "single",
+        options: ["Solve a lived problem", "Explore an opportunity", "Support better decisions", "Create a public good", "Learn by building", "I do not know yet"]
+      },
+      {
+        id: "people",
+        label: "People",
+        title: "Whose day gets better first?",
+        help: "Choose the first person whose experience matters. Other stakeholders can come later.",
+        placeholder: "The first person I picture is…",
+        mode: "multi",
+        options: ["Resident", "Commuter", "Visitor", "Planner", "Operator", "Local business", "Researcher", "Community group", "I do not know yet"]
+      },
+      {
+        id: "territory",
+        label: "Territory",
+        title: "What part of urban life is in view?",
+        help: "Pick the territory, not a feature list. Several can coexist, but notice which one feels central.",
+        placeholder: "The project is mostly about…",
+        mode: "multi",
+        options: ["Moving", "Accessing", "Understanding", "Planning", "Coordinating", "Participating", "Designing", "Measuring", "Safety", "Sustainability", "I do not know yet"]
+      },
+      {
+        id: "change",
+        label: "Change",
+        title: "What should become easier or better?",
+        help: "Describe the before-and-after in ordinary language. Avoid naming technology if you can.",
+        placeholder: "Today they…, but with Urban_project they could…",
+        mode: "multi",
+        options: ["Find", "Choose", "Reach", "Understand", "Coordinate", "Contribute", "Avoid", "Trust", "Save time", "I do not know yet"]
+      },
+      {
+        id: "shape",
+        label: "Shape",
+        title: "What might this project become?",
+        help: "This is provisional. Select any plausible form—the goal is to expose assumptions, not lock one in.",
+        placeholder: "At the moment, I imagine something like…",
+        mode: "multi",
+        options: ["App", "Map", "Service", "Decision tool", "Data product", "Research project", "Toolkit", "Community process", "Physical + digital", "I do not know yet"]
+      },
+      {
+        id: "moment",
+        label: "Moment",
+        title: "What is the first meaningful moment?",
+        help: "Picture one real situation in which someone reaches for Urban_project and gets value.",
+        placeholder: "Someone is trying to… They use Urban_project to…",
+        mode: "multi",
+        options: ["Before a trip", "During a trip", "After a disruption", "While planning", "During a public decision", "In daily operations", "During research", "I do not know yet"]
+      },
+      {
+        id: "risk",
+        label: "Risk",
+        title: "What could make it not worth building?",
+        help: "A broad fear is useful here. It tells us what must be learned before the project becomes expensive.",
+        placeholder: "This would be a weak project if…",
+        mode: "multi",
+        options: ["No real need", "Bad or missing data", "Too many stakeholders", "Trust or privacy risk", "Hard to operate", "Already solved", "Too broad", "No adoption path", "I do not know yet"]
+      },
+      {
+        id: "proof",
+        label: "Proof",
+        title: "What is the smallest useful proof?",
+        help: "Choose a cheap way to learn whether the idea has life before specifying or building the full product.",
+        placeholder: "The first proof could be…",
+        mode: "single",
+        options: ["Five conversations", "Paper sketch", "Manual service", "Clickable prototype", "Small data study", "Field observation", "One-neighborhood test", "I do not know yet"]
+      }
+    ];
+
+    const statuses = {
+      learn:  { label: "Learn", color: "#2767b1" },
+      decide: { label: "Decide", color: "#e66b53" },
+      known:  { label: "Known", color: "#5aa589" },
+      later:  { label: "Later", color: "#f4b942" },
+      na:     { label: "N/A", color: "#9aa8af" }
+    };
+
+    const horizons = [
+      {
+        id: "mission",
+        title: "Mission & evidence",
+        kind: "Foundation",
+        prompt: "Why this matters, and what observable evidence says the problem is real.",
+        suggested: "learn",
+        seed: "Find concrete evidence of the problem: lived examples, workarounds, time lost, money spent, or decisions currently made badly."
+      },
+      {
+        id: "people",
+        title: "People & stakeholders",
+        kind: "Foundation",
+        prompt: "Who receives value, who influences adoption, and who may bear costs.",
+        suggested: "learn",
+        seed: "Identify the first beneficiary and map the other people or institutions who enable, block, operate, or are affected by the project."
+      },
+      {
+        id: "urban-context",
+        title: "Urban context",
+        kind: "Domain",
+        prompt: "Which place, mobility pattern, policy context, and local realities matter.",
+        suggested: "learn",
+        seed: "Define the initial city or geography and learn which local mobility, accessibility, equity, and policy conditions change the problem."
+      },
+      {
+        id: "domain",
+        title: "Domain knowledge",
+        kind: "Learning",
+        prompt: "Concepts and prior research needed to reason about the project well.",
+        suggested: "learn",
+        seed: `Review the existing materials at ${RESOURCE_LEAD}; extract concepts, claims, and uncertainties that could change the project direction.`
+      },
+      {
+        id: "alternatives",
+        title: "Existing alternatives",
+        kind: "Learning",
+        prompt: "How people solve this today and what comparable projects already offer.",
+        suggested: "learn",
+        seed: "Study current workarounds, products, public services, research projects, and failed attempts; identify what remains underserved."
+      },
+      {
+        id: "product-shape",
+        title: "Product shape",
+        kind: "Specification",
+        prompt: "Whether this is primarily a tool, service, map, study, process, or hybrid.",
+        suggested: "decide",
+        seed: "Choose the smallest product form that can deliver the intended value without assuming a full application."
+      },
+      {
+        id: "core-moment",
+        title: "Core experience",
+        kind: "Specification",
+        prompt: "The first end-to-end situation in which one person gets value.",
+        suggested: "decide",
+        seed: "Describe one primary actor, their starting situation, the action they take, the result they receive, and what happens next."
+      },
+      {
+        id: "capabilities",
+        title: "Capabilities & features",
+        kind: "Specification",
+        prompt: "What the project must enable—after the core experience is clear.",
+        suggested: "decide",
+        seed: "Derive a short must-have capability set from the core experience; separate first-version needs from attractive later features."
+      },
+      {
+        id: "data",
+        title: "Data & sources",
+        kind: "Learning",
+        prompt: "What information is needed, where it comes from, and whether it is usable.",
+        suggested: "learn",
+        seed: "Inventory required data, ownership, quality, coverage, freshness, access conditions, gaps, and the consequences of wrong data."
+      },
+      {
+        id: "outputs",
+        title: "Outputs & decisions",
+        kind: "Specification",
+        prompt: "What the project produces and which real decision or action it improves.",
+        suggested: "decide",
+        seed: "Specify what a user receives—guidance, comparison, route, insight, alert, plan, or evidence—and the action it should enable."
+      },
+      {
+        id: "trust",
+        title: "Trust, safety & equity",
+        kind: "Learning + spec",
+        prompt: "Who could be harmed, excluded, misled, surveilled, or disadvantaged.",
+        suggested: "learn",
+        seed: "Learn the privacy, safety, accessibility, bias, and equity risks; later specify safeguards and how uncertainty is communicated."
+      },
+      {
+        id: "operations",
+        title: "Operations & ownership",
+        kind: "Specification",
+        prompt: "Who keeps it accurate, responds when it fails, and maintains it over time.",
+        suggested: "later",
+        seed: "Decide who owns content, data quality, support, updates, incident response, and ongoing costs once the first proof shows value."
+      },
+      {
+        id: "feasibility",
+        title: "Feasibility & dependencies",
+        kind: "Learning",
+        prompt: "What must be possible or available before this shape can work.",
+        suggested: "learn",
+        seed: "Test the riskiest dependency first: data access, stakeholder cooperation, technical capability, field logistics, or legal permission."
+      },
+      {
+        id: "success",
+        title: "Success & validation",
+        kind: "Specification",
+        prompt: "What evidence would justify continuing, changing direction, or stopping.",
+        suggested: "decide",
+        seed: "Choose observable first-proof signals and explicit continue/change/stop criteria; avoid vanity metrics."
+      },
+      {
+        id: "scope",
+        title: "Scope & non-goals",
+        kind: "Specification",
+        prompt: "The first geography, actor, situation, and capabilities—and what stays out.",
+        suggested: "decide",
+        seed: "Define the smallest coherent first scope and name adjacent urban problems this project will not try to solve yet."
+      }
+    ];
+
+    function freshState() {
+      return {
+        version: 1,
+        updatedAt: new Date().toISOString(),
+        activeView: "home",
+        questionIndex: 0,
+        quick: Object.fromEntries(questions.map(q => [q.id, { choices: [], text: "" }])),
+        horizons: Object.fromEntries(horizons.map(h => [
+          h.id,
+          { status: h.suggested, detail: h.seed }
+        ]))
+      };
+    }
+
+    function loadState() {
+      try {
+        const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
+        if (!saved || saved.version !== 1) return freshState();
+        const base = freshState();
+        return {
+          ...base,
+          ...saved,
+          quick: { ...base.quick, ...saved.quick },
+          horizons: { ...base.horizons, ...saved.horizons }
+        };
+      } catch {
+        return freshState();
+      }
+    }
+
+    let state = loadState();
+    let saveTimer;
+    let toastTimer;
+
+    const routeNav = document.getElementById("routeNav");
+    const questionNumber = document.getElementById("questionNumber");
+    const questionTitle = document.getElementById("questionTitle");
+    const questionHelp = document.getElementById("questionHelp");
+    const questionChips = document.getElementById("questionChips");
+    const questionAnswer = document.getElementById("questionAnswer");
+    const progressFill = document.getElementById("progressFill");
+    const progressLabel = document.getElementById("progressLabel");
+    const horizonGrid = document.getElementById("horizonGrid");
+    const summaryGrid = document.getElementById("summaryGrid");
+    const toast = document.getElementById("toast");
+    const saveStatus = document.getElementById("saveStatus");
+
+    function escapeHTML(value = "") {
+      return String(value)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    function answered(question) {
+      const answer = state.quick[question.id];
+      return Boolean(answer.text.trim() || answer.choices.length);
+    }
+
+    function scheduleSave(message = "Saved in this browser") {
+      clearTimeout(saveTimer);
+      saveStatus.textContent = "Saving…";
+      saveTimer = setTimeout(() => {
+        state.updatedAt = new Date().toISOString();
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+        saveStatus.textContent = message;
+      }, 220);
+    }
+
+    function showToast(message) {
+      clearTimeout(toastTimer);
+      toast.textContent = message;
+      toast.classList.add("is-visible");
+      toastTimer = setTimeout(() => toast.classList.remove("is-visible"), 2300);
+    }
+
+    function renderRoute() {
+      routeNav.innerHTML = questions.map((q, index) => `
+        <button
+          class="route-button ${answered(q) ? "is-complete" : ""}"
+          data-question="${index}"
+          ${state.activeView === "question" && state.questionIndex === index ? 'aria-current="page"' : ""}
+        >
+          <span class="route-dot" aria-hidden="true"></span>
+          <span>${escapeHTML(q.label)}</span>
+        </button>
+      `).join("");
+
+      routeNav.querySelectorAll("[data-question]").forEach(button => {
+        button.addEventListener("click", () => {
+          state.questionIndex = Number(button.dataset.question);
+          showView("question");
+        });
+      });
+    }
+
+    function renderProgress() {
+      const complete = questions.filter(answered).length;
+      progressFill.style.width = `${(complete / questions.length) * 100}%`;
+      progressLabel.textContent = `${complete} / ${questions.length}`;
+    }
+
+    function renderQuestion() {
+      const question = questions[state.questionIndex];
+      const answer = state.quick[question.id];
+
+      questionNumber.textContent = `STOP ${String(state.questionIndex + 1).padStart(2, "0")} · ${question.label.toUpperCase()}`;
+      questionTitle.textContent = question.title;
+      questionHelp.textContent = question.help;
+      questionAnswer.placeholder = question.placeholder;
+      questionAnswer.value = answer.text;
+
+      questionChips.innerHTML = question.options.map(option => `
+        <button
+          type="button"
+          class="chip"
+          data-option="${escapeHTML(option)}"
+          aria-pressed="${answer.choices.includes(option)}"
+        >${escapeHTML(option)}</button>
+      `).join("");
+
+      questionChips.querySelectorAll(".chip").forEach(chip => {
+        chip.addEventListener("click", () => {
+          const option = chip.dataset.option;
+          const current = state.quick[question.id].choices;
+          const isPressed = current.includes(option);
+          state.quick[question.id].choices = question.mode === "single"
+            ? (isPressed ? [] : [option])
+            : (isPressed ? current.filter(item => item !== option) : [...current, option]);
+          renderQuestion();
+          renderRoute();
+          renderProgress();
+          scheduleSave();
+        });
+      });
+
+      document.getElementById("previousQuestion").disabled = state.questionIndex === 0;
+      document.getElementById("nextQuestion").textContent =
+        state.questionIndex === questions.length - 1 ? "Open horizon map" : "Next stop";
+    }
+
+    function renderHorizons() {
+      horizonGrid.innerHTML = horizons.map(horizon => {
+        const entry = state.horizons[horizon.id];
+        const status = statuses[entry.status] || statuses.learn;
+        return `
+          <article class="horizon-card" style="--status-color:${status.color}">
+            <div class="horizon-head">
+              <div>
+                <h3>${escapeHTML(horizon.title)}</h3>
+                <span class="horizon-kind">${escapeHTML(horizon.kind)}</span>
+              </div>
+            </div>
+            <p>${escapeHTML(horizon.prompt)}</p>
+            <div class="status-row" role="group" aria-label="${escapeHTML(horizon.title)} status">
+              ${Object.entries(statuses).map(([key, item]) => `
+                <button
+                  type="button"
+                  class="status-button"
+                  style="--status-color:${item.color}"
+                  data-horizon="${horizon.id}"
+                  data-status="${key}"
+                  aria-pressed="${entry.status === key}"
+                >${item.label}</button>
+              `).join("")}
+            </div>
+            <label class="answer-label" for="horizon-${horizon.id}">
+              ${entry.status === "learn" ? "What needs learning?" :
+                entry.status === "decide" ? "What needs deciding?" :
+                entry.status === "known" ? "What is already known?" :
+                entry.status === "later" ? "What are we postponing?" :
+                "Why is this outside the project?"}
+            </label>
+            <textarea id="horizon-${horizon.id}" data-horizon-detail="${horizon.id}">${escapeHTML(entry.detail)}</textarea>
+          </article>
+        `;
+      }).join("");
+
+      horizonGrid.querySelectorAll("[data-status]").forEach(button => {
+        button.addEventListener("click", () => {
+          state.horizons[button.dataset.horizon].status = button.dataset.status;
+          renderHorizons();
+          scheduleSave();
+        });
+      });
+
+      horizonGrid.querySelectorAll("[data-horizon-detail]").forEach(field => {
+        field.addEventListener("input", () => {
+          state.horizons[field.dataset.horizonDetail].detail = field.value;
+          scheduleSave();
+        });
+      });
+    }
+
+    function summaryList(items, color, emptyText) {
+      if (!items.length) return `<p class="summary-empty">${escapeHTML(emptyText)}</p>`;
+      return `
+        <ul class="summary-list" style="--summary-color:${color}">
+          ${items.map(item => `
+            <li>
+              <b>${escapeHTML(item.title)}</b>
+              <span>${escapeHTML(item.detail || "No description yet.")}</span>
+            </li>
+          `).join("")}
+        </ul>
+      `;
+    }
+
+    function renderSummary() {
+      const quickItems = questions
+        .filter(answered)
+        .map(q => {
+          const answer = state.quick[q.id];
+          const parts = [];
+          if (answer.choices.length) parts.push(answer.choices.join(", "));
+          if (answer.text.trim()) parts.push(answer.text.trim());
+          return { title: q.title, detail: parts.join("\n") };
+        });
+
+      const byStatus = Object.fromEntries(Object.keys(statuses).map(key => [key, []]));
+      horizons.forEach(h => {
+        const entry = state.horizons[h.id];
+        byStatus[entry.status].push({ title: h.title, detail: entry.detail.trim() });
+      });
+
+      summaryGrid.innerHTML = `
+        <section class="summary-card">
+          <h3>Project compass</h3>
+          ${summaryList(quickItems, "#2767b1", "The broad questions are still open. That is normal at step zero.")}
+        </section>
+        <section class="summary-card">
+          <h3>Learning goals</h3>
+          ${summaryList(byStatus.learn, statuses.learn.color, "No area is marked for learning yet.")}
+        </section>
+        <section class="summary-card">
+          <h3>Specification goals</h3>
+          ${summaryList(byStatus.decide, statuses.decide.color, "No area is marked for a product decision yet.")}
+        </section>
+        <section class="summary-card">
+          <h3>Known ground</h3>
+          ${summaryList(byStatus.known, statuses.known.color, "Nothing is marked as known yet.")}
+        </section>
+        <section class="summary-card">
+          <h3>Parked or outside</h3>
+          ${summaryList(
+            [...byStatus.later, ...byStatus.na],
+            statuses.later.color,
+            "Nothing is parked or ruled out yet."
+          )}
+        </section>
+      `;
+    }
+
+    function updateNavigation(view) {
+      document.querySelectorAll("[data-view]").forEach(button => {
+        if (button.closest(".mobile-nav")) {
+          button.toggleAttribute("aria-current", button.dataset.view === view);
+          if (button.dataset.view === view) button.setAttribute("aria-current", "page");
+        }
+      });
+    }
+
+    function showView(view) {
+      state.activeView = view;
+      document.querySelectorAll(".view").forEach(section => section.classList.remove("is-active"));
+      const target = document.getElementById(`${view}View`);
+      if (target) target.classList.add("is-active");
+
+      if (view === "question") renderQuestion();
+      if (view === "horizon") renderHorizons();
+      if (view === "summary") renderSummary();
+
+      renderRoute();
+      renderProgress();
+      updateNavigation(view === "question" ? "home" : view);
+      scheduleSave();
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    function markdownValue(value) {
+      return value && value.trim() ? value.trim() : "_Open_";
+    }
+
+    function buildMarkdown() {
+      const date = new Date(state.updatedAt).toLocaleString();
+      const lines = [
+        "# Urban_project — Step-zero discovery",
+        "",
+        `Last updated: ${date}`,
+        "",
+        "> This is a discovery map, not a finished specification.",
+        "",
+        "## Project compass",
+        ""
+      ];
+
+      questions.forEach(q => {
+        const answer = state.quick[q.id];
+        const parts = [];
+        if (answer.choices.length) parts.push(`Selected: ${answer.choices.join(", ")}`);
+        if (answer.text.trim()) parts.push(answer.text.trim());
+        lines.push(`### ${q.title}`, "", markdownValue(parts.join("\n\n")), "");
+      });
+
+      const sections = [
+        ["Learning goals", "learn"],
+        ["Specification goals", "decide"],
+        ["Known ground", "known"],
+        ["Deferred for later", "later"],
+        ["Outside / not relevant", "na"]
+      ];
+
+      sections.forEach(([title, status]) => {
+        lines.push(`## ${title}`, "");
+        const entries = horizons.filter(h => state.horizons[h.id].status === status);
+        if (!entries.length) {
+          lines.push("_None yet._", "");
+        } else {
+          entries.forEach(h => {
+            lines.push(`- **${h.title}:** ${markdownValue(state.horizons[h.id].detail)}`);
+          });
+          lines.push("");
+        }
+      });
+
+      lines.push(
+        "## Existing research lead",
+        "",
+        `- \`${RESOURCE_LEAD}\``,
+        "",
+        "## Suggested next use",
+        "",
+        "Give this file to an agent and ask it to walk through only the highest-risk learning goal first. Do not create a full implementation plan until the project compass and first proof are credible.",
+        ""
+      );
+
+      return lines.join("\n");
+    }
+
+    function download(filename, content, type) {
+      const blob = new Blob([content], { type });
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = filename;
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }
+
+    document.getElementById("beginButton").addEventListener("click", () => showView("question"));
+
+    document.querySelectorAll("[data-view]").forEach(button => {
+      button.addEventListener("click", () => showView(button.dataset.view));
+    });
+
+    questionAnswer.addEventListener("input", () => {
+      const question = questions[state.questionIndex];
+      state.quick[question.id].text = questionAnswer.value;
+      renderRoute();
+      renderProgress();
+      scheduleSave();
+    });
+
+    document.getElementById("previousQuestion").addEventListener("click", () => {
+      if (state.questionIndex > 0) {
+        state.questionIndex -= 1;
+        showView("question");
+      }
+    });
+
+    document.getElementById("nextQuestion").addEventListener("click", () => {
+      if (state.questionIndex < questions.length - 1) {
+        state.questionIndex += 1;
+        showView("question");
+      } else {
+        showView("horizon");
+      }
+    });
+
+    document.getElementById("restoreHorizon").addEventListener("click", () => {
+      if (!confirm("Restore the suggested horizon map? This replaces horizon statuses and notes, but keeps quick-compass answers.")) return;
+      state.horizons = freshState().horizons;
+      renderHorizons();
+      scheduleSave();
+      showToast("Suggested horizon map restored.");
+    });
+
+    document.getElementById("downloadMarkdown").addEventListener("click", () => {
+      download("Urban_project-step-zero.md", buildMarkdown(), "text/markdown;charset=utf-8");
+      showToast("Markdown downloaded.");
+    });
+
+    document.getElementById("copyMarkdown").addEventListener("click", async () => {
+      try {
+        await navigator.clipboard.writeText(buildMarkdown());
+        showToast("Markdown copied.");
+      } catch {
+        showToast("Clipboard access was blocked. Use Download answers instead.");
+      }
+    });
+
+    document.getElementById("downloadJson").addEventListener("click", () => {
+      download("Urban_project-step-zero-backup.json", JSON.stringify(state, null, 2), "application/json");
+      showToast("JSON backup downloaded.");
+    });
+
+    document.getElementById("importJson").addEventListener("click", () => {
+      document.getElementById("importFile").click();
+    });
+
+    document.getElementById("importFile").addEventListener("change", event => {
+      const file = event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        try {
+          const imported = JSON.parse(reader.result);
+          if (imported.version !== 1 || !imported.quick || !imported.horizons) {
+            throw new Error("Unsupported backup");
+          }
+          const base = freshState();
+          state = {
+            ...base,
+            ...imported,
+            quick: { ...base.quick, ...imported.quick },
+            horizons: { ...base.horizons, ...imported.horizons }
+          };
+          scheduleSave("Imported and saved");
+          renderRoute();
+          renderProgress();
+          renderSummary();
+          showToast("Backup opened.");
+        } catch {
+          showToast("That file is not a valid Urban_project backup.");
+        } finally {
+          event.target.value = "";
+        }
+      };
+      reader.readAsText(file);
+    });
+
+    document.addEventListener("keydown", event => {
+      if (state.activeView !== "question") return;
+      if (["TEXTAREA", "INPUT"].includes(document.activeElement.tagName)) return;
+      if (event.key === "ArrowLeft" && state.questionIndex > 0) {
+        state.questionIndex -= 1;
+        showView("question");
+      }
+      if (event.key === "ArrowRight") {
+        if (state.questionIndex < questions.length - 1) {
+          state.questionIndex += 1;
+          showView("question");
+        } else {
+          showView("horizon");
+        }
+      }
+    });
+
+    renderRoute();
+    renderProgress();
+    renderHorizons();
+    renderSummary();
+    showView(state.activeView);
+  </script>
+</body>
+</html>

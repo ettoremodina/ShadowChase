@@ -7,13 +7,18 @@ This module provides the foundational classes that all training algorithms
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Dict, List, Optional, Any
+from typing import TYPE_CHECKING, Dict, List, Optional, Any
 from datetime import datetime
 import json
 import os
 from pathlib import Path
 
 import pickle
+
+if TYPE_CHECKING:
+    from ShadowChase.integrations import TrainingRunRecorder
+
+
 @dataclass
 class TrainingResult:
     """Results from a training session."""
@@ -93,23 +98,26 @@ class BaseTrainer(ABC):
     must implement, providing a consistent API for training and evaluation.
     """
     
-    def __init__(self, 
+    def __init__(self,
                  algorithm_name: str,
                  save_dir: str = "training_results",
-                 config: Optional[Dict[str, Any]] = None):
+                 config: Optional[Dict[str, Any]] = None,
+                 run_recorder: Optional["TrainingRunRecorder"] = None):
         """
         Initialize the base trainer.
-        
+
         Args:
             algorithm_name: Name of the training algorithm
             save_dir: Directory to save training results and models
             config: Algorithm-specific configuration parameters
+            run_recorder: Optional ml_logger recorder owned by the entry point
         """
         self.algorithm_name = algorithm_name
         self.save_dir = Path(save_dir)
         self.save_dir.mkdir(parents=True, exist_ok=True)
         self.config = config or {}
-        
+        self.run_recorder = run_recorder
+
         # Training state
         self.is_trained = False
         self.training_history = []
@@ -192,7 +200,11 @@ class BaseTrainer(ABC):
     def _log_training_step(self, episode: int, metrics: Dict[str, Any]) -> None:
         """
         Log metrics for a training step.
-        
+
+        The in-memory history is always kept so plotting and model checkpoints
+        stay unchanged. When an ml_logger recorder is attached, the numeric part
+        of the same payload is also recorded under the ``train`` namespace.
+
         Args:
             episode: Current episode number
             metrics: Dictionary of metrics to log
@@ -202,9 +214,18 @@ class BaseTrainer(ABC):
             'timestamp': datetime.now().isoformat(),
             **metrics
         }
-        
+
         self.training_history.append(step_data)
-    
+
+        if self.run_recorder is not None:
+            numeric_metrics = {
+                name: value
+                for name, value in metrics.items()
+                if isinstance(value, (int, float)) and not isinstance(value, bool)
+            }
+            if numeric_metrics:
+                self.run_recorder.record_metrics(episode, numeric_metrics)
+
     def get_training_summary(self) -> Dict[str, Any]:
         """
         Get a summary of the training progress.

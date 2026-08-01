@@ -1,0 +1,38 @@
+{
+  "skill_name": "code-flow-explorer",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Create a hierarchical interactive flow diagram for the macro macro_test in tests/jinja_macro_test.sql. Analyze it statically: do not install or run dbt and do not execute warehouse operations. Save the reusable artifact and supporting structured data in the requested output directory.",
+      "expected_output": "A self-contained HTML viewer with overview, logic, and exact views, plus source-linked structured flow and semantic data for the dbt/Jinja macro.",
+      "files": [
+        "../../../tests/jinja_macro_test.sql"
+      ],
+      "expectations": [
+        "The output contains a self-contained interactive HTML file with Overview, Logic, and Exact views.",
+        "The exact flow includes explicit branches and loops from the macro and preserves source line links.",
+        "The output distinguishes SQL capture or generation from run_query warehouse execution.",
+        "The semantic data identifies inputs, outputs, side effects, adaptive Overview phases, and readable nested Logic steps.",
+        "Logic is materially more grouped than Exact without a fixed node-count quota.",
+        "A single click inspects without navigating; the explicit action, double-click, or Enter opens focused Logic or Exact, and breadcrumbs return to the parent scope.",
+        "Overview uses an agent-authored semantic legend, Logic inherits its parent phase colors, Exact retains deterministic technical colors, and zoom/pan are remembered per full or focused scope.",
+        "The execution does not run dbt or invoke warehouse operations."
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Create a hierarchical interactive flow diagram for the function classify_and_sum in the provided Python fixture. Save the artifact and supporting structured data in the requested output directory.",
+      "expected_output": "A self-contained HTML viewer and structured flow data showing the function's loop, branch, continue, and returns at multiple levels of detail.",
+      "files": [
+        "tests/fixtures/python_sample.py"
+      ],
+      "expectations": [
+        "The output contains a self-contained interactive HTML file with Overview, Logic, and Exact views.",
+        "The exact flow includes the for loop, if branch, continue, and return behavior with source line links.",
+        "The semantic data describes the function's purpose, inputs, outputs, side effects, source-backed phases, and readable nested Logic steps.",
+        "Overview-to-Logic and Logic-to-Exact drill-down preserve source grounding and allow breadcrumb navigation.",
+        "The structured flow data is separate from the agent-authored semantic summary."
+      ]
+    }
+  ]
+}

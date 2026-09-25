@@ -11,18 +11,11 @@
 - **Important commands:** Not established yet
 - **Important constraints:** Not established yet
 
-### Connected capabilities
+### Skills and memory
 
-- **Managed skills:** agent-workflow-bootstrap, code-flow-explorer, frontend-design, html-output-viewer, memory-manager, paper-summarizer-visual, parallel-worktree-tasks, pdf, teach, webapp-testing
-- **Global memory index:** .agents/memory/global/INDEX.md
-- **Local memory index:** .agents/memory/local/INDEX.md
-
-### Memory rules
-
-- Start from the global and local INDEX.md; open only entries relevant to the task.
-- Use memory-manager to classify durable knowledge, create categories, and validate indexes.
-- Keep always-on rules here; move conditional detail to memory, docs/agent-guides/, or a skill as appropriate.
-- Do not store secrets, transient task state, or information that is easy to derive from the repository.
+- Base skills (`html-output-viewer`, `code-flow-explorer`) are installed once for every project. This project also links: none. Change the set from AgentWorkflow with `scripts/project.ps1 -Action Link`.
+- Project-owned skills live in `.agents/skills/` and are committed. Linked skills are shared with other projects: for a project-specific variant, create a new skill with a different name instead of editing the shared one.
+- Project memory starts at `.agents/memory/local/INDEX.md`; open only relevant entries. Never store secrets or personal data in this repository.
 <!-- agent-workflow:end -->
 
 ## Understand the goal (summarize)

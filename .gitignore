@@ -152,17 +152,12 @@ board_progress.json.backup
 # Copyrighted game assets - do not distribute
 data/board.jpg
 
-# AgentWorkflow junctions are machine-local and recreated from
-# .agents/control-center.json. Add a targeted exception if a skill is localized.
-.claude/skills/
-
-# agent-workflow:provider-bridges:start
-# Machine-local .agents -> .claude junctions. Recreated by scripts/sync-provider-bridges.ps1.
-.claude/memory/
-# agent-workflow:provider-bridges:end
-
-# AgentWorkflow infrastructure: shared skills and global memory are machine-local
-# links to the AgentWorkflow repository, never project content. Commit a
-# project-owned skill through an explicit exception, e.g. !.agents/skills/my-skill/
-.agents/skills/
+# >>> agentworkflow
+# Shared skills are links to AgentWorkflow, recreated by its scripts/project.ps1 -Action Link.
+# Project-owned skills stay tracked through the exceptions below.
+.agents/skills/*
 .agents/memory/global/
+.claude/skills
+.claude/memory
+.claude/settings.local.json
+# <<< agentworkflow

@@ -219,6 +219,10 @@ python ShadowChase/services/export_video.py <game.pkl> --output replay.mp4 --dur
 The browser UI exposes the same export from its left rail, writing to
 `exports/`.
 
+If the installed `ffmpeg` rejects the frame size (odd pixel dimensions trip
+`libx264`), the exporter falls back to a matplotlib-only writer automatically;
+the output is still a valid MP4.
+
 ---
 
 ## Author boards
@@ -348,3 +352,12 @@ Those older names are aliased in `ShadowChase/compat.py`, so every save remains
 loadable. If a class or module is renamed again, add the old name there —
 otherwise the games saved before the rename become unreadable, silently and
 permanently.
+
+Loadable is not the same as usable: unpickling restores an object's fields
+directly and never calls `__init__`, so a renamed *field* on an existing class
+survives under its old name unless something migrates it.
+`GameState.__setstate__` does this for the pre-rename `mr_x_tickets`,
+`mr_x_visible` and `mr_x_moves_log` fields — about a fifth of the corpus was
+saved under those names. `tests/characterization/test_pickle_compatibility.py`
+reads a sample of the real corpus rather than freshly created objects, which is
+the only way this class of bug gets caught before a user hits it.

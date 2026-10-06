@@ -61,7 +61,22 @@ class GameState:
         self.MrX_moves_log = MrX_moves_log or []
         self.double_move_active = False
 
-    
+    # Field names used by GameState objects saved before the MrX_* rename.
+    # Unpickling restores __dict__ directly and skips __init__, so a state
+    # saved under the old names would otherwise keep them forever and break
+    # any code reading .MrX_tickets, .MrX_visible or .MrX_moves_log.
+    _LEGACY_FIELD_NAMES = {
+        "mr_x_tickets": "MrX_tickets",
+        "mr_x_visible": "MrX_visible",
+        "mr_x_moves_log": "MrX_moves_log",
+    }
+
+    def __setstate__(self, state):
+        for legacy_name, current_name in self._LEGACY_FIELD_NAMES.items():
+            if legacy_name in state:
+                state[current_name] = state.pop(legacy_name)
+        self.__dict__.update(state)
+
     def copy(self):
         new_state = GameState(
             self.detective_positions, self.MrX_position, 

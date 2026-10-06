@@ -1,0 +1,17 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "shadow-chase"
+version = "0.1.0"
+description = "Shadow Chase: Scotland Yard-style pursuit game, agents, and training"
+requires-python = ">=3.11"
+# Intentionally empty: dependencies are pinned in the working .venv (see
+# docs/refactoring/plan.md, "Deferred, deliberately"). requirements.txt is not
+# installable as written, and this editable install must never trigger a
+# resolve that could replace the pinned CUDA build of torch.
+dependencies = []
+
+[tool.setuptools.packages.find]
+where = ["src"]

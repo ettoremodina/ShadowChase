@@ -73,12 +73,15 @@ function render() {
   const state = current();
   if (!state) return;
 
+  // Without a photo behind them the routes are the whole map, so they stay on.
+  const photo = showPhoto && Boolean(data.board.image);
+
   $("scrub").value = String(step);
   $("step-read").textContent = `${step} / ${data.steps.length - 1}`;
 
   board.render({
-    showImage: showPhoto,
-    showEdges: !showPhoto,
+    showImage: photo,
+    showEdges: !photo,
     detectives: state.detectivePositions,
     mrx: state.mrxPosition,
     mrxVisible: state.mrxVisible,
@@ -87,8 +90,12 @@ function render() {
     active: [],
     staged: [],
     suspects: [],
-    labels: showPhoto ? "notable" : "all",
+    labels: photo ? "notable" : "all",
   });
+
+  $("photo-toggle").disabled = !data.board.image;
+  $("photo-toggle").setAttribute("aria-pressed", String(photo));
+  $("photo-toggle").textContent = photo ? "Photo on" : "Photo off";
 
   renderRuler(state);
   renderBadges(state);

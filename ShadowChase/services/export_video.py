@@ -16,10 +16,15 @@ import sys
 import os
 from pathlib import Path
 
-# Add the parent directory to Python path to import modules
-current_dir = Path(__file__).parent
-project_root = current_dir.parent if current_dir.name == "ShadowChaseRL" else current_dir
+# Add the project root (two levels up: ShadowChase/services/..) to the path.
+project_root = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(project_root))
+
+# The status messages below use non-ASCII characters, which raise
+# UnicodeEncodeError under the Windows console's default cp1252 stdout.
+for stream in (sys.stdout, sys.stderr):
+    if hasattr(stream, "reconfigure"):
+        stream.reconfigure(encoding="utf-8")
 
 from ShadowChase.ui.video_exporter import export_video_from_command_line
 

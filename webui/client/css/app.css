@@ -353,9 +353,20 @@
   transition: background var(--speed-fast) var(--ease);
 }
 
-.zoom button:hover {
+.zoom button:hover:not(:disabled) {
   background: var(--ink-700);
   color: var(--paper);
+}
+
+.zoom button[aria-pressed="true"] {
+  background: var(--ink-700);
+  border-color: var(--paper-dim);
+  color: var(--paper);
+}
+
+.zoom button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
 }
 
 /* Panel --------------------------------------------------------------- */
@@ -875,11 +886,30 @@
   background: var(--ink-750);
   border: 1px solid var(--line);
   border-radius: var(--radius);
+  cursor: pointer;
+  font: inherit;
+  transition: border-color var(--speed-fast) var(--ease),
+    background var(--speed-fast) var(--ease);
+}
+
+.card-slot:hover {
+  border-color: var(--paper-dim);
 }
 
 .card-slot.is-empty {
   border-style: dashed;
   background: transparent;
+}
+
+/* The piece the next click on the map will place. */
+.card-slot.is-target {
+  border-style: solid;
+  border-color: var(--tube);
+  box-shadow: 0 0 0 1px var(--tube) inset;
+}
+
+.card-slot.is-target .who {
+  color: var(--paper);
 }
 
 .card-slot .who {

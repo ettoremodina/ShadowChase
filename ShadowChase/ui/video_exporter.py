@@ -723,17 +723,18 @@ def export_video_from_command_line(game_file: str, output_file: str = None,
     except Exception as e:
         raise RuntimeError(f"Failed to load game from {game_file}: {str(e)}")
     
-    # Handle different game storage formats
-    if hasattr(game_data, 'game_history'):
-        # Direct game object
-        game = game_data
-        game_id = Path(game_file).stem
-    elif hasattr(game_data, 'game_config'):
+    # Handle different game storage formats. A GameRecord also carries
+    # game_history, so it must be checked before the direct-object branch or
+    # every saved game is misdetected as a live ShadowChaseGame.
+    if hasattr(game_data, 'game_config'):
         # GameRecord object - need to reconstruct
-        from ..services.game_loader import GameLoader
         loader = GameLoader()
         game = loader._reconstruct_game_from_record(game_data)
         game_id = game_data.game_id
+    elif hasattr(game_data, 'game_history'):
+        # Direct game object
+        game = game_data
+        game_id = Path(game_file).stem
     else:
         raise ValueError(f"File does not contain a valid Shadow Chase game: {type(game_data)}")
     

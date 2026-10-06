@@ -95,8 +95,8 @@ BOARDS: Dict[str, BoardOption] = {
             "London, no tickets",
             "The full map with basic movement and no ticket economy",
             lambda n: create_simple_shadow_chase_game(n, show_MrX=True, use_tickets=False),
-            [2],
-            2,
+            [1, 2, 3, 4, 5],
+            3,
             tickets=False,
         ),
         BoardOption(
@@ -104,7 +104,7 @@ BOARDS: Dict[str, BoardOption] = {
             "Test board",
             "Ten stations with full ticket rules, for quick checks",
             create_test_shadow_chase_game,
-            [2],
+            [1, 2, 3, 4],
             2,
         ),
         BoardOption(
@@ -114,7 +114,7 @@ BOARDS: Dict[str, BoardOption] = {
             lambda n: create_simple_test_shadow_chase_game(
                 n, show_MrX=True, use_tickets=False
             ),
-            [2],
+            [1, 2, 3, 4],
             2,
             tickets=False,
         ),
@@ -132,7 +132,7 @@ BOARDS: Dict[str, BoardOption] = {
             "Path",
             "Five stations in a line",
             lambda n: create_path_graph_game(5, n),
-            [1, 2],
+            [1, 2, 3],
             1,
             tickets=False,
         ),
@@ -141,7 +141,7 @@ BOARDS: Dict[str, BoardOption] = {
             "Cycle",
             "Six stations in a ring",
             lambda n: create_cycle_graph_game(6, n),
-            [1, 2],
+            [1, 2, 3, 4],
             1,
             tickets=False,
         ),
@@ -224,6 +224,10 @@ class NewGameBody(BaseModel):
 
 class NodeBody(BaseModel):
     node: int
+
+
+class SlotBody(BaseModel):
+    slot: int
 
 
 class ModeBody(BaseModel):
@@ -357,8 +361,13 @@ def deal_setup() -> Dict[str, object]:
                 )
             else:
                 session.reset_setup()
-                session.selected_positions = positions
+                session.set_setup_positions(positions)
         return _envelope(session)
+
+
+@app.post("/api/setup/slot")
+def set_setup_slot(body: SlotBody) -> Dict[str, object]:
+    return _mutate(lambda session: session.set_setup_slot(body.slot))
 
 
 @app.post("/api/setup/start")

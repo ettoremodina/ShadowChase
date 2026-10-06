@@ -16,10 +16,12 @@ import ShadowChase  # noqa: F401
 from ml_logger import get_logger
 from ShadowChase.compat import current_module_name
 from ShadowChase.core.game import (
+    GameState,
     Player,
     ShadowChaseGame,
     ShadowChaseMovement,
     ShadowChaseWinCondition,
+    TicketType,
 )
 from ShadowChase.services.game_loader import GameRecord
 
@@ -92,6 +94,41 @@ def test_legacy_player_values_resolve_to_current_members():
         Player("not-a-player")
 
 
+def test_game_state_migrates_pre_rename_field_names():
+    """Verify GameState.__setstate__ normalizes the pre-MrX_* field names.
+
+    Games saved before the rename recorded mr_x_tickets, mr_x_visible and
+    mr_x_moves_log. Unpickling restores __dict__ directly and skips
+    __init__, so without this migration those objects would keep the old
+    names forever and silently fail anything reading .MrX_tickets.
+    """
+    legacy_state = pickle.loads(
+        pickle.dumps(
+            {
+                "detective_positions": [1, 2],
+                "MrX_position": 3,
+                "turn": Player.MRX,
+                "turn_count": 4,
+                "MrX_turn_count": 2,
+                "detective_tickets": {},
+                "double_move_active": False,
+                "mr_x_tickets": {TicketType.TAXI: 5},
+                "mr_x_visible": False,
+                "mr_x_moves_log": [(3, TicketType.TAXI)],
+            }
+        )
+    )
+    state = GameState.__new__(GameState)
+    state.__setstate__(legacy_state)
+
+    assert state.MrX_tickets == {TicketType.TAXI: 5}
+    assert state.MrX_visible is False
+    assert state.MrX_moves_log == [(3, TicketType.TAXI)]
+    assert not hasattr(state, "mr_x_tickets")
+    assert not hasattr(state, "mr_x_visible")
+    assert not hasattr(state, "mr_x_moves_log")
+
+
 @pytest.mark.integration
 def test_historical_saves_still_load_and_keep_their_outcomes(historical_pickles):
     """Verify every sampled game unpickles into a usable record.
@@ -114,3 +151,11 @@ def test_historical_saves_still_load_and_keep_their_outcomes(historical_pickles)
         assert final_state.MrX_position is not None, path
         assert final_state.detective_positions, path
         assert final_state.turn in (Player.MRX, Player.DETECTIVES), path
+        # A state saved under the pre-rename field names (mr_x_tickets,
+        # mr_x_visible, mr_x_moves_log) must expose the current MrX_* names:
+        # GameState.__setstate__ migrates them, and consumers such as the
+        # video exporter read only the current names.
+        assert hasattr(final_state, "MrX_tickets"), path
+        assert hasattr(final_state, "MrX_visible"), path
+        assert hasattr(final_state, "MrX_moves_log"), path
+        assert not hasattr(final_state, "mr_x_tickets"), path

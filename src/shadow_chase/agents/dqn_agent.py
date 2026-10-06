@@ -17,8 +17,8 @@ import torch
 from ShadowChase.core.game import ShadowChaseGame, Player, TransportType
 from training.feature_extractor_simple import GameFeatureExtractor, FeatureConfig
 from training.deep_q.dqn_model import create_dqn_model
-from agents.heuristics import GameHeuristics
-from agents.base_agent import MrXAgent, MultiDetectiveAgent, DetectiveAgent
+from .heuristics import GameHeuristics
+from .base_agent import MrXAgent, MultiDetectiveAgent, DetectiveAgent
 
 class DQNAgentMixin:
     """Mixin class for shared DQN agent functionality."""

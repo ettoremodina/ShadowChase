@@ -34,6 +34,7 @@ export const api = {
   clickNode: (node) => post("/api/board/node", { node }),
   togglePhoto: () => post("/api/board/image/toggle"),
 
+  setSetupSlot: (slot) => post("/api/setup/slot", { slot }),
   setMode: (mode) => post("/api/setup/mode", { mode }),
   setAgent: (side, agent) => post("/api/setup/agent", { side, agent }),
   setHeuristics: (enabled) => post("/api/setup/heuristics", { enabled }),

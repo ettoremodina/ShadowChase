@@ -96,6 +96,36 @@ resolves to this package gets found on disk and executed a second time, giving
 duplicate classes and a second `Player` enum whose members compare unequal to
 the real ones.
 
+**Follow-up: loadable was not the same as usable.** Writing
+[docs/usage.md](../usage.md) required exercising every documented command,
+including video export, which surfaced a second gap in the same invariant:
+unpickling restores `__dict__` directly and never calls `__init__`, so a class
+whose *fields* were renamed keeps the old field names on every object saved
+before the rename. About a fifth of the corpus (43 of 201 sampled) was saved
+with `GameState.mr_x_tickets` / `mr_x_visible` / `mr_x_moves_log` instead of
+the current `MrX_tickets` / `MrX_visible` / `MrX_moves_log`, and nothing
+migrated them. The original pickle-compatibility test didn't catch it because
+it checked `MrX_position` and `turn` but never the ticket or visibility
+fields — the exact fields that were missing.
+
+Fixed with `GameState.__setstate__`, which renames the legacy fields on load.
+The corpus test now asserts the current field names are present and the legacy
+ones are gone, and a focused unit test exercises the migration directly against
+a hand-built legacy `__dict__`.
+
+Two unrelated bugs surfaced by the same exercise, both one-line and fixed:
+
+- `ShadowChase/services/export_video.py` computed its own path to the project
+  root with a check (`current_dir.name == "ShadowChaseRL"`) that could never be
+  true for a file at `ShadowChase/services/`, so every invocation failed before
+  importing anything. Replaced with `Path(__file__).resolve().parents[2]`.
+- `export_video_from_command_line` branched on `hasattr(game_data,
+  'game_history')` before `hasattr(game_data, 'game_config')` to tell a live
+  game object from a `GameRecord` — but `GameRecord` has both attributes, so
+  every saved game (always a `GameRecord` on disk) took the wrong branch and
+  crashed reconstructing a graph that only the live object has. Reordered the
+  checks so the more specific attribute is tried first.
+
 ### 5. Physical reorganization
 
 Move files into the target layout and leave import shims behind. Deferred until
@@ -124,6 +154,59 @@ docs/  examples/
 Pickle compatibility is the hard constraint here: unpickling resolves the module
 path recorded at save time, so the original module names must keep importing the
 same classes.
+
+Moved module-by-module, lowest pickle risk first, each move verified by the
+full suite plus a real smoke run before the next: `agents/` first (nothing
+under it is pickled directly — DQN checkpoints hold only `state_dict` tensors,
+plain strings and JSON config), `ShadowChase/core/game.py` last (the highest
+risk, since it's what most saved-game pickles reference).
+
+- [x] 5a. `agents/` → `src/shadow_chase/agents/`
+- [ ] 5b. `training/` → `src/shadow_chase/application/training.py` + `deep_q/`
+- [ ] 5c. `game_controls/`, `main.py`, `test_agents.py` → `interfaces/cli/`, `application/`
+- [ ] 5d. `webui/`, `pettingzoo_integration/` → `interfaces/web/`, `interfaces/pettingzoo/`
+- [ ] 5e. `ShadowChase/services/`, `ShadowChase/ui/` → `infrastructure/`, `interfaces/gui/`
+- [ ] 5f. `ShadowChase/core/game.py` → `domain/game.py`
+- [ ] 5g. `other/` → `scripts/`
+
+#### 5a. `agents/` — done
+
+No `pyproject.toml` existed before this: every entry point resolved imports by
+manually doing `sys.path.insert(0, project_root)`, the same fragile pattern
+that caused the `export_video.py` bug found while writing the usage docs.
+Added `pyproject.toml` (a `src`-layout package, empty `dependencies` so `uv pip
+install -e . --no-deps` cannot touch the pinned CUDA torch build) and installed
+it into `.venv`. New code should import `shadow_chase.agents` directly; call
+sites using `agents.*` are unaffected.
+
+`agents/__init__.py` is now a compatibility shim re-exporting every submodule
+of `shadow_chase.agents`, registered in `sys.modules` so both
+`from agents import AgentType` and `from agents.heuristics import
+GameHeuristics` keep resolving. Two things made this non-trivial:
+
+- **`dqn_agent` has to stay lazy.** The original package never imported it at
+  `agents` init time — `agent_registry` only loads it inside a method, on
+  first request for a DQN agent. `dqn_agent.py` and
+  `training/deep_q/dqn_trainer.py` reference each other by absolute path
+  (`from agents.dqn_agent import ...` and `from agents import AgentType`), a
+  tangle that predates this move — confirmed by running the identical import
+  against the untouched code extracted from git history. Importing it eagerly
+  in the shim would force that tangle to resolve while the shim is still
+  mid-init, which fails. Fixed with `importlib.util.LazyLoader`, matching the
+  original's actual lazy timing rather than working around the tangle.
+- **The lazy module needs registering under both names.** Registering it only
+  as `sys.modules["agents.dqn_agent"]` left `shadow_chase.agents.dqn_agent`
+  unregistered, so a later `import shadow_chase.agents.dqn_agent` re-executed
+  the file and produced a second, distinct `DQNMrXAgent` class — same code,
+  failing identity. A test asserting `is` (not just equal names) caught it;
+  fixed by pointing both `sys.modules` keys, plus the parent package
+  attribute, at the same module object.
+
+Verified: full suite (40 passed, 2 known xfails), every entry point's
+`--help`, a real headless demo, a 2-game heuristic-vs-random batch, and a
+2-episode DQN training run through to a saved checkpoint and evaluation.
+`tests/characterization/test_agents_package_move.py` pins the shim's identity
+and lazy-loading behavior against regressions.
 
 ### 6. Examples and analysis
 

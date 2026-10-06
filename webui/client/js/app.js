@@ -146,8 +146,11 @@ function renderStage() {
     dom.badgeMrx.textContent = "Mr. X under cover";
   }
 
-  $("rail-photo").setAttribute("aria-pressed", String(snapshot.showBoardImage));
-  $("rail-photo").disabled = !snapshot.hasBoardImage;
+  for (const id of ["rail-photo", "photo-toggle"]) {
+    $(id).setAttribute("aria-pressed", String(snapshot.showBoardImage));
+    $(id).disabled = !snapshot.hasBoardImage;
+  }
+  $("photo-toggle").textContent = snapshot.showBoardImage ? "Photo on" : "Photo off";
   $("rail-suspects").setAttribute(
     "aria-pressed",
     String(snapshot.setup.heuristics)
@@ -238,20 +241,25 @@ function setupPanel() {
       </select>
     </div>`;
 
+  // Each slot is a button: pick the piece first, then click its station on the
+  // map. Without this the only way to move one detective was to clear the lot.
+  const slot = (index, who, station, side) => `
+    <button type="button" class="card-slot ${station == null ? "is-empty" : ""} ${
+    index === setup.slot ? "is-target" : ""
+  }" data-side="${side}" data-slot="${index}"
+      aria-pressed="${index === setup.slot}"
+      title="Place ${who} on the next station you click">
+      <span class="who">${escape(who)}</span>
+      <span class="slot-station">${station ?? "··"}</span>
+    </button>`;
+
   const slots = [];
   for (let index = 0; index < snapshot.numDetectives; index += 1) {
-    const station = setup.detectives[index];
-    slots.push(`
-      <div class="card-slot ${station === undefined ? "is-empty" : ""}" data-side="detectives">
-        <span class="who">D${index + 1}</span>
-        <span class="slot-station">${station ?? "··"}</span>
-      </div>`);
+    slots.push(
+      slot(index, `D${index + 1}`, setup.detectives[index], "detectives")
+    );
   }
-  slots.push(`
-    <div class="card-slot ${setup.mrx == null ? "is-empty" : ""}" data-side="mrx">
-      <span class="who">Mr. X</span>
-      <span class="slot-station">${setup.mrx ?? "··"}</span>
-    </div>`);
+  slots.push(slot(snapshot.numDetectives, "Mr. X", setup.mrx, "mrx"));
 
   return `
     <section class="section">
@@ -276,7 +284,7 @@ function setupPanel() {
     <section class="section">
       <div class="section-head">
         <span class="eyebrow">Starting stations</span>
-        <span class="section-note">${setup.selected.length} of ${setup.needed}</span>
+        <span class="section-note">${setup.selected.length} of ${setup.needed} placed</span>
       </div>
       <div class="hand">${slots.join("")}</div>
       <p class="instruction" style="border-top: none; padding-top: 12px; margin-top: 8px">
@@ -340,7 +348,10 @@ function playPanel() {
     ),
   ].join("");
 
-  const routes = moves.empty
+  const routes = moves.hidden
+    ? `<p class="empty-note">Mr. X is under cover. His station and his routes
+         stay off the board until he surfaces.</p>`
+    : moves.empty
     ? `<p class="empty-note">No route out of station ${
         moves.source ?? "—"
       }. This piece stands still.</p>`
@@ -398,7 +409,7 @@ function playPanel() {
       <div class="section-head">
         <span class="eyebrow">Where you can go</span>
         <span class="section-note">${
-          moves.source != null ? `from ${moves.source}` : ""
+          moves.source != null && !moves.hidden ? `from ${moves.source}` : ""
         }</span>
       </div>
       ${routes}
@@ -469,14 +480,11 @@ function ticketTable() {
 
 function setupActions() {
   const canStart = snapshot.actions.start;
-  const dealable = (boardInfo?.options || []).find(
-    (item) => item.key === boardInfo.selected
-  )?.dealsCards;
 
   return `
     <div class="btn-row">
       ${
-        dealable
+        snapshot.setup.canDeal
           ? `<button class="btn" data-do="deal">Deal stations</button>`
           : ""
       }
@@ -583,13 +591,22 @@ function renderBoardOptions() {
     .join("");
 
   const option = options.find((item) => item.key === pickedBoard);
+  // Staying on the current board keeps the squad size you are already playing.
+  const current =
+    pickedBoard === boardInfo.selected
+      ? boardInfo.detectives
+      : option.defaultDetectives;
+  const chosen = option.detectives.includes(current)
+    ? current
+    : option.defaultDetectives;
+
   const select = $("board-detectives");
   select.innerHTML = option.detectives
     .map(
       (count) =>
-        `<option value="${count}" ${
-          count === option.defaultDetectives ? "selected" : ""
-        }>${count} detective${count === 1 ? "" : "s"}</option>`
+        `<option value="${count}" ${count === chosen ? "selected" : ""}>${count} detective${
+          count === 1 ? "" : "s"
+        }</option>`
     )
     .join("");
   select.disabled = option.detectives.length < 2;
@@ -665,6 +682,7 @@ function wire() {
     loadSaves("export");
   });
   $("rail-photo").addEventListener("click", () => send(api.togglePhoto));
+  $("photo-toggle").addEventListener("click", () => send(api.togglePhoto));
   $("rail-suspects").addEventListener("click", () =>
     send(() => api.setHeuristics(!snapshot.setup.heuristics))
   );
@@ -683,6 +701,11 @@ function wire() {
     const ticket = event.target.closest("[data-ticket]");
     if (ticket) {
       send(() => api.chooseTicket(Number(ticket.dataset.ticket)));
+      return;
+    }
+    const slot = event.target.closest("[data-slot]");
+    if (slot) {
+      send(() => api.setSetupSlot(Number(slot.dataset.slot)));
       return;
     }
     const chip = event.target.closest("[data-station]");

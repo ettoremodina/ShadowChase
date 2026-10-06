@@ -9,7 +9,7 @@ should say.
 from __future__ import annotations
 
 import threading
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, Iterable, List, Optional, Tuple
 
 from ShadowChase.core.game import (
     Player,
@@ -97,9 +97,14 @@ class GameSession:
         self.game_service = GameService(self.loader)
         self.layout: BoardLayout = build_layout(game)
 
-        # Setup phase
+        # Setup phase. One slot per piece, detectives first and Mr. X last, so a
+        # station can be placed into — and picked back out of — a named slot
+        # instead of appending to a list where every hole shifts everyone along.
         self.setup_mode = True
-        self.selected_positions: List[int] = list(auto_positions or [])
+        self.setup_positions: List[Optional[int]] = [None] * (game.num_detectives + 1)
+        self.setup_slot = 0
+        if auto_positions:
+            self.set_setup_positions(auto_positions)
         self.game_mode = "human_vs_human"
         self.mrx_agent_type = "random"
         self.detective_agent_type = "random"
@@ -110,6 +115,7 @@ class GameSession:
         self.detective_selections: List[Tuple[int, Optional[TransportType]]] = []
         self.mrx_selections: List[Tuple[int, TransportType]] = []
         self.selected_nodes: List[int] = []
+        self.mrx_target: Optional[int] = None  # basic games move without tickets
         self.pending_transport: Optional[Dict] = None
         self.double_move_requested = False
 
@@ -118,10 +124,13 @@ class GameSession:
         self.active_player_positions: List[int] = []
         self.highlighted_edges: List[Tuple[int, int, int]] = []
 
-        # Agents and analysis
+        # Agents and analysis. The agent is asked once per decision point and the
+        # answer is kept, so what the panel previews is what Continue plays.
         self.detective_agent = None
         self.mrx_agent = None
         self.heuristics = None
+        self._ai_plan: Optional[Dict] = None
+        self._ai_plan_key: Optional[Tuple] = None
 
         # Presentation
         self.show_board_image = self.layout.image is not None
@@ -149,9 +158,9 @@ class GameSession:
         return notices
 
     def _clear_selections(self) -> None:
-        self.selected_positions = []
         self.detective_selections = []
         self.mrx_selections = []
+        self.mrx_target = None
         self.current_detective_index = 0
         self.selected_nodes = []
         self.pending_transport = None
@@ -180,21 +189,65 @@ class GameSession:
             return
         self.show_board_image = not self.show_board_image
 
+    # -- starting stations ---------------------------------------------
+    @property
+    def selected_positions(self) -> List[int]:
+        """The stations placed so far, in slot order, holes left out."""
+        return [station for station in self.setup_positions if station is not None]
+
+    def set_setup_positions(self, positions: Iterable[int]) -> None:
+        """Fill the slots from a dealt hand, detectives first and Mr. X last."""
+        total = self.game.num_detectives + 1
+        filled = [int(station) for station in positions][:total]
+        self.setup_positions = filled + [None] * (total - len(filled))
+        self.setup_slot = self._first_free_slot()
+
+    def set_setup_slot(self, slot: int) -> None:
+        """Aim the next click at one piece rather than at the next free hole."""
+        if 0 <= slot < len(self.setup_positions):
+            self.setup_slot = slot
+
+    def _first_free_slot(self) -> int:
+        for index, station in enumerate(self.setup_positions):
+            if station is None:
+                return index
+        return 0
+
+    def _next_slot_after(self, slot: int) -> int:
+        """Walk to the next empty slot, wrapping; step by one if all are full."""
+        total = len(self.setup_positions)
+        for offset in range(1, total + 1):
+            index = (slot + offset) % total
+            if self.setup_positions[index] is None:
+                return index
+        return (slot + 1) % total
+
     def select_setup_node(self, node: int) -> None:
-        if node in self.selected_positions:
-            self.selected_positions.remove(node)
-        elif len(self.selected_positions) < self.game.num_detectives + 1:
-            self.selected_positions.append(node)
+        if node in self.setup_positions:
+            # Clicking a placed station picks that piece back up, and leaves the
+            # cursor on its slot so the next click puts it somewhere else.
+            slot = self.setup_positions.index(node)
+            self.setup_positions[slot] = None
+            self.setup_slot = slot
+            return
+
+        slot = min(self.setup_slot, len(self.setup_positions) - 1)
+        self.setup_positions[slot] = node
+        self.setup_slot = self._next_slot_after(slot)
+
+    def slot_label(self, slot: int) -> str:
+        return "Mr. X" if slot >= self.game.num_detectives else f"detective {slot + 1}"
 
     def can_start(self) -> bool:
-        needed = self.game.num_detectives + 1
-        if len(self.selected_positions) != needed:
+        placed = self.setup_positions
+        if any(station is None for station in placed):
             return False
-        detectives = self.selected_positions[: self.game.num_detectives]
-        return self.selected_positions[self.game.num_detectives] not in detectives
+        return len(set(placed)) == len(placed)
 
     def reset_setup(self) -> None:
         self.setup_mode = True
+        self.setup_positions = [None] * (self.game.num_detectives + 1)
+        self.setup_slot = 0
         self._clear_selections()
         self.current_player_moves = {}
         self.active_player_positions = []
@@ -207,22 +260,26 @@ class GameSession:
         self.saved_game_id = None
 
     def start_game(self) -> bool:
-        needed = self.game.num_detectives + 1
-        if len(self.selected_positions) != needed:
+        empty = [
+            self.slot_label(slot)
+            for slot, station in enumerate(self.setup_positions)
+            if station is None
+        ]
+        if empty:
             self.notify(
                 "error",
-                "Not enough stations",
-                f"Pick {self.game.num_detectives} detective stations and one for Mr. X.",
+                "Not every piece is placed",
+                f"Still to place: {', '.join(empty)}.",
             )
             return False
 
-        detectives = self.selected_positions[: self.game.num_detectives]
-        mrx = self.selected_positions[self.game.num_detectives]
-        if mrx in detectives:
+        detectives = list(self.setup_positions[: self.game.num_detectives])
+        mrx = self.setup_positions[self.game.num_detectives]
+        if len(set(self.setup_positions)) != len(self.setup_positions):
             self.notify(
                 "error",
                 "Stations overlap",
-                "Mr. X cannot start on a station a detective occupies.",
+                "Every piece needs a station of its own.",
             )
             return False
 
@@ -290,6 +347,22 @@ class GameSession:
             return self.detective_agent is not None
         return self.mrx_agent is not None
 
+    def mrx_is_concealed(self) -> bool:
+        """True while an agent moves Mr. X and the board must not give him away.
+
+        A human Mr. X is looking at his own screen, so his station and routes
+        belong on it. An agent's Mr. X does not: whoever is at the keyboard is
+        the hunter, and everything about a hidden fugitive has to stay off the
+        board and out of the panel.
+        """
+        if not self.state or self.setup_mode:
+            return False
+        if self.state.turn != Player.MRX or self.mrx_agent is None:
+            return False
+        return not (
+            getattr(self.state, "MrX_visible", False) or self.game.is_game_over()
+        )
+
     # ------------------------------------------------------------------
     # Move computation
     # ------------------------------------------------------------------
@@ -314,6 +387,13 @@ class GameSession:
                 f"The engine rejected its route data: {error}",
             )
             return
+
+        if self.mrx_is_concealed():
+            # Everything computed above describes where the hidden fugitive is
+            # and where he can go. None of it may reach the browser.
+            self.current_player_moves = {}
+            self.active_player_positions = []
+            self.highlighted_edges = []
 
         if self.is_current_player_ai():
             self._stage_ai_selections()
@@ -461,7 +541,7 @@ class GameSession:
 
     def _click_mrx_destination(self, source: int, node: int) -> None:
         if not self.is_shadow_chase:
-            self.selected_positions = [node]
+            self.mrx_target = node
             self.selected_nodes = [node]
             self._refresh()
             return
@@ -544,11 +624,11 @@ class GameSession:
     def can_confirm_move(self) -> bool:
         if self.setup_mode or not self.state or self.game.is_game_over():
             return False
-        if self.pending_transport:
+        if self.pending_transport or self.is_current_player_ai():
             return False
         if self.state.turn == Player.DETECTIVES:
             return len(self.detective_selections) == self.game.num_detectives
-        return bool(self.mrx_selections or self.selected_positions)
+        return bool(self.mrx_selections) or self.mrx_target is not None
 
     def can_skip(self) -> bool:
         """A detective with nowhere to go may stand still."""
@@ -594,7 +674,7 @@ class GameSession:
     def _confirm_mrx_move(self) -> bool:
         """Return True when Mr. X keeps the turn for a second leg."""
         if not self.is_shadow_chase:
-            success = self.game.make_move(new_MrX_pos=self.selected_positions[0])
+            success = self.game.make_move(new_MrX_pos=self.mrx_target)
             if not success:
                 self.notify("error", "Move rejected", "The engine refused that move.")
             return False
@@ -654,41 +734,85 @@ class GameSession:
         self._refresh()
         self._check_game_over()
 
-    def _play_ai_move(self) -> bool:
+    def _plan_key(self) -> Tuple:
+        """Identify the decision the agent is being asked to make."""
+        state = self.state
+        return (
+            state.turn,
+            tuple(state.detective_positions),
+            state.MrX_position,
+            int(getattr(state, "turn_count", 0)),
+            int(getattr(state, "MrX_turn_count", 0)),
+            bool(getattr(state, "double_move_active", False)),
+        )
+
+    def _ai_plan_for_now(self) -> Optional[Dict]:
+        """The agent's move for this position, asked for once and remembered.
+
+        Agents are free to answer differently every time they are asked — the
+        random one always does, and the MCTS ones usually do. Calling one twice
+        meant the panel previewed a move that Continue then did not play, and
+        made every search run twice, so the answer is cached against the
+        position it was asked about.
+        """
+        if not self.state:
+            return None
+        key = self._plan_key()
+        if self._ai_plan is not None and self._ai_plan_key == key:
+            return self._ai_plan
+        self._ai_plan_key = key
+        self._ai_plan = self._compute_ai_plan()
+        return self._ai_plan
+
+    def _compute_ai_plan(self) -> Optional[Dict]:
         try:
             if self.state.turn == Player.DETECTIVES and self.detective_agent:
                 moves = self.detective_agent.choose_all_moves(self.game)
-                return bool(moves) and self.game.make_move(detective_moves=moves)
-            if self.state.turn == Player.MRX and self.mrx_agent:
+                if moves:
+                    return {"side": "detectives", "moves": list(moves)}
+            elif self.state.turn == Player.MRX and self.mrx_agent:
                 result = self.mrx_agent.choose_move(self.game)
                 if result and len(result) == 3:
                     destination, transport, use_double = result
-                    return self.game.make_move(
-                        MrX_moves=[(destination, transport)],
-                        use_double_move=use_double,
-                    )
+                    return {
+                        "side": "mrx",
+                        "move": (destination, transport),
+                        "double": bool(use_double),
+                    }
+        except Exception as error:  # noqa: BLE001 - surfaced to the player
+            self.notify("error", "Agent error", str(error))
+        return None
+
+    def _play_ai_move(self) -> bool:
+        plan = self._ai_plan_for_now()
+        if not plan:
+            return False
+        try:
+            if plan["side"] == "detectives":
+                return bool(self.game.make_move(detective_moves=plan["moves"]))
+            return bool(
+                self.game.make_move(
+                    MrX_moves=[plan["move"]], use_double_move=plan["double"]
+                )
+            )
         except Exception as error:  # noqa: BLE001 - surfaced to the player
             self.notify("error", "Agent error", str(error))
         return False
 
     def _stage_ai_selections(self) -> None:
-        """Show what the agent intends before the player presses Continue."""
-        try:
-            if self.state.turn == Player.DETECTIVES and self.detective_agent:
-                moves = self.detective_agent.choose_all_moves(self.game)
-                if moves:
-                    self.detective_selections = list(moves)
-                    self.selected_nodes = [move[0] for move in moves]
-                    self.current_detective_index = len(moves)
-            elif self.state.turn == Player.MRX and self.mrx_agent:
-                result = self.mrx_agent.choose_move(self.game)
-                if result and len(result) == 3:
-                    destination, transport, use_double = result
-                    self.mrx_selections = [(destination, transport)]
-                    self.selected_nodes = [destination]
-                    self.double_move_requested = bool(use_double)
-        except Exception as error:  # noqa: BLE001 - surfaced to the player
-            self.notify("error", "Agent error", str(error))
+        """Show what the agent intends before the player presses Continue.
+
+        Only the detectives' plan is shown. Mr. X's is computed here too, so
+        Continue answers instantly, but staging it would have drawn the hidden
+        fugitive's destination on the hunter's own board.
+        """
+        plan = self._ai_plan_for_now()
+        if not plan or plan["side"] != "detectives":
+            return
+        moves = plan["moves"]
+        self.detective_selections = list(moves)
+        self.selected_nodes = [move[0] for move in moves]
+        self.current_detective_index = len(moves)
 
     def _update_heuristics(self) -> None:
         if self.heuristics_enabled and self.heuristics is None:
@@ -795,24 +919,27 @@ class GameSession:
     def _setup_payload(self) -> Dict[str, object]:
         from agents import AgentSelector
 
-        selected = list(self.selected_positions)
+        placed = list(self.setup_positions)
         needed = self.game.num_detectives + 1
-        detectives = selected[: self.game.num_detectives]
-        mrx = selected[self.game.num_detectives] if len(selected) > needed - 1 else None
+        slot = min(self.setup_slot, needed - 1)
 
-        if len(selected) < self.game.num_detectives:
-            hint = f"Pick a station for detective {len(selected) + 1}."
-        elif len(selected) == self.game.num_detectives:
-            hint = "Pick the station where Mr. X goes under cover."
+        if any(station is None for station in placed):
+            hint = (
+                f"Click a station to place {self.slot_label(slot)}. "
+                "Click a placed piece to pick it up again."
+            )
         elif not self.can_start():
-            hint = "Mr. X cannot share a station with a detective."
+            hint = "Two pieces share a station. Click one to move it."
         else:
             hint = "Every station is set. Start the chase."
 
         return {
-            "selected": selected,
-            "detectives": detectives,
-            "mrx": mrx,
+            "selected": [station for station in placed if station is not None],
+            "detectives": placed[: self.game.num_detectives],
+            "mrx": placed[self.game.num_detectives],
+            "slot": slot,
+            "slotLabel": self.slot_label(slot),
+            "canDeal": len(self.game.graph.nodes()) > needed,
             "needed": needed,
             "hint": hint,
             "modes": GAME_MODES,
@@ -985,7 +1112,13 @@ class GameSession:
                 }
             )
 
-        return {"source": source, "groups": groups, "empty": not groups}
+        return {
+            "source": source,
+            "groups": groups,
+            "empty": not groups,
+            # Nothing is missing — the routes are being withheld on purpose.
+            "hidden": self.mrx_is_concealed(),
+        }
 
     def _selection_payload(self) -> Dict[str, object]:
         detectives = []
@@ -997,13 +1130,18 @@ class GameSession:
                 destination, transport = selection, None
             transport_value = getattr(transport, "value", None)
             style = TICKET_STYLES.get(transport_value, {}) if transport_value else {}
+            source = positions[index] if index < len(positions) else None
+            # Only a detective who ends where he started stood still. Basic
+            # games carry no ticket at all, and used to read as "Stayed" for
+            # every move they made.
+            fallback = "Stayed" if destination == source else "Move"
             detectives.append(
                 {
                     "index": index,
-                    "from": positions[index] if index < len(positions) else None,
+                    "from": source,
                     "to": destination,
                     "transport": transport_value,
-                    "ticket": style.get("name", "Stayed" if transport is None else "?"),
+                    "ticket": style.get("name", fallback),
                     "color": style.get("color", "#6B7688"),
                 }
             )
